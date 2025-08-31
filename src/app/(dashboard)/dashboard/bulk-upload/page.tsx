@@ -4,10 +4,20 @@ import { useState } from 'react';
 import Link from 'next/link';
 import BulkUpload from '@/components/BulkUpload';
 
+interface UploadData {
+  name: string;
+  email: string;
+  role: string;
+  state?: string;
+  district?: string;
+  gender?: string;
+  rowNumber: number;
+}
+
 export default function BulkUploadPage() {
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
 
-  const handleUpload = async (data: any[], courseId: string) => {
+  const handleUpload = async (data: UploadData[], courseId: string) => {
     const response = await fetch(`/api/upload/${activeTab}/classroom`, {
       method: 'POST',
       headers: {
@@ -82,7 +92,7 @@ export default function BulkUploadPage() {
             <li>• Download the template for the selected type</li>
             <li>• Fill in the data following the template format (use correct role)</li>
             <li>• Save as Excel file (.xlsx or .xls)</li>
-            <li>• Upload the file using drag & drop or file picker</li>
+            <li>• Upload the file using drag &amp; drop or file picker</li>
             <li>• Review the preview and click upload to add to Google Classroom</li>
             <li>• <strong>Important:</strong> Upload students and teachers separately using different templates</li>
           </ul>
@@ -148,7 +158,7 @@ export default function BulkUploadPage() {
                   <ul className="text-sm text-gray-600 space-y-1">
                     <li>• <strong>Name:</strong> Full name of the student</li>
                     <li>• <strong>Email:</strong> Valid email address (must exist in Google Workspace)</li>
-                    <li>• <strong>Role:</strong> Must be "student"</li>
+                    <li>• <strong>Role:</strong> Must be &quot;student&quot;</li>
                   </ul>
                 </div>
                 <div>
@@ -168,7 +178,7 @@ export default function BulkUploadPage() {
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• <strong>Name:</strong> Full name of the teacher</li>
                   <li>• <strong>Email:</strong> Valid email address (must exist in Google Workspace)</li>
-                  <li>• <strong>Role:</strong> Must be "teacher"</li>
+                  <li>• <strong>Role:</strong> Must be &quot;teacher&quot;</li>
                 </ul>
               </div>
             </div>
@@ -180,7 +190,7 @@ export default function BulkUploadPage() {
               <li>• All emails must exist in your Google Workspace domain</li>
               <li>• Duplicate users in the same course will be skipped</li>
               <li>• All emails must be in valid format</li>
-              <li>• Role must be exactly "student" or "teacher" (case insensitive)</li>
+              <li>• Role must be exactly &quot;student&quot; or &quot;teacher&quot; (case insensitive)</li>
               <li>• Maximum file size: 10MB</li>
               <li>• Supported formats: .xlsx, .xls</li>
             </ul>

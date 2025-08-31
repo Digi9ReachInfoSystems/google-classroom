@@ -3,6 +3,17 @@ import { getClassroom } from '@/lib/google';
 import { connectToDatabase } from '@/lib/mongodb';
 import { UserModel } from '@/models/User';
 
+interface GoogleError {
+	code: number;
+	message?: string;
+}
+
+interface GoogleStudent {
+	profile?: {
+		emailAddress?: string | null;
+	};
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -78,7 +89,7 @@ export async function POST(request: NextRequest) {
           });
 
           const isAlreadyEnrolled = existingStudents.data.students?.some(
-            (student: any) => student.profile?.emailAddress === row.email
+            (student: GoogleStudent) => student.profile?.emailAddress === row.email
           );
 
           if (isAlreadyEnrolled) {
@@ -99,26 +110,27 @@ export async function POST(request: NextRequest) {
           });
 
           results.success++;
-                  } catch (googleError: any) {
+                  } catch (googleError: unknown) {
             console.error(`Error adding student ${row.email} to course:`, googleError);
             
-            if (googleError.code === 409) {
+            const error = googleError as GoogleError;
+            if (error.code === 409) {
               // Student already exists in course
               results.duplicates++;
-            } else if (googleError.code === 403) {
+            } else if (error.code === 403) {
               // Permission denied - check specific error
-              if (googleError.message?.includes('does not have permission')) {
+              if (error.message?.includes('does not have permission')) {
                 results.errors.push(`Row ${row.rowNumber}: ${row.email} - Insufficient permissions to add students to this course. Only course owners can add students.`);
               } else {
                 results.errors.push(`Row ${row.rowNumber}: ${row.email} - User not found in Google Workspace or insufficient permissions`);
               }
               results.skipped++;
-            } else if (googleError.code === 400) {
+            } else if (error.code === 400) {
               // Bad request - might be invalid email format
               results.errors.push(`Row ${row.rowNumber}: ${row.email} - Invalid email format or user not found`);
               results.skipped++;
             } else {
-              results.errors.push(`Row ${row.rowNumber}: ${row.email} - ${googleError.message || 'Unknown error'}`);
+              results.errors.push(`Row ${row.rowNumber}: ${row.email} - ${error.message || 'Unknown error'}`);
               results.skipped++;
             }
           }

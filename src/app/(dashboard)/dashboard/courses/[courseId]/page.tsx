@@ -5,16 +5,68 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import DataTable from '@/components/DataTable';
 
+interface Teacher {
+  userId: string;
+  profile: {
+    name: {
+      givenName?: string;
+      familyName?: string;
+      fullName?: string;
+    };
+    emailAddress?: string;
+  };
+}
+
+interface Student {
+  userId: string;
+  profile: {
+    name: {
+      givenName?: string;
+      familyName?: string;
+      fullName?: string;
+    };
+    emailAddress?: string;
+  };
+}
+
+interface CourseWork {
+  id: string;
+  title?: string;
+  state?: string;
+  dueDate?: {
+    year: number;
+    month: number;
+    day: number;
+  };
+}
+
+interface Submission {
+  id: string;
+  courseWorkId: string;
+  state?: string;
+  late?: boolean;
+  assignedGrade?: number;
+}
+
+interface Grade {
+  submissionId: string;
+  courseWorkId: string;
+  userEmail: string;
+  grade?: number;
+  state?: string;
+  late?: boolean;
+}
+
 export default function CourseDetailPage() {
 	const params = useParams<{ courseId: string }>();
 	const courseId = params.courseId as string;
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [teachers, setTeachers] = useState<any[]>([]);
-	const [students, setStudents] = useState<any[]>([]);
-	const [courseWork, setCourseWork] = useState<any[]>([]);
-	const [submissions, setSubmissions] = useState<any[]>([]);
-	const [grades, setGrades] = useState<any[]>([]);
+	const [teachers, setTeachers] = useState<Teacher[]>([]);
+	const [students, setStudents] = useState<Student[]>([]);
+	const [courseWork, setCourseWork] = useState<CourseWork[]>([]);
+	const [submissions, setSubmissions] = useState<Submission[]>([]);
+	const [grades, setGrades] = useState<Grade[]>([]);
 
 	useEffect(() => {
 		(async () => {

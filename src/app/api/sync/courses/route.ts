@@ -1,12 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getClassroom } from '@/lib/google';
 import { connectToDatabase } from '@/lib/mongodb';
 import { CourseModel } from '@/models/Course';
 
+interface Course {
+	id?: string;
+	name?: string;
+	section?: string;
+	descriptionHeading?: string;
+	description?: string;
+	room?: string;
+	ownerId?: string;
+	enrollmentCode?: string;
+	courseState?: string;
+	updateTime?: string;
+	creationTime?: string;
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(_req: NextRequest) {
+export async function POST() {
 	try {
 		console.log('Starting sync courses...');
 		await connectToDatabase();
@@ -15,10 +29,11 @@ export async function POST(_req: NextRequest) {
 		const classroom = getClassroom();
 		console.log('Got classroom instance');
 		
-		const all: any[] = [];
+		const all: Course[] = [];
 		let pageToken: string | undefined = undefined;
 		do {
-			const res = await classroom.courses.list({ pageSize: 300, pageToken });
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const res: any = await classroom.courses.list({ pageSize: 300, pageToken });
 			all.push(...(res.data.courses || []));
 			pageToken = res.data.nextPageToken || undefined;
 		} while (pageToken);

@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getClassroom } from '@/lib/google';
 import { connectToDatabase } from '@/lib/mongodb';
 import { SubmissionModel } from '@/models/Submission';
-import { CourseworkModel } from '@/models/Coursework';
+
+interface StudentSubmission {
+	id?: string;
+	courseWorkId?: string;
+	userId?: string;
+	state?: string;
+	late?: boolean;
+	uploadedTime?: string;
+	updateTime?: string;
+	assignedGrade?: number;
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,7 +33,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 		let cwPageToken: string | undefined = undefined;
 		try {
 			do {
-				const cwRes = await classroom.courses.courseWork.list({ courseId, pageSize: 100, pageToken: cwPageToken });
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const cwRes: any = await classroom.courses.courseWork.list({ courseId, pageSize: 100, pageToken: cwPageToken });
 				const items = cwRes.data.courseWork || [];
 				for (const item of items) {
 					if (item.id) courseWorkIds.push(item.id);
@@ -36,12 +47,13 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 		}
 
 		// For each coursework, fetch its student submissions
-		const all: any[] = [];
+		const all: StudentSubmission[] = [];
 		for (const courseWorkId of courseWorkIds) {
 			let subPageToken: string | undefined = undefined;
 			try {
 				do {
-					const subRes = await classroom.courses.courseWork.studentSubmissions.list({ courseId, courseWorkId, pageSize: 100, pageToken: subPageToken });
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const subRes: any = await classroom.courses.courseWork.studentSubmissions.list({ courseId, courseWorkId, pageSize: 100, pageToken: subPageToken });
 					all.push(...(subRes.data.studentSubmissions || []));
 					subPageToken = subRes.data.nextPageToken || undefined;
 				} while (subPageToken);

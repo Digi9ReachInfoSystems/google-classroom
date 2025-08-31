@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { CourseModel } from '@/models/Course';
 
+interface FilterQuery {
+	$or?: Array<{
+		name?: { $regex: string; $options: string };
+		section?: { $regex: string; $options: string };
+		room?: { $regex: string; $options: string };
+	}>;
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +20,7 @@ export async function GET(req: NextRequest) {
 	const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '12', 10)));
 	const q = (searchParams.get('q') || '').trim();
 
-	const filter: any = {};
+	const filter: FilterQuery = {};
 	if (q) {
 		filter.$or = [
 			{ name: { $regex: q, $options: 'i' } },
