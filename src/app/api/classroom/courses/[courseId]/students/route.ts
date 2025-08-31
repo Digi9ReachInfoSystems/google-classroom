@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClassroom } from '@/lib/google';
 import { connectToDatabase } from '@/lib/mongodb';
-import { RosterMembershipModel } from '@/models/RosterMembership';
 import { UserModel } from '@/models/User';
+
+interface Student {
+	userId?: string;
+	profile?: {
+		id?: string;
+		name?: {
+			givenName?: string;
+			familyName?: string;
+			fullName?: string;
+		};
+		emailAddress?: string;
+	};
+	courseId?: string;
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,12 +30,13 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 		
 		// Always fetch fresh data from Google Classroom
 		const classroom = getClassroom();
-		const all: any[] = [];
+		const all: Student[] = [];
 		let pageToken: string | undefined = undefined;
 		
 		try {
 			do {
-				const res = await classroom.courses.students.list({ courseId, pageSize: 100, pageToken });
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const res: any = await classroom.courses.students.list({ courseId, pageSize: 100, pageToken });
 				all.push(...(res.data.students || []));
 				pageToken = res.data.nextPageToken || undefined;
 			} while (pageToken);
@@ -33,27 +47,18 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 
 		// Store students in database (for backup/reference, but always return fresh API data)
 		const studentPromises = all.map(async (student) => {
-			const email = student.profile?.emailAddress;
-			if (!email) return;
+			if (!student.profile?.emailAddress) return;
 
-			// Store user if not exists
 			await UserModel.findOneAndUpdate(
-				{ email },
+				{ email: student.profile.emailAddress },
 				{
-					email,
-					externalId: student.userId,
+					email: student.profile.emailAddress,
+					fullName: student.profile.name?.fullName || `${student.profile.name?.givenName || ''} ${student.profile.name?.familyName || ''}`.trim(),
+					givenName: student.profile.name?.givenName || '',
+					familyName: student.profile.name?.familyName || '',
 					role: 'student',
-					givenName: student.profile?.name?.givenName,
-					familyName: student.profile?.name?.familyName,
-					fullName: student.profile?.name?.fullName
+					externalId: student.userId || student.profile.id || student.profile.emailAddress
 				},
-				{ upsert: true, new: true }
-			);
-
-			// Store roster membership
-			await RosterMembershipModel.findOneAndUpdate(
-				{ courseId, userEmail: email, role: 'student' },
-				{ courseId, userEmail: email, role: 'student' },
 				{ upsert: true, new: true }
 			);
 		});
@@ -61,22 +66,10 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 		await Promise.all(studentPromises);
 
 		// Return fresh data from API
-		const formattedStudents = all.map(student => ({
-			userId: student.userId,
-			profile: {
-				name: {
-					givenName: student.profile?.name?.givenName,
-					familyName: student.profile?.name?.familyName,
-					fullName: student.profile?.name?.fullName || student.profile?.emailAddress
-				},
-				emailAddress: student.profile?.emailAddress
-			}
-		}));
-
-		return NextResponse.json({ count: formattedStudents.length, students: formattedStudents });
+		return NextResponse.json({ count: all.length, students: all });
 	} catch (e) {
 		console.error('Students API Error:', e);
-		const message = e instanceof Error ? e.message : 'Failed to fetch course students';
+		const message = e instanceof Error ? e.message : 'Failed to fetch students';
 		return NextResponse.json({ message }, { status: 500 });
 	}
 }

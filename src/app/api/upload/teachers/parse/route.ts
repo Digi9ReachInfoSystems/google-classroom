@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 
+interface ProcessedRow {
+	name: string;
+	email: string;
+	role: string;
+	rowNumber: number;
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Extract headers and data
     const headers = rawData[0] as string[];
-    const dataRows = rawData.slice(1) as any[][];
+    const dataRows = rawData.slice(1) as unknown[][];
 
     // Validate required headers
     const requiredHeaders = ['Name', 'Email', 'Role'];
@@ -53,7 +60,7 @@ export async function POST(request: NextRequest) {
     const processedData = dataRows
       .filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''))
       .map((row, index) => {
-        const rowData: any = {};
+        const rowData: Partial<ProcessedRow> = {};
         
         headers.forEach((header, colIndex) => {
           const value = row[colIndex];
@@ -71,13 +78,13 @@ export async function POST(request: NextRequest) {
         return {
           ...rowData,
           rowNumber: index + 2 // +2 because we start from row 2 (after header)
-        };
+        } as ProcessedRow;
       })
       .filter(row => row.name && row.email && row.role);
 
     // Validate data
     const errors: string[] = [];
-    const validData = processedData.filter((row, index) => {
+    const validData = processedData.filter((row) => {
       // Email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(row.email)) {

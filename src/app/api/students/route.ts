@@ -3,6 +3,31 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { UserModel } from '@/models/User';
 import { SubmissionModel } from '@/models/Submission';
 
+interface Metric {
+	_id: string;
+	totalAssignments: number;
+	completedCount: number;
+	lateCount: number;
+}
+
+interface StudentTableRow {
+	name: string;
+	email: string;
+	state: string;
+	district: string;
+	gender: string;
+	assignments: number;
+	completed: number;
+	latePct: number;
+}
+
+interface MatchFilter {
+	role: string;
+	state?: { $in: string[] };
+	district?: { $in: string[] };
+	gender?: { $in: string[] };
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +39,7 @@ export async function GET(req: NextRequest) {
 	const districts = searchParams.getAll('district');
 	const genders = searchParams.getAll('gender');
 
-	const match: Record<string, any> = { role: 'student' };
+	const match: MatchFilter = { role: 'student' };
 	if (states.length) match.state = { $in: states };
 	if (districts.length) match.district = { $in: districts };
 	if (genders.length) match.gender = { $in: genders };
@@ -54,18 +79,19 @@ export async function GET(req: NextRequest) {
 	]).exec();
 
 	const metricsByEmail = new Map(
-		metrics.map((m) => [m._id as string, { totalAssignments: m.totalAssignments, completedCount: m.completedCount, lateCount: m.lateCount }])
+		metrics.map((m: Metric) => [m._id as string, { totalAssignments: m.totalAssignments, completedCount: m.completedCount, lateCount: m.lateCount }])
 	);
 
-	const table = students.map((s) => {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const table: StudentTableRow[] = students.map((s: any) => {
 		const m = metricsByEmail.get(s.email) || { totalAssignments: 0, completedCount: 0, lateCount: 0 };
 		const latePct = m.totalAssignments > 0 ? Math.round((m.lateCount / m.totalAssignments) * 100) : 0;
 		return {
-			name: (s as any).fullName || s.email,
+			name: s.fullName || s.email,
 			email: s.email,
-			state: (s as any).state || '',
-			district: (s as any).district || '',
-			gender: (s as any).gender || '',
+			state: s.state || '',
+			district: s.district || '',
+			gender: s.gender || '',
 			assignments: m.totalAssignments,
 			completed: m.completedCount,
 			latePct,

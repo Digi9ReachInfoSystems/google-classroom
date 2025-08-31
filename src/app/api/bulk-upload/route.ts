@@ -4,6 +4,28 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { UserModel } from '@/models/User';
 import * as XLSX from 'xlsx';
 
+interface UploadRow {
+	email: string;
+	externalId?: string;
+	role: string;
+	schoolId?: string;
+	gender?: string;
+	state?: string;
+	district?: string;
+	cohort?: string;
+}
+
+interface ExcelRow {
+	email?: string;
+	externalId?: string;
+	role?: string;
+	schoolId?: string;
+	gender?: string;
+	state?: string;
+	district?: string;
+	cohort?: string;
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +47,7 @@ export async function POST(req: NextRequest) {
 	const workbook = XLSX.read(buffer, { type: 'buffer' });
 	const sheetName = workbook.SheetNames[0];
 	const sheet = workbook.Sheets[sheetName];
-	const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+	const rows = XLSX.utils.sheet_to_json<ExcelRow>(sheet, { defval: '' });
 
 	let created = 0;
 	let updated = 0;
@@ -39,7 +61,7 @@ export async function POST(req: NextRequest) {
 			continue;
 		}
 
-		const payload = {
+		const payload: UploadRow = {
 			email,
 			externalId: String(row.externalId || '').trim() || undefined,
 			role: (String(row.role || '').trim().toLowerCase() as 'student' | 'teacher' | 'admin') || 'student',

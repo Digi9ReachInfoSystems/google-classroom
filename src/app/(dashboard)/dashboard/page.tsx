@@ -12,6 +12,14 @@ type Course = {
 	room?: string;
 };
 
+interface CourseData {
+	courseId: string;
+	name?: string;
+	section?: string;
+	courseState?: string;
+	room?: string;
+}
+
 export default function DashboardPage() {
 	const router = useRouter();
 	const [courses, setCourses] = useState<Course[]>([]);
@@ -32,7 +40,7 @@ export default function DashboardPage() {
 			const res = await fetch(`/api/db/courses?${params.toString()}`, { cache: 'no-store' });
 			if (!res.ok) throw new Error('Failed to load courses');
 			const data = await res.json();
-			setCourses((data.courses || []).map((c: any) => ({
+			setCourses((data.courses || []).map((c: CourseData) => ({
 				courseId: c.courseId,
 				name: c.name,
 				section: c.section,

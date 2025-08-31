@@ -3,6 +3,17 @@ import { getClassroom } from '@/lib/google';
 import { connectToDatabase } from '@/lib/mongodb';
 import { UserModel } from '@/models/User';
 
+interface GoogleError {
+	code: number;
+	message?: string;
+}
+
+interface GoogleTeacher {
+	profile?: {
+		emailAddress?: string | null;
+	};
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -64,7 +75,7 @@ export async function POST(request: NextRequest) {
           });
 
           const isAlreadyEnrolled = existingTeachers.data.teachers?.some(
-            (teacher: any) => teacher.profile?.emailAddress === row.email
+            (teacher: GoogleTeacher) => teacher.profile?.emailAddress === row.email
           );
 
           if (isAlreadyEnrolled) {
@@ -85,18 +96,19 @@ export async function POST(request: NextRequest) {
           });
 
           results.success++;
-        } catch (googleError: any) {
+        } catch (googleError: unknown) {
           console.error(`Error adding teacher ${row.email} to course:`, googleError);
           
-          if (googleError.code === 409) {
+          const error = googleError as GoogleError;
+          if (error.code === 409) {
             // Teacher already exists in course
             results.duplicates++;
-          } else if (googleError.code === 403) {
+          } else if (error.code === 403) {
             // Permission denied - user might not exist in Google Workspace or insufficient permissions
             results.errors.push(`Row ${row.rowNumber}: ${row.email} - User not found in Google Workspace or insufficient permissions`);
             results.skipped++;
           } else {
-            results.errors.push(`Row ${row.rowNumber}: ${row.email} - ${googleError.message || 'Unknown error'}`);
+            results.errors.push(`Row ${row.rowNumber}: ${row.email} - ${error.message || 'Unknown error'}`);
             results.skipped++;
           }
         }

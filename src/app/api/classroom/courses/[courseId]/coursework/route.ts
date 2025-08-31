@@ -3,6 +3,21 @@ import { getClassroom } from '@/lib/google';
 import { connectToDatabase } from '@/lib/mongodb';
 import { CourseworkModel } from '@/models/Coursework';
 
+interface CourseWorkItem {
+	id?: string | null;
+	title?: string;
+	description?: string;
+	dueDate?: {
+		year: number;
+		month: number;
+		day: number;
+	};
+	state?: string;
+	maxPoints?: number;
+	updateTime?: string;
+	creationTime?: string;
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +31,13 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 		
 		// Always fetch fresh data from Google Classroom
 		const classroom = getClassroom();
-		const all: any[] = [];
+		const all: CourseWorkItem[] = [];
 		let pageToken: string | undefined = undefined;
 		
 		try {
 			do {
-				const res = await classroom.courses.courseWork.list({ courseId, pageSize: 100, pageToken });
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const res: any = await classroom.courses.courseWork.list({ courseId, pageSize: 100, pageToken });
 				all.push(...(res.data.courseWork || []));
 				pageToken = res.data.nextPageToken || undefined;
 			} while (pageToken);

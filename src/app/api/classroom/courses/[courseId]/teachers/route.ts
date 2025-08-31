@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClassroom } from '@/lib/google';
 import { connectToDatabase } from '@/lib/mongodb';
-import { RosterMembershipModel } from '@/models/RosterMembership';
 import { UserModel } from '@/models/User';
+
+interface Teacher {
+	userId?: string;
+	profile?: {
+		id?: string;
+		name?: {
+			givenName?: string;
+			familyName?: string;
+			fullName?: string;
+		};
+		emailAddress?: string;
+	};
+	courseId?: string;
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,12 +30,13 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 		
 		// Always fetch fresh data from Google Classroom
 		const classroom = getClassroom();
-		const all: any[] = [];
+		const all: Teacher[] = [];
 		let pageToken: string | undefined = undefined;
 		
 		try {
 			do {
-				const res = await classroom.courses.teachers.list({ courseId, pageSize: 100, pageToken });
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const res: any = await classroom.courses.teachers.list({ courseId, pageSize: 100, pageToken });
 				all.push(...(res.data.teachers || []));
 				pageToken = res.data.nextPageToken || undefined;
 			} while (pageToken);
@@ -33,27 +47,18 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 
 		// Store teachers in database (for backup/reference, but always return fresh API data)
 		const teacherPromises = all.map(async (teacher) => {
-			const email = teacher.profile?.emailAddress;
-			if (!email) return;
+			if (!teacher.profile?.emailAddress) return;
 
-			// Store user if not exists
 			await UserModel.findOneAndUpdate(
-				{ email },
+				{ email: teacher.profile.emailAddress },
 				{
-					email,
-					externalId: teacher.userId,
+					email: teacher.profile.emailAddress,
+					fullName: teacher.profile.name?.fullName || `${teacher.profile.name?.givenName || ''} ${teacher.profile.name?.familyName || ''}`.trim(),
+					givenName: teacher.profile.name?.givenName || '',
+					familyName: teacher.profile.name?.familyName || '',
 					role: 'teacher',
-					givenName: teacher.profile?.name?.givenName,
-					familyName: teacher.profile?.name?.familyName,
-					fullName: teacher.profile?.name?.fullName
+					externalId: teacher.userId || teacher.profile.id || teacher.profile.emailAddress
 				},
-				{ upsert: true, new: true }
-			);
-
-			// Store roster membership
-			await RosterMembershipModel.findOneAndUpdate(
-				{ courseId, userEmail: email, role: 'teacher' },
-				{ courseId, userEmail: email, role: 'teacher' },
 				{ upsert: true, new: true }
 			);
 		});
@@ -61,22 +66,10 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 		await Promise.all(teacherPromises);
 
 		// Return fresh data from API
-		const formattedTeachers = all.map(teacher => ({
-			userId: teacher.userId,
-			profile: {
-				name: {
-					givenName: teacher.profile?.name?.givenName,
-					familyName: teacher.profile?.name?.familyName,
-					fullName: teacher.profile?.name?.fullName || teacher.profile?.emailAddress
-				},
-				emailAddress: teacher.profile?.emailAddress
-			}
-		}));
-
-		return NextResponse.json({ count: formattedTeachers.length, teachers: formattedTeachers });
+		return NextResponse.json({ count: all.length, teachers: all });
 	} catch (e) {
 		console.error('Teachers API Error:', e);
-		const message = e instanceof Error ? e.message : 'Failed to fetch course teachers';
+		const message = e instanceof Error ? e.message : 'Failed to fetch teachers';
 		return NextResponse.json({ message }, { status: 500 });
 	}
 }
