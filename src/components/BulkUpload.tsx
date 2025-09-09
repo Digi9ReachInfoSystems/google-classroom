@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 interface Course {
@@ -10,13 +10,29 @@ interface Course {
 }
 
 interface UploadData {
-  name: string;
-  email: string;
-  role: string;
+  name?: string;
+  email?: string;
+  role?: string;
   state?: string;
   district?: string;
   gender?: string;
   rowNumber: number;
+  // Workspace account fields
+  firstName?: string;
+  lastName?: string;
+  password?: string;
+  orgUnitPath?: string;
+  suspended?: boolean;
+  changePasswordAtNextLogin?: boolean;
+  recoveryEmail?: string;
+  recoveryPhone?: string;
+  // Course fields
+  section?: string;
+  descriptionHeading?: string;
+  description?: string;
+  room?: string;
+  courseState?: string;
+  ownerId?: string;
 }
 
 interface UploadResult {
@@ -29,12 +45,13 @@ interface UploadResult {
 }
 
 interface BulkUploadProps {
-  type: 'students' | 'teachers';
+  type: 'students' | 'teachers' | 'workspace-accounts' | 'courses';
   onUpload: (data: UploadData[], courseId: string) => Promise<UploadResult>;
   onDownloadTemplate: () => void;
+  preselectedCourseId?: string;
 }
 
-export default function BulkUpload({ type, onUpload, onDownloadTemplate }: BulkUploadProps) {
+export default function BulkUpload({ type, onUpload, onDownloadTemplate, preselectedCourseId }: BulkUploadProps) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [uploadedData, setUploadedData] = useState<UploadData[]>([]);
@@ -98,6 +115,12 @@ export default function BulkUpload({ type, onUpload, onDownloadTemplate }: BulkU
     }
   }, [type]);
 
+  useEffect(() => {
+    if (preselectedCourseId) {
+      setSelectedCourseId(preselectedCourseId);
+    }
+  }, [preselectedCourseId]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
@@ -108,7 +131,8 @@ export default function BulkUpload({ type, onUpload, onDownloadTemplate }: BulkU
   });
 
   const handleUpload = async () => {
-    if (!selectedCourseId) {
+    // Course selection is only required for classroom uploads, not workspace accounts or courses
+    if (type !== 'workspace-accounts' && type !== 'courses' && !selectedCourseId) {
       setError('Please select a course');
       return;
     }
@@ -139,9 +163,10 @@ export default function BulkUpload({ type, onUpload, onDownloadTemplate }: BulkU
 
   return (
     <div className="space-y-6">
-      {/* Course Selection */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Select Course</h3>
+      {/* Course Selection - Only show for classroom uploads */}
+      {type !== 'workspace-accounts' && type !== 'courses' && (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Select Course</h3>
         
         {!isLoadingCourses && courses.length === 0 && (
           <div className="text-center py-4">
@@ -186,7 +211,8 @@ export default function BulkUpload({ type, onUpload, onDownloadTemplate }: BulkU
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* File Upload */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -244,26 +270,66 @@ export default function BulkUpload({ type, onUpload, onDownloadTemplate }: BulkU
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    {type === 'students' && (
+                    {type === 'workspace-accounts' ? (
                       <>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          First Name
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Last Name
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Role
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Org Unit
+                        </th>
+                      </>
+                    ) : type === 'courses' ? (
+                      <>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Section
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Room
+                        </th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           State
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          District
+                          Owner
+                        </th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Gender
+                          Email
                         </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Role
+                        </th>
+                        {type === 'students' && (
+                          <>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              State
+                            </th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              District
+                            </th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Gender
+                            </th>
+                          </>
+                        )}
                       </>
                     )}
                   </tr>
@@ -271,21 +337,41 @@ export default function BulkUpload({ type, onUpload, onDownloadTemplate }: BulkU
                 <tbody className="bg-white divide-y divide-gray-200">
                   {uploadedData.slice(0, 5).map((row, index) => (
                     <tr key={index}>
-                      <td className="px-3 py-2 text-sm text-gray-900">{row.name}</td>
-                      <td className="px-3 py-2 text-sm text-gray-900">{row.email}</td>
-                      <td className="px-3 py-2 text-sm text-gray-900">{row.role}</td>
-                      {type === 'students' && (
+                      {type === 'workspace-accounts' ? (
                         <>
-                          <td className="px-3 py-2 text-sm text-gray-900">{row.state || '-'}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{row.district || '-'}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{row.gender || '-'}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.firstName || '-'}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.lastName || '-'}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.email}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.role}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.orgUnitPath || '-'}</td>
+                        </>
+                      ) : type === 'courses' ? (
+                        <>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.name}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.section || '-'}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.room || '-'}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.courseState || '-'}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.ownerId || '-'}</td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.name}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.email}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{row.role}</td>
+                          {type === 'students' && (
+                            <>
+                              <td className="px-3 py-2 text-sm text-gray-900">{row.state || '-'}</td>
+                              <td className="px-3 py-2 text-sm text-gray-900">{row.district || '-'}</td>
+                              <td className="px-3 py-2 text-sm text-gray-900">{row.gender || '-'}</td>
+                            </>
+                          )}
                         </>
                       )}
                     </tr>
                   ))}
                   {uploadedData.length > 5 && (
                     <tr>
-                      <td colSpan={type === 'students' ? 6 : 3} className="px-3 py-2 text-sm text-gray-500 text-center">
+                      <td colSpan={type === 'workspace-accounts' ? 5 : type === 'courses' ? 5 : type === 'students' ? 6 : 3} className="px-3 py-2 text-sm text-gray-500 text-center">
                         ... and {uploadedData.length - 5} more {type}
                       </td>
                     </tr>
@@ -298,13 +384,18 @@ export default function BulkUpload({ type, onUpload, onDownloadTemplate }: BulkU
       </div>
 
       {/* Upload Button */}
-      {uploadedData.length > 0 && selectedCourseId && (
+      {uploadedData.length > 0 && (type === 'workspace-accounts' || type === 'courses' || selectedCourseId) && (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-medium text-gray-900">Ready to Upload</h3>
               <p className="text-sm text-gray-600 mt-1">
-                {uploadedData.length} {type} will be added to the selected course
+                {type === 'workspace-accounts' 
+                  ? `${uploadedData.length} ${type} will be created in Google Workspace`
+                  : type === 'courses'
+                  ? `${uploadedData.length} ${type} will be created in Google Classroom`
+                  : `${uploadedData.length} ${type} will be added to the selected course`
+                }
               </p>
             </div>
             <button
