@@ -16,7 +16,101 @@ export async function GET(request: NextRequest) {
 
     let templateData: TemplateData;
 
-    if (type === 'students') {
+    if (type === 'workspace-accounts') {
+      templateData = {
+        headers: [
+          'firstName', 
+          'lastName', 
+          'email', 
+          'password', 
+          'role', 
+          'orgUnitPath', 
+          'suspended', 
+          'changePasswordAtNextLogin', 
+          'recoveryEmail', 
+          'recoveryPhone'
+        ],
+        sampleData: [
+          [
+            'John', 
+            'Doe', 
+            'john.doe@yourschool.edu', 
+            'TempPassword123!', 
+            'student', 
+            '/Students', 
+            'false', 
+            'true', 
+            'john.doe.recovery@gmail.com', 
+            '+1234567890'
+          ],
+          [
+            'Jane', 
+            'Smith', 
+            'jane.smith@yourschool.edu', 
+            'TempPassword456!', 
+            'teacher', 
+            '/Teachers', 
+            'false', 
+            'true', 
+            'jane.smith.recovery@gmail.com', 
+            '+1234567891'
+          ],
+          [
+            'Bob', 
+            'Johnson', 
+            'bob.johnson@yourschool.edu', 
+            'AdminPass789!', 
+            'admin', 
+            '/Admins', 
+            'false', 
+            'true', 
+            'bob.johnson.recovery@gmail.com', 
+            '+1234567892'
+          ]
+        ]
+      };
+    } else if (type === 'courses') {
+      templateData = {
+        headers: [
+          'name',
+          'section',
+          'descriptionHeading',
+          'description',
+          'room',
+          'courseState',
+          'ownerId'
+        ],
+        sampleData: [
+          [
+            'Mathematics 101',
+            'Section A',
+            'Course Overview',
+            'Introduction to basic mathematics concepts',
+            'Room 201',
+            'ACTIVE',
+            'teacher@yourschool.edu'
+          ],
+          [
+            'English Literature',
+            'Section B',
+            'Course Description',
+            'Study of classic and modern literature',
+            'Room 105',
+            'ACTIVE',
+            'teacher2@yourschool.edu'
+          ],
+          [
+            'Science Lab',
+            'Lab Section 1',
+            'Laboratory Information',
+            'Hands-on science experiments and observations',
+            'Lab Room 301',
+            'ACTIVE',
+            'science.teacher@yourschool.edu'
+          ]
+        ]
+      };
+    } else if (type === 'students') {
       templateData = {
         headers: ['Name', 'Email', 'Role', 'State', 'District', 'Gender'],
         sampleData: [
@@ -42,7 +136,10 @@ export async function GET(request: NextRequest) {
     const worksheet = XLSX.utils.aoa_to_sheet([templateData.headers, ...templateData.sampleData]);
     
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, type === 'students' ? 'Students' : 'Teachers');
+    const sheetName = type === 'workspace-accounts' ? 'Workspace Accounts' : 
+                     type === 'courses' ? 'Courses' :
+                     type === 'students' ? 'Students' : 'Teachers';
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
     // Generate buffer
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });

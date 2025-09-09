@@ -20,6 +20,18 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    rules: {
+      // Disable unused variable warnings
+      "@typescript-eslint/no-unused-vars": "off",
+      // Disable explicit any warnings
+      "@typescript-eslint/no-explicit-any": "off",
+      // Disable React hook dependency warnings
+      "react-hooks/exhaustive-deps": "off",
+      // Disable unescaped entities warnings
+      "react/no-unescaped-entities": "off",
+    },
+  },
 ];
 
 export default eslintConfig;

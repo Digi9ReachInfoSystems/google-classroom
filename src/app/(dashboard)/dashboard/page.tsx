@@ -110,6 +110,9 @@ export default function DashboardPage() {
 						<button onClick={syncCourses} disabled={syncing} className="px-3 py-2 rounded-md bg-gray-900 text-white text-sm hover:bg-gray-800">
 							{syncing ? 'Syncing…' : 'Sync classroom'}
 						</button>
+						<Link href="/dashboard/create-course" className="px-3 py-2 rounded-md bg-green-600 text-white text-sm hover:bg-green-700">
+							Create Course
+						</Link>
 					</div>
 				</div>
 
@@ -144,7 +147,12 @@ export default function DashboardPage() {
 									<button type="button" onClick={() => router.push(`/dashboard/courses/${c.courseId}`)} className="px-3 py-1.5 rounded-md bg-gray-900 text-white text-sm hover:bg-gray-800">
 										Open classroom
 									</button>
-									{/* <Link href={`/dashboard/courses`} className="text-sm text-gray-700 hover:underline">All courses</Link> */}
+									<button type="button" onClick={() => router.push(`/dashboard/courses/${c.courseId}/roster`)} className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700">
+										Manage Roster
+									</button>
+									<button type="button" onClick={() => router.push(`/dashboard/courses/${c.courseId}/coursework`)} className="px-3 py-1.5 rounded-md bg-purple-600 text-white text-sm hover:bg-purple-700">
+										Manage Coursework
+									</button>
 								</div>
 							</div>
 						))}

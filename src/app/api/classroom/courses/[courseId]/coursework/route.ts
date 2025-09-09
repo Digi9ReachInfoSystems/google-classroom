@@ -1,85 +1,158 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClassroom } from '@/lib/google';
-import { connectToDatabase } from '@/lib/mongodb';
-import { CourseworkModel } from '@/models/Coursework';
 
-interface CourseWorkItem {
-	id?: string | null;
-	title?: string;
-	description?: string;
-	dueDate?: {
-		year: number;
-		month: number;
-		day: number;
-	};
-	state?: string;
-	maxPoints?: number;
-	updateTime?: string;
-	creationTime?: string;
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string }> }
+) {
+  try {
+    const { courseId } = await params;
+    console.log('Fetching coursework for courseId:', courseId);
+
+    if (!courseId) {
+      return NextResponse.json(
+        { success: false, error: 'Course ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const classroom = await getClassroom();
+    
+    // Fetch coursework (assignments) - this should work with classroom.coursework.students.readonly
+    const courseworkResponse = await classroom.courses.courseWork.list({
+      courseId: courseId,
+    });
+
+    // Fetch course materials - now using the configured scope
+    const materialsResponse = await classroom.courses.courseWorkMaterials.list({
+      courseId: courseId,
+    });
+
+    const coursework = courseworkResponse.data.courseWork || [];
+    const materials = materialsResponse.data.courseWorkMaterial || [];
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        coursework,
+        materials,
+        total: coursework.length + materials.length
+      }
+    });
+
+  } catch (error: unknown) {
+    console.error('Error fetching coursework:', error);
+    
+    if ((error as { code?: number }).code === 403) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied. Please check your Google Classroom API permissions.' },
+        { status: 403 }
+      );
+    }
+    
+    if ((error as { code?: number }).code === 404) {
+      return NextResponse.json(
+        { success: false, error: 'Course not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to fetch coursework' },
+      { status: 500 }
+    );
+  }
 }
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string }> }
+) {
+  try {
+    const { courseId } = await params;
+    const body = await request.json();
+    const { type, ...courseworkData } = body;
 
-export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: string }> }) {
-	try {
-		const { params } = await ctx;
-		const { courseId } = await params;
-		
-		// Connect to database
-		await connectToDatabase();
-		
-		// Always fetch fresh data from Google Classroom
-		const classroom = getClassroom();
-		const all: CourseWorkItem[] = [];
-		let pageToken: string | undefined = undefined;
-		
-		try {
-			do {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const res: any = await classroom.courses.courseWork.list({ courseId, pageSize: 100, pageToken });
-				all.push(...(res.data.courseWork || []));
-				pageToken = res.data.nextPageToken || undefined;
-			} while (pageToken);
-		} catch (apiError) {
-			console.error('Google API Error:', apiError);
-			throw new Error(`Google API Error: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`);
-		}
+    console.log('Creating coursework for courseId:', courseId, 'type:', type);
 
-		// Store coursework in database (for backup/reference, but always return fresh API data)
-		const courseworkPromises = all.map(async (cw) => {
-			if (!cw.id) return;
+    if (!courseId) {
+      return NextResponse.json(
+        { success: false, error: 'Course ID is required' },
+        { status: 400 }
+      );
+    }
 
-			// Convert due date if it exists
-			let dueDate = null;
-			if (cw.dueDate) {
-				dueDate = new Date(cw.dueDate.year, cw.dueDate.month - 1, cw.dueDate.day);
-			}
+    if (!type || !['assignment', 'material'].includes(type)) {
+      return NextResponse.json(
+        { success: false, error: 'Type must be either "assignment" or "material"' },
+        { status: 400 }
+      );
+    }
 
-			await CourseworkModel.findOneAndUpdate(
-				{ courseWorkId: cw.id },
-				{
-					courseId,
-					courseWorkId: cw.id,
-					title: cw.title,
-					description: cw.description,
-					dueDate,
-					state: cw.state,
-					maxPoints: cw.maxPoints,
-					updateTime: cw.updateTime ? new Date(cw.updateTime) : undefined,
-					creationTime: cw.creationTime ? new Date(cw.creationTime) : undefined
-				},
-				{ upsert: true, new: true }
-			);
-		});
+    const classroom = await getClassroom();
+    let result;
 
-		await Promise.all(courseworkPromises);
+    if (type === 'assignment') {
+      // Create assignment - now using the configured scope
+      result = await classroom.courses.courseWork.create({
+        courseId: courseId,
+        requestBody: {
+          title: courseworkData.title,
+          description: courseworkData.description,
+          workType: 'ASSIGNMENT',
+          state: courseworkData.state || 'PUBLISHED',
+          dueDate: courseworkData.dueDate ? {
+            year: new Date(courseworkData.dueDate).getFullYear(),
+            month: new Date(courseworkData.dueDate).getMonth() + 1,
+            day: new Date(courseworkData.dueDate).getDate(),
+          } : undefined,
+          dueTime: courseworkData.dueDate ? {
+            hours: new Date(courseworkData.dueDate).getHours(),
+            minutes: new Date(courseworkData.dueDate).getMinutes(),
+          } : undefined,
+          maxPoints: courseworkData.maxPoints ? parseFloat(courseworkData.maxPoints) : undefined,
+          materials: courseworkData.materials || [],
+          assigneeMode: courseworkData.assigneeMode || 'ALL_STUDENTS',
+        }
+      });
+    } else {
+      // Create course material - now using the configured scope
+      result = await classroom.courses.courseWorkMaterials.create({
+        courseId: courseId,
+        requestBody: {
+          title: courseworkData.title,
+          description: courseworkData.description,
+          materials: courseworkData.materials || [],
+          state: courseworkData.state || 'PUBLISHED',
+        }
+      });
+    }
 
-		// Return fresh data from API
-		return NextResponse.json({ count: all.length, courseWork: all });
-	} catch (e) {
-		console.error('Coursework API Error:', e);
-		const message = e instanceof Error ? e.message : 'Failed to fetch courseWork';
-		return NextResponse.json({ message }, { status: 500 });
-	}
+    return NextResponse.json({
+      success: true,
+      data: result.data
+    });
+
+  } catch (error: unknown) {
+    console.error('Error creating coursework:', error);
+    
+    if ((error as { code?: number }).code === 403) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied. Please check your Google Classroom API permissions.' },
+        { status: 403 }
+      );
+    }
+    
+    if ((error as { code?: number }).code === 404) {
+      return NextResponse.json(
+        { success: false, error: 'Course not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to create coursework' },
+      { status: 500 }
+    );
+  }
 }
