@@ -1,11 +1,30 @@
+"use client"
 import { Bell, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { usePathname, useRouter } from "next/navigation"
 
 export function DashboardHeader() {
-  const navigationItems = ["Overview", "My Courses", "Leaderboard", "Certificate"]
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const tabs = [
+    { label: "Overview", value: "Overview", href: "/student/dashboard" },
+    { label: "My Courses", value: "My Courses", href: "/student/dashboard/mycourses" },
+    { label: "Leaderboard", value: "Leaderboard", href: "#" },
+    { label: "Certificate", value: "Certificate", href: "#" },
+  ] as const
+
+  const currentTab = (() => {
+    const match = tabs
+      .filter((t) => t.href !== "#")
+      .sort((a, b) => b.href.length - a.href.length)
+      .find((t) => (pathname ?? "").startsWith(t.href))
+
+    return match ? match.value : "Overview"
+  })()
 
   return (
     <header className="bg-white  border-neutral-200 px-8 py-5">
@@ -16,15 +35,20 @@ export function DashboardHeader() {
             <img src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" className="h-16 w-auto" />
           </div>
 
-          <Tabs defaultValue="Overview" className="hidden md:block">
+          <Tabs value={currentTab} onValueChange={(val) => {
+            const target = tabs.find((t) => t.value === val)
+            if (target && target.href && target.href !== "#") {
+              router.push(target.href)
+            }
+          }} className="hidden md:block">
             <TabsList className="bg-neutral-100 border-0 h-12 gap-2 rounded-full px-1 py-1">
-              {navigationItems.map((item) => (
+              {tabs.map((item) => (
                 <TabsTrigger
-                  key={item}
-                  value={item}
+                  key={item.value}
+                  value={item.value}
                   className="px-7 py-2 text-sm font-medium rounded-full border-0 shadow-none transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow data-[state=inactive]:text-neutral-600 data-[state=inactive]:hover:text-neutral-800 data-[disabled]:opacity-60 data-[disabled]:text-neutral-400 data-[disabled]:cursor-not-allowed"
                 >
-                  {item}
+                  {item.label}
                 </TabsTrigger>
               ))}
             </TabsList>
