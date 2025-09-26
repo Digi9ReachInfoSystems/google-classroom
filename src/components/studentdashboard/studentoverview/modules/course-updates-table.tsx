@@ -94,7 +94,7 @@ export function CourseUpdatesTable() {
         {/* Header table (not scrollable) */}
         <table className="w-full table-fixed rounded-t-lg overflow-hidden border-collapse border-b border-neutral-200">
           <colgroup>
-            <col className="w-[50%]" />
+            <col className="w-[40%]" />
             <col className="w-[15%]" />
             <col className="w-[25%]" />
             <col className="w-[20%]" />

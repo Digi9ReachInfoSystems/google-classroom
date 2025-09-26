@@ -71,7 +71,7 @@ export function Announcements() {
               <div className="w-8 h-8 rounded-full border-2 border-neutral-200 flex items-center justify-center flex-shrink-0">
                 <Bell className="w-4 h-4 text-primary fill-primary stroke-none" />
               </div>
-              <p className="text-sm text-neutral-700 leading-relaxed flex-1">{announcement.text}</p>
+              <p className="text-sm text-neutral-700 leading-relaxed flex-1 line-clamp-2">{announcement.text}</p>
             </div>
 
             <div className="ml-11">

@@ -228,6 +228,20 @@ tr:nth-child(even) {
   border-radius: 4px;
 }
 
+/* Utility: clamp text to 2 lines with ellipsis */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Utility: reserve space equal to 2 lines to avoid layout jump */
+.two-line-fixed {
+  line-height: 1.5;
+  min-height: 3em; /* 2 lines at 1.5 line-height */
+}
+
 /* Buttons (colder modern look) */
 .btn {
   display: inline-block;

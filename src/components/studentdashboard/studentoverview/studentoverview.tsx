@@ -6,7 +6,7 @@ import { ProgressCircle } from "./modules/progress-circle"
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-neutral-100 ">
+    <div className="min-h-screen bg-white">
 
       <main className="px-6 py-6 bg-white ">
         {/* Welcome Section */}
