@@ -12,7 +12,11 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
+    "@vnedyalk0v/react19-simple-maps": "^1.2.0",
     "bcryptjs": "^3.0.2",
+    "d3": "^3.5.17",
+    "d3v3": "^1.0.3",
+    "datamaps": "^0.5.9",
     "googleapis": "^159.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
@@ -21,6 +25,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-dropzone": "^14.3.8",
+    "topojson": "^1.6.27",
+    "topojson-client": "^3.1.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
