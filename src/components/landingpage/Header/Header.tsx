@@ -54,7 +54,7 @@ const Header: React.FC = () => {
                 onClick={(e) => handleClick(e, item.target)}
                 className="text-[14px]
               
-                 font-normal hover:text-black transition-colors"
+                 font-normal transition-colors"
               >
                 {item.label}
               </a>
