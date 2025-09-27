@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* @import "tailwindcss";
 
 :root {
   --background: #ffffff;
@@ -25,7 +25,152 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Ensure table text is always visible (force black text for tables) */
 table, th, td {
   color: #000;
+} */
+
+@import "tailwindcss";
+ 
+/* Base light theme */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+ 
+  /* Neutral colors */
+  --neutral-100: #ffffff;
+  --neutral-200: #e4e4e4;
+  --neutral-300: #d2d2d2;
+  --neutral-400: #b0b0b0;
+  --neutral-500: #a4a4a4;
+  --neutral-600: #8e8e8e;
+  --neutral-700: #777777;
+  --neutral-800: #606060;
+  --neutral-900: #4a4a4a;
+  --neutral-1000: #333333;
+ 
+  /* Error */
+  --error-100: #ffe6e6;
+  --error-200: #ffaaaa;
+  --error-300: #ff6363;
+  --error-400: #ff2121;
+  --error-500: #a40000;
+  --error-600: #900000;
+ 
+  /* Warning */
+  --warning-100: #fff3e6;
+  --warning-200: #ffcb94;
+  --warning-300: #ff9d63;
+  --warning-400: #ff9421;
+  --warning-500: #a74000;
+  --warning-600: #652500;
+ 
+  /* Success */
+  --success-100: #e6ffe6;
+  --success-200: #a4f4a4;
+  --success-300: #63f763;
+  --success-400: #27f721;
+  --success-500: #00d000;
+  --success-600: #009000;
+ 
+  /* New Color (Blue family) */
+  --blue-100: #2015ff;
+  --blue-200: #2543eb;
+  --blue-300: #1034ae;
+  --blue-400: #2563eb;
+  --blue-500: #1727fb;
+  --blue-600: #0d86e4;
+  --blue-700: #046d8c;
+ 
+  /* Fonts */
+  --font-sans: "Geist Sans", Arial, Helvetica, sans-serif;
+  --font-mono: "Geist Mono", monospace;
+  
+}
+ 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+ 
+/* Apply global */
+body {
+  background: #ffffff !important;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+ 
+/* Table styling for cold dashboard look */
+table, th, td {
+  color: #000;
+  border: 1px solid var(--neutral-200);
+  border-collapse: collapse;
+  padding: 0.75rem;
+}
+ 
+th {
+  background: var(--neutral-100);
+  font-weight: 600;
+  text-align: left;
+}
+ 
+tr:nth-child(even) {
+  background: var(--neutral-200);
+}
+ 
+tr:hover {
+  background: var(--neutral-300);
+}
+ 
+/* Utility classes for status labels */
+.label-error {
+  background: var(--error-100);
+  color: var(--error-500);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+ 
+.label-success {
+  background: var(--success-100);
+  color: var(--success-500);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+ 
+.label-warning {
+  background: var(--warning-100);
+  color: var(--warning-500);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+ 
+/* Buttons (colder modern look) */
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+ 
+.btn-primary {
+  background: var(--blue-400);
+  color: #fff;
+}
+ 
+.btn-primary:hover {
+  background: var(--blue-600);
+}
+ 
+.btn-outline {
+  border: 1px solid var(--neutral-300);
+  background: transparent;
+  color: var(--foreground);
+}
+ 
+.btn-outline:hover {
+  background: var(--neutral-200);
 }
