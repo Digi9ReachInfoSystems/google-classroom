@@ -67,12 +67,10 @@ export default function Pagination({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className={`flex items-center justify-between px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200 ${className}`}>
+    <div className={`flex items-center justify-between px-6 py-5  border-gray-200 ${className}`}>
       {/* Results info */}
       <div className="text-sm text-gray-600">
-        Showing <span className="font-bold text-gray-900">{startItem}</span> to{" "}
-        <span className="font-bold text-gray-900">{endItem}</span> of{" "}
-        <span className="font-bold text-gray-900">{totalItems}</span> results
+        Showing <span className="font-bold text-gray-900">{startItem}-{endItem}</span>
       </div>
 
       {/* Pagination controls */}
@@ -100,7 +98,7 @@ export default function Pagination({
                   size="sm"
                   variant={currentPage === page ? "default" : "outline"}
                   onClick={() => onPageChange(page as number)}
-                  className={`w-10 h-10 p-0 text-sm font-semibold rounded-full transition-all duration-200 ${
+                  className={`w-8 h-8 p-0 text-xs font-semibold rounded-full transition-all duration-200 ${
                     currentPage === page
                       ? "bg-orange-500 text-white hover:bg-orange-600 border-orange-500 shadow-lg transform scale-105"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600"
