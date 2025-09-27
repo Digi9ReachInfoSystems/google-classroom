@@ -14,7 +14,7 @@ export function DashboardHeader() {
     { label: "Overview", value: "Overview", href: "/student/dashboard" },
     { label: "My Courses", value: "My Courses", href: "/student/dashboard/mycourses" },
     { label: "Leaderboard", value: "Leaderboard", href: "#" },
-    { label: "Certificate", value: "Certificate", href: "#" },
+    { label: "Certificate", value: "Certificate", href: "/student/dashboard/certificate" },
   ] as const
 
   const currentTab = (() => {
