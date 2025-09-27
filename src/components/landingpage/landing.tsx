@@ -9,7 +9,6 @@ import Pilot from "./Pilot/Pilot";
 import Faq from "./Faq/Faq";
 import Header from "./Header/Header";
 import Footer from "./Footer/Footer";
-import Last from "./Last/Last";
 
 export default function Landing() {
     return (
@@ -24,7 +23,6 @@ export default function Landing() {
         <Pilot />
         <Faq />
         <Footer />
-        
         </>
     )
 }
