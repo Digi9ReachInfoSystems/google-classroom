@@ -86,7 +86,8 @@ export function CourseUpdatesTable() {
     status: update.status,
   }));
   return (
-    <div className="bg-white rounded-lg  border-neutral-200">
+    <>
+      <div className="bg-white rounded-lg  border-neutral-200">
       <div className="p-6  border-neutral-200">
         <h2 className="text-lg font-semibold text-neutral-900">Course updates</h2>
       </div>
@@ -110,8 +111,8 @@ export function CourseUpdatesTable() {
         </table>
 
         {/* Scrollable body only (shows ~10 rows) */}
-        <div className="max-h-[680px] overflow-y-auto scrollbar-slim rounded-b-lg">
-          <table className="w-full table-fixed">
+        <div className="max-h-[680px] overflow-y-auto rounded-b-lg custom-scrollbar">
+          <table className="w-[100%] table-fixed">
             <colgroup>
               <col className="w-[40%]" />
               <col className="w-[15%]" />
@@ -141,5 +142,6 @@ export function CourseUpdatesTable() {
         </div>
       </div>
     </div>
+    </>
   )
 }
