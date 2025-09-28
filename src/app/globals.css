@@ -124,86 +124,26 @@ tr:nth-child(even) {
   background: transparent;
 }
 
-/* Allow per-component hover utilities to take effect */
-
-/* Utility classes for status labels */
-.scrollbar-dark {
-  scrollbar-width: thin;
-  scrollbar-color: #000 #e5e7eb;
-}
-
-.scrollbar-dark::-webkit-scrollbar {
-  width: 6px;
-  height: 2px;
-}
-
-.scrollbar-dark::-webkit-scrollbar-track {
-  background: #e5e7eb;
-}
-
-.scrollbar-dark::-webkit-scrollbar-thumb {
-  background: #000;
-  border-radius: 8px;
-}
-
-.scrollbar-dark::-webkit-scrollbar-thumb:hover {
-  background: #111;
-}
-
-/* Hidden until hover, thick black scrollbar on the right */
-.scrollbar-auto-hide {
-  scrollbar-width: none;
-  scrollbar-gutter: stable;
-  -ms-overflow-style: none; /* IE/Edge */
-  scrollbar-color: transparent transparent;
-}
-.scrollbar-auto-hide:hover {
-  scrollbar-width: thin; /* Firefox shows thin width */
-  scrollbar-color: rgba(0,0,0,0.6) transparent;
-}
-.scrollbar-auto-hide::-webkit-scrollbar {
-  width: 0px;
-  height: 0px;
-}
-.scrollbar-auto-hide:hover::-webkit-scrollbar {
+/* student overview */
+/* Custom scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
   width: 4px;
-  height: 4px;
-}
-.scrollbar-auto-hide::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollbar-auto-hide::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.6);
-  border-radius: 9999px;
 }
 
-/* Remove default scrollbar arrow buttons */
-.scrollbar-auto-hide::-webkit-scrollbar-button,
-.scrollbar-slim::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
 }
 
-/* Always visible slim black scrollbar (4px) */
-.scrollbar-slim {
-  scrollbar-width: thin;
-  scrollbar-color: #000 #efefef; /* Firefox: black thumb, light track */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #000000;
+  border-radius: 2px;
 }
-.scrollbar-slim::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #333333;
 }
-.scrollbar-slim::-webkit-scrollbar-track {
-  background: #efefef; /* subtle visible track */
-}
-.scrollbar-slim::-webkit-scrollbar-thumb {
-  background: #000;
-  border-radius: 9999px;
-}
-.scrollbar-slim::-webkit-scrollbar-thumb:hover {
-  background: #000;
-}
+
 
 /* Utility classes for status labels */
 .label-error {

@@ -60,11 +60,12 @@ const announcements: Announcement[] = [
 
 export function Announcements() {
   return (
-    <div className="bg-white rounded-lg  border-neutral-200">
+    <>
+      <div className="bg-white rounded-lg  border-neutral-200">
       <div className="p-6 border-neutral-200">
         <h2 className="text-lg font-semibold text-neutral-900">Announcements</h2>
       </div>
-      <div className="p-6 space-y-6 max-h-[30rem] overflow-y-auto scrollbar-slim pr-3">
+      <div className="p-6 space-y-6 max-h-[30rem] overflow-y-auto custom-scrollbar pr-3">
         {announcements.map((announcement, index) => (
           <div key={`${announcement.id}-${index}`} className="space-y-3">
             <div className="flex items-start space-x-3">
@@ -90,5 +91,6 @@ export function Announcements() {
         ))}
       </div>
     </div>
+    </>
   )
 }
