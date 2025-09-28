@@ -27,12 +27,12 @@ export function DashboardHeader() {
   })()
 
   return (
-    <header className="bg-white  border-neutral-200 px-8 py-5">
+    <header className="bg-white border-neutral-200 px-4 md:px-8 py-5">
       <div className="flex items-center justify-between">
         {/* Logo and Navigation */}
-        <div className="flex items-center space-x-8">
+        <div className="flex items-center space-x-4 md:space-x-8 flex-1 min-w-0">
           <div className="flex items-center space-x-2">
-            <img src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" className="h-16 w-auto" />
+            <img src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" className="h-12 md:h-16 w-auto" />
           </div>
 
           <Tabs value={currentTab} onValueChange={(val) => {
@@ -40,13 +40,13 @@ export function DashboardHeader() {
             if (target && target.href && target.href !== "#") {
               router.push(target.href)
             }
-          }} className="hidden md:block">
-            <TabsList className="bg-neutral-100 border-0 h-12 gap-2 rounded-full px-1 py-1">
+          }}>
+            <TabsList className="bg-neutral-100 border-0 h-12 gap-1 md:gap-2 rounded-full px-1 py-1 overflow-x-auto">
               {tabs.map((item) => (
                 <TabsTrigger
                   key={item.value}
                   value={item.value}
-                  className="px-7 py-2 text-sm font-medium rounded-full border-0 shadow-none transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow data-[state=inactive]:text-neutral-600 data-[state=inactive]:hover:text-neutral-800 data-[disabled]:opacity-60 data-[disabled]:text-neutral-400 data-[disabled]:cursor-not-allowed"
+                  className="px-3 md:px-7 py-2 text-xs md:text-sm font-medium rounded-full border-0 shadow-none transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow data-[state=inactive]:text-neutral-600 data-[state=inactive]:hover:text-neutral-800 data-[disabled]:opacity-60 data-[disabled]:text-neutral-400 data-[disabled]:cursor-not-allowed whitespace-nowrap"
                 >
                   {item.label}
                 </TabsTrigger>
