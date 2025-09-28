@@ -89,13 +89,13 @@ const ProgressSidebar = () => {
   }
 
   return (
-    <div className="w-[480px] h-[calc(90vh-120px)] sticky top-6 self-start bg-white border border-gray-200 rounded-2xl shadow-md p-4 scrollbar-slim overflow-y-auto">
-      <div className="space-y-22">
+    <div className="w-full lg:w-[400px] xl:w-[480px] h-auto lg:h-[calc(90vh-120px)] lg:sticky lg:top-6 lg:self-start bg-white border border-gray-200 rounded-2xl shadow-md p-4 scrollbar-slim overflow-y-auto flex-shrink-0">
+      <div className="space-y-6 lg:space-y-22">
         {modules.map((module, index) => (
           <div key={module.id} className="relative">
             {index < modules.length - 1 && (
               <div
-                className={`absolute left-2.5 top-8 w-px h-20 ${module.status === "completed" ? "bg-green-200" : "bg-gray-200"}`}
+                className={`absolute left-2.5 top-8 w-px h-12 lg:h-20 ${module.status === "completed" ? "bg-green-200" : "bg-gray-200"}`}
               ></div>
             )}
 
@@ -105,15 +105,15 @@ const ProgressSidebar = () => {
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
                     <h3 className={`text-sm font-medium ${getStatusStyle(module.status)} line-clamp-2`}>
                       {module.title}
                     </h3>
                     {module.subtitle && <p className="text-xs text-gray-500 mt-1">{module.subtitle}</p>}
                   </div>
 
-                  <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+                  <div className="flex items-center space-x-2 flex-shrink-0 sm:ml-2">
                     <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border-none">
                       {module.videoCount} Video{module.videoCount !== 1 ? "s" : ""}
                     </Badge>
@@ -121,9 +121,9 @@ const ProgressSidebar = () => {
                 </div>
 
                 {module.items && module.status !== "locked" && (
-                  <div className="mt-4 space-y-3 pl-4 border-l border-gray-200">
+                  <div className="mt-3 lg:mt-4 space-y-2 lg:space-y-3 pl-3 lg:pl-4 border-l border-gray-200">
                     {module.items.map((item) => (
-                      <div key={item.id} className="flex items-center space-x-3">
+                      <div key={item.id} className="flex items-center space-x-2 lg:space-x-3">
                         <div className="flex-shrink-0">
                           {item.completed ? (
                             <div className="relative flex items-center justify-center">
