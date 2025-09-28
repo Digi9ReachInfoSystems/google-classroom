@@ -35,13 +35,18 @@ export function DashboardHeader() {
             <img src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" className="h-12 md:h-16 w-auto" />
           </div>
 
-          <Tabs defaultValue="Overview" className="hidden md:block">
-            <TabsList className="bg-neutral-100 border-0 h-12 gap-2 rounded-full px-1 py-1">
-              {navigationItems.map((item) => (
+          <Tabs value={currentTab} onValueChange={(val) => {
+            const target = tabs.find((t) => t.value === val)
+            if (target && target.href && target.href !== "#") {
+              router.push(target.href)
+            }
+          }}>
+            <TabsList className="bg-neutral-100 border-0 h-12 gap-1 md:gap-2 rounded-full px-1 py-1 overflow-x-auto">
+              {tabs.map((item) => (
                 <TabsTrigger
-                  key={item}
-                  value={item}
-                  className="px-7 py-2 text-sm font-medium rounded-full border-0 shadow-none transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow data-[state=inactive]:text-neutral-600 data-[state=inactive]:hover:text-neutral-800 data-[disabled]:opacity-60 data-[disabled]:text-neutral-400 data-[disabled]:cursor-not-allowed"
+                  key={item.value}
+                  value={item.value}
+                  className="px-3 md:px-7 py-2 text-xs md:text-sm font-medium rounded-full border-0 shadow-none transition-colors data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow data-[state=inactive]:text-neutral-600 data-[state=inactive]:hover:text-neutral-800 data-[disabled]:opacity-60 data-[disabled]:text-neutral-400 data-[disabled]:cursor-not-allowed whitespace-nowrap"
                 >
                   {item.label}
                 </TabsTrigger>
