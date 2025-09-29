@@ -24,8 +24,7 @@ export default function BadgesSection() {
              width={100}
              height={100}
               className="w-24 h-24 md:w-40 md:h-40 mx-auto transition-transform group-hover:scale-105"
-         width={40}
-         height={40}
+   
          />
           </div>
         ))}
