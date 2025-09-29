@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { usePathname, useRouter } from "next/navigation"
+import Image from "next/image"
 
 export function DashboardHeader() {
   const router = useRouter()
@@ -17,14 +18,14 @@ export function DashboardHeader() {
     { label: "Certificate", value: "Certificate", href: "/student/dashboard/certificate" },
   ] as const
 
-  const currentTab = (() => {
-    const match = tabs
-      .filter((t) => t.href !== "#")
-      .sort((a, b) => b.href.length - a.href.length)
-      .find((t) => (pathname ?? "").startsWith(t.href))
+ const currentTab = (() => {
+  const match = [...tabs] // spread to make a mutable array
+    .sort((a, b) => b.href.length - a.href.length)
+    .find((t) => (pathname ?? "").startsWith(t.href))
 
-    return match ? match.value : "Overview"
-  })()
+  return match ? match.value : "Overview"
+})()
+
 
   return (
     <header className="bg-white border-neutral-200 px-4 md:px-8 py-5">
@@ -32,12 +33,12 @@ export function DashboardHeader() {
         {/* Logo and Navigation */}
         <div className="flex items-center space-x-4 md:space-x-8 flex-1 min-w-0">
           <div className="flex items-center space-x-2">
-            <img src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" className="h-12 md:h-16 w-auto" />
+            <Image src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" width={120} height={64} className="h-12 md:h-16 w-auto" />
           </div>
 
           <Tabs value={currentTab} onValueChange={(val) => {
             const target = tabs.find((t) => t.value === val)
-            if (target && target.href && target.href !== "#") {
+            if (target) {
               router.push(target.href)
             }
           }}>

@@ -90,6 +90,8 @@ const FeatureCard: React.FC<Feature> = ({
             alt={alt}
             className={`${imgHeights} max-w-[86%] object-contain drop-shadow-sm`}
             loading="lazy"
+            width={300}
+            height={100}
           />
         </div>
 

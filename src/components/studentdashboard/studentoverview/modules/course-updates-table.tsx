@@ -129,11 +129,12 @@ export function CourseUpdatesTable() {
                   <td className="py-3 px-6 text-sm text-card-foreground tabular-nums">{item.score}</td>
                   <td className="py-3 px-6 text-sm text-card-foreground">{item.date}</td>
                   <td className="py-3 px-6">
-                    <Badge
-                      variant={item.status === "completed" ? "success" : "pending"}
-                    >
-                      {item.status === "completed" ? "Completed" : "Pending"}
-                    </Badge>
+                  <Badge
+  variant={item.status === "completed" ? "default" : "secondary"}
+>
+  {item.status === "completed" ? "Completed" : "Pending"}
+</Badge>
+
                   </td>
                 </tr>
               ))}
