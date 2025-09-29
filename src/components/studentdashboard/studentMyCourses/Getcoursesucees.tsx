@@ -15,9 +15,9 @@ export default function Getcoursesucees() {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 xl:gap-8">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 xl:gap-8 2xl:gap-12">
           <div className="flex-1 min-w-0 order-1 lg:order-1">
-            <div className="max-w-4xl mx-auto xl:max-w-5xl">
+            <div className="max-w-4xl mx-auto xl:max-w-5xl 2xl:max-w-6xl">
               <Getcoursecertificate />
             </div>
           </div>

@@ -8,7 +8,7 @@ export function VideoPlayer() {
   const [isPlaying, setIsPlaying] = useState(false)
 
   return (
-    <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 rounded-xl sm:rounded-2xl shadow-md overflow-hidden aspect-video">
+    <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 rounded-xl sm:rounded-2xl 2xl:rounded-3xl shadow-md overflow-hidden aspect-video">
       <div className="absolute inset-0">
         {/* Top left UI elements */}
         <div className="absolute top-2 sm:top-4 left-2 sm:left-4 space-y-1 sm:space-y-2">
@@ -115,7 +115,7 @@ export function VideoPlayer() {
         </button>
       )}
 
-      <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 right-2 sm:right-3 flex items-center gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
+      <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 right-2 sm:right-3 flex items-center gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4 2xl:gap-6">
         <Button
           variant="ghost"
           size="icon"

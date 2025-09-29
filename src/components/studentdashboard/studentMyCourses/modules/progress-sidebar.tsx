@@ -89,8 +89,8 @@ const ProgressSidebar = () => {
   }
 
   return (
-    <div className="w-full lg:w-[400px] xl:w-[480px] h-auto lg:h-[calc(90vh-120px)] lg:sticky lg:top-6 lg:self-start bg-white border border-gray-200 rounded-2xl shadow-md p-4 scrollbar-slim overflow-y-auto flex-shrink-0">
-      <div className="space-y-6 lg:space-y-22">
+    <div className="w-full lg:w-[400px] xl:w-[480px] 2xl:w-[520px] h-auto lg:h-[calc(90vh-120px)] lg:sticky lg:top-6 lg:self-start bg-white border border-gray-200 rounded-2xl shadow-md p-4 2xl:p-6 scrollbar-slim overflow-y-auto flex-shrink-0">
+      <div className="space-y-6 lg:space-y-8 2xl:space-y-10">
         {modules.map((module, index) => (
           <div key={module.id} className="relative">
             {index < modules.length - 1 && (
