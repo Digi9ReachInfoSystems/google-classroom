@@ -522,10 +522,11 @@ export function CourseUpdatesTable() {
                   <td className="py-3 px-6 text-sm text-card-foreground">{item.date}</td>
                   <td className="py-3 px-6">
                     <Badge
-                      variant={item.status === "completed" ? "success" : "pending"}
-                    >
-                      {item.status === "completed" ? "Completed" : "Pending"}
-                    </Badge>
+  className={item.status === "completed" ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}
+  variant="default"
+>
+  {item.status === "completed" ? "Completed" : "Pending"}
+</Badge>
                   </td>
                 </tr>
               ))}
