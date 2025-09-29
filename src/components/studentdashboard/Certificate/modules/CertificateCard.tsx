@@ -2,6 +2,7 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
+import Image from 'next/image'
 
 interface CertificateCardProps {
   certificateNumber: string
@@ -22,10 +23,12 @@ export default function CertificateCard({
     <div className="bg-white rounded-lg overflow-hidden">
       {/* Certificate Image */}
       <div className="relative">
-        <img 
+        <Image 
           src="/student/cetificate.png" 
           alt="Certificate" 
           className="w-full h-auto object-contain"
+          width={600}
+          height={400}
         />
       </div>
 

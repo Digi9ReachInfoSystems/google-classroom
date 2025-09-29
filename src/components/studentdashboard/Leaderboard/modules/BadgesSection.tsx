@@ -1,7 +1,9 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+
 import { Lock } from "lucide-react";
+import Image from "next/image";
 
 export default function BadgesSection() {
   return (
@@ -16,9 +18,11 @@ export default function BadgesSection() {
         {/* Earned Badges */}
         {[...Array(3)].map((_, i) => (
           <div key={i} className="relative group">
-            <img
+            <Image
               src="/student/badge-first.png"
               alt="Class First Badge"
+             width={100}
+             height={100}
               className="w-24 h-24 md:w-40 md:h-40 mx-auto transition-transform group-hover:scale-105"
             />
           </div>
