@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type Slide = { src: string; alt?: string };
@@ -124,11 +125,13 @@ const PilotTrainingCarousel: React.FC = () => {
         >
           {slides.map((s, i) => (
             <div key={i} className="min-w-full relative">
-              <img
+              <Image
                 src={s.src}
                 alt={s.alt ?? "Pilot slide"}
                 className="block w-screen h-[60vh] md:h-[70vh] object-cover"
                 draggable={false}
+                width={1920}
+                height={1080}
               />
               {/* Top gradient */}
               <div className="pointer-events-none absolute top-0 left-0 w-full h-32 md:h-40 bg-gradient-to-b from-white to-transparent" />

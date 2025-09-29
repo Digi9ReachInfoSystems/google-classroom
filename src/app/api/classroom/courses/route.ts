@@ -24,7 +24,7 @@ export async function GET() {
 		const all: Course[] = [];
 		let pageToken: string | undefined = undefined;
 		do {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		
 			const result: any = await classroom.courses.list({ pageSize: 300, pageToken });
 			const courses = result.data.courses || [];
 			all.push(...courses);

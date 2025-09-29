@@ -82,7 +82,6 @@ export async function GET(req: NextRequest) {
 		metrics.map((m: Metric) => [m._id as string, { totalAssignments: m.totalAssignments, completedCount: m.completedCount, lateCount: m.lateCount }])
 	);
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const table: StudentTableRow[] = students.map((s: any) => {
 		const m = metricsByEmail.get(s.email) || { totalAssignments: 0, completedCount: 0, lateCount: 0 };
 		const latePct = m.totalAssignments > 0 ? Math.round((m.lateCount / m.totalAssignments) * 100) : 0;

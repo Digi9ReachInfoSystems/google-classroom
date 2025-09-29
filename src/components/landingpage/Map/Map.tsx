@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ============================  types & static data  ============================ */
@@ -301,11 +302,13 @@ const Map: React.FC = () => {
 {/* MIDDLE: decorative image only (270x70) */}
 <div className="hidden lg:flex lg:col-span-1 items-center justify-center">
   <div className="relative h-[270px] w-[70px]">
-    <img
+    <Image
       src="/arrowicon.png"
       alt=""
       role="presentation"
       aria-hidden="true"
+      width={70}
+      height={270}
       className="absolute inset-0 h-[270px] w-[70px] object-contain select-none pointer-events-none"
     />
   </div>

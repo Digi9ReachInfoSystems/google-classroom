@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 const Why: React.FC = () => {
@@ -6,10 +7,12 @@ const Why: React.FC = () => {
       {/* Heading */}
       <h2 className="text-center text-[48px] md:text-5xl font-weight-400 text-[var(--neutral-1000)] flex items-center justify-center gap-3">
         <span>Why</span>
-        <img
+        <Image
           src="/upshiftlogo.png"            // in /public
           alt="UPSHIFT"
           className="h-10 md:h-16 w-auto"
+          width={48}
+          height={51}
         />
       </h2>
 
@@ -24,7 +27,7 @@ const Why: React.FC = () => {
         {/* Pill 1 */}
         <div className="flex items-center gap-4 bg-[--blue-300] border border-[var(--neutral-600)] rounded-[40px] px-6 py-5 shadow-sm">
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--blue-400)]">
-            <img src="/piechart.svg" alt="" className="w-6 h-6" />
+            <Image src="/piechart.svg" alt="" className="w-6 h-6" width={24} height={24}/>
           </div>
           <p className="text-left font-semibold text-lg text-[var(--neutral-1000)]">
             Boost participation
@@ -34,7 +37,7 @@ const Why: React.FC = () => {
         {/* Pill 2 */}
         <div className="flex items-center gap-4 bg-[var(--neutral-100)] border border-[var(--neutral-600)] rounded-[40px] px-6 py-5 shadow-sm">
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--warning-400)]">
-            <img src="/lock.svg" alt="" className="w-6 h-6" />
+            <Image src="/lock.svg" alt="" width={24} height={24} className="w-6 h-6" />
           </div>
           <p className="text-left font-semibold text-lg text-[var(--neutral-1000)]">
             Improve learning outcomes
@@ -44,7 +47,7 @@ const Why: React.FC = () => {
         {/* Pill 3 */}
         <div className="flex items-center gap-4 bg-[var(--neutral-100)] border border-[var(--neutral-600)] rounded-[40px] px-6 py-5 shadow-sm">
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--blue-600)]">
-            <img src="/chat.svg" alt="" className="w-6 h-6" />
+            <Image src="/chat.svg" alt="" className="w-6 h-6" width={24} height={24}/>
           </div>
           <p className="text-left font-semibold text-lg text-[var(--neutral-1000)]">
             Celebrate achievements
