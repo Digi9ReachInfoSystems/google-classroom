@@ -20,7 +20,7 @@ export function Superadminheader() {
     { label: "Overview", value: "overview", href: "/superadmin/overview" },
     {
       label: "Course Metrics",
-      value: "coursemetrics",
+      value: "metrics",
       href: "/superadmin/metrics",
     },
     { label: "Ideas", value: "ideas", href: "/superadmin/ideas" },
