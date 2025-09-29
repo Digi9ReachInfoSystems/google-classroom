@@ -33,8 +33,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 		let cwPageToken: string | undefined = undefined;
 		try {
 			do {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const cwRes: any = await classroom.courses.courseWork.list({ courseId, pageSize: 100, pageToken: cwPageToken });
+			const cwRes: any = await classroom.courses.courseWork.list({ courseId, pageSize: 100, pageToken: cwPageToken });
 				const items = cwRes.data.courseWork || [];
 				for (const item of items) {
 					if (item.id) courseWorkIds.push(item.id);
@@ -52,8 +51,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ courseId: 
 			let subPageToken: string | undefined = undefined;
 			try {
 				do {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					const subRes: any = await classroom.courses.courseWork.studentSubmissions.list({ courseId, courseWorkId, pageSize: 100, pageToken: subPageToken });
+				const subRes: any = await classroom.courses.courseWork.studentSubmissions.list({ courseId, courseWorkId, pageSize: 100, pageToken: subPageToken });
 					all.push(...(subRes.data.studentSubmissions || []));
 					subPageToken = subRes.data.nextPageToken || undefined;
 				} while (subPageToken);

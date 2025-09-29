@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		load();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+	
 	}, [page, q]);
 
 	async function syncCourses() {

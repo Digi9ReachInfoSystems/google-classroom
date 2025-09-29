@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 const navLinks = [
@@ -108,7 +109,7 @@ const Footer: React.FC = () => {
       {/* Logo strip */}
       <div className="bg-[var(--neutral-100)] py-8">
   <div className="max-w-6xl mx-auto px-6 flex justify-center">
-    <img
+    <Image
       src="/upshiftlogo.png"
       alt="UPSHIFT Bhutan"
       width={269}

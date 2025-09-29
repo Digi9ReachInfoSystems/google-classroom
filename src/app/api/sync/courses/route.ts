@@ -32,7 +32,6 @@ export async function POST() {
 		const all: Course[] = [];
 		let pageToken: string | undefined = undefined;
 		do {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const res: any = await classroom.courses.list({ pageSize: 300, pageToken });
 			all.push(...(res.data.courses || []));
 			pageToken = res.data.nextPageToken || undefined;

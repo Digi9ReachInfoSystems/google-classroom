@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
 export function DashboardHeader() {
   const router = useRouter();
@@ -31,8 +32,14 @@ export function DashboardHeader() {
       <div className="flex items-center justify-between">
         {/* Left: logo + tabs */}
         <div className="flex items-center space-x-8">
-          <img src="/upshiftlogo.png" alt="UPSHIFT BHUTAN" className="h-16 w-auto" />
-
+          <Image
+            src="/upshiftlogo.png"
+            alt="UPSHIFT BHUTAN"
+            width={160}
+            height={64}
+            className="h-16 w-auto"
+            priority
+          />
           <Tabs
             value={currentTab}
             onValueChange={(val) => {

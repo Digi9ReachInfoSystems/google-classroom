@@ -41,7 +41,7 @@ const ERROR_200 = "var(--error-200)";
 /** Not started ideas / Completed / Reviewed */
 const BLUE_700 = "var(--blue-700)";
 
-/* keys are just internal buckets; we override `fill` per chart slice */
+/* keys are buckets; we override `fill` per slice as needed */
 const baseConfig: ChartConfig = {
   submit:   { label: "Submit",   color: BLUE_100 },
   pending:  { label: "Pending",  color: ERROR_200 },
@@ -89,25 +89,25 @@ function makeCharts(filters: {
   const [s1, s2, s3] = mk3(12);
 
   return {
-    /* Pre survey: Submit (blue-100), Pending (error-200), Reviewed (blue-700) */
+    /* Pre survey */
     pre: [
       { key: "submit",   value: p1, fill: BLUE_100 },
       { key: "pending",  value: p2, fill: ERROR_200 },
       { key: "reviewed", value: p3, fill: BLUE_700 },
     ],
-    /* Student course: Completed (blue-700), In progress (error-200), Not started (blue-100) */
+    /* Student course: Completed / In progress / Not started */
     course: [
       { key: "submit",   value: q1, fill: BLUE_700 },  // Completed
       { key: "pending",  value: q2, fill: ERROR_200 }, // In progress
       { key: "reviewed", value: q3, fill: BLUE_100 },  // Not started
     ],
-    /* Idea submission: Submitted (blue-100), In draft (error-200), Not started ideas (blue-700) */
+    /* Idea submission */
     idea: [
       { key: "submit",   value: r1, fill: BLUE_100 },  // Submitted ideas
       { key: "pending",  value: r2, fill: ERROR_200 }, // In draft ideas
-      { key: "reviewed", value: r3, fill: BLUE_700 },  // Not started idea submission
+      { key: "reviewed", value: r3, fill: BLUE_700 },  // Not started ideas
     ],
-    /* Post survey: Submit (blue-100), Pending (error-200), Reviewed (blue-700) */
+    /* Post survey */
     post: [
       { key: "submit",   value: s1, fill: BLUE_100 },
       { key: "pending",  value: s2, fill: ERROR_200 },
@@ -152,10 +152,14 @@ function PieBlock({
   data: Slice[];
   legendLabels: string[];
 }) {
-  const legend = data.map((d, i) => ({
-    color: d.fill ?? baseConfig[d.key]?.color!,
-    label: legendLabels[i],
-  }));
+  const legend = data.map((d, i) => {
+    const baseColor =
+      (baseConfig as Record<string, { color: string }>)[d.key]?.color;
+    return {
+      color: d.fill ?? baseColor ?? "var(--neutral-300)", // ← safe fallback, no non-null assertion
+      label: legendLabels[i],
+    };
+  });
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[minmax(260px,380px)_auto] items-center gap-5">
@@ -183,14 +187,12 @@ function PieBlock({
 
 /* --------------------------------- Page --------------------------------- */
 export default function PiCharts() {
-  // filters
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
   const [age, setAge] = React.useState<string | undefined>();
   const [grade, setGrade] = React.useState<string | undefined>();
   const [gender, setGender] = React.useState<string | undefined>();
   const [disability, setDisability] = React.useState<string | undefined>();
 
-  // chart state
   const [charts, setCharts] = React.useState<ChartSet>(() =>
     makeCharts({ dateRange, age, grade, gender, disability })
   );
@@ -208,7 +210,6 @@ export default function PiCharts() {
   return (
     <section className="w-full px-4 py-4">
       <div className="space-y-3">
-        {/* Heading */}
         <div>
           <h1 className="text-[22px] md:text-[36px] font-normal text-[var(--neutral-1000)]">
             Reports & Exports
@@ -218,14 +219,12 @@ export default function PiCharts() {
           </p>
         </div>
 
-        {/* Analytics card */}
-        <Card className="bg-white  ">
+        <Card className="bg-white">
           <CardHeader className="pb-0">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-[16px] font-medium text-[var(--neutral-900)]">Data Analytics</div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {/* Date range picker */}
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="h-8 rounded-full px-3 text-[12px] w-[210px] justify-start">
@@ -250,7 +249,6 @@ export default function PiCharts() {
                   </PopoverContent>
                 </Popover>
 
-                {/* Age */}
                 <Select value={age} onValueChange={setAge}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[120px] text-[12px]">
                     <SelectValue placeholder="Select Age" />
@@ -268,7 +266,6 @@ export default function PiCharts() {
                   </SelectContent>
                 </Select>
 
-                {/* Grade */}
                 <Select value={grade} onValueChange={setGrade}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[130px] text-[12px]">
                     <SelectValue placeholder="Select Grade" />
@@ -286,7 +283,6 @@ export default function PiCharts() {
                   </SelectContent>
                 </Select>
 
-                {/* Gender */}
                 <Select value={gender} onValueChange={setGender}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[140px] text-[12px]">
                     <SelectValue placeholder="Select Gender" />
@@ -304,7 +300,6 @@ export default function PiCharts() {
                   </SelectContent>
                 </Select>
 
-                {/* Disability */}
                 <Select value={disability} onValueChange={setDisability}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[150px] text-[12px]">
                     <SelectValue placeholder="Select Disability" />
@@ -348,11 +343,7 @@ export default function PiCharts() {
               <PieBlock
                 title="Idea Submission status"
                 data={charts.idea}
-                legendLabels={[
-                  "Submitted ideas",
-                  "In draft ideas",
-                  "Not started idea submission",
-                ]}
+                legendLabels={["Submitted ideas", "In draft ideas", "Not started idea submission"]}
               />
               <PieBlock
                 title="Post survey status"
