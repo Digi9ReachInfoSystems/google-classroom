@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import BadgesSection from "./BadgesSection";
+import Image from "next/image";
 
 interface UserProfileProps {
   rank: number;
@@ -21,10 +22,12 @@ export default function UserProfile({
       <CardContent className="p-0">
         <div className="relative h-24 md:h-32 bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-400 rounded-t-lg">
           <div className="absolute -bottom-6 md:-bottom-8 left-4 md:left-6">
-            <img
+            <Image
               src="/student/user.jpg"
               alt="Profile"
               className="w-24 h-24 md:w-35 md:h-35 rounded-full object-cover"
+              width={96}
+              height={96}
             />
           </div>
           <div className="absolute top-4 md:top-8 right-4 md:right-18">
