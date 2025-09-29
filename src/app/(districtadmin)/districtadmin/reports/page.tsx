@@ -1,3 +1,9 @@
+import DistrictReports from "@/components/districtreports/districtreports";
+
 export default function Page() {
-    return <h1>Reports</h1>
+  return (
+    <>
+      <DistrictReports />
+    </>
+  );
 }
