@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 type Item = {
@@ -32,7 +33,7 @@ const ReliabilitySection: React.FC = () => {
               <div key={title} className="flex flex-col items-start gap-3">
                 {/* icon square */}
                 <div className="w-10 h-10 rounded-[10px] bg-[var(--warning-400)] flex items-center justify-center">
-                  <img src={icon} alt="" className="w-5 h-5" />
+                  <Image src={icon} alt="" className="w-5 h-5" />
                 </div>
 
                 {/* 24px medium */}
@@ -53,7 +54,7 @@ const ReliabilitySection: React.FC = () => {
        {/* Right: fixed-size image (442x448) */}
 <div className="w-full flex justify-center lg:justify-end">
   <div className="rounded-2xl overflow-hidden w-[442px] h-[448px] mx-auto lg:mx-0">
-    <img
+    <Image
       src="/reliableimage.png"
       alt="Students in classroom"
       className="w-full h-full object-cover"

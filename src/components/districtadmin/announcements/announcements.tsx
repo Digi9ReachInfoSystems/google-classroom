@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import React, { useState } from "react";
 
 /* ========================= helpers ========================= */
@@ -8,7 +9,7 @@ function StatusBell() {
       className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full
                  ring-1 ring-[var(--neutral-300)] bg-white"
     >
-      <img src="/notification.png" alt="Notification" className="h-6 w-6" />
+      <Image src="/notification.png" alt="Notification" width={24} height={24} className="h-6 w-6" />
     </span>
   );
 }
@@ -139,7 +140,7 @@ function CommentInput({ onOpen }: { onOpen: () => void }) {
     >
       Add comment…
       <span className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-8 grid place-items-center bg-[var(--neutral-100)] rounded-full">
-        <img src="/send.png" alt="" className="h-3.5 w-3.5" />
+        <Image src="/send.png" alt="" width={14} height={14} className="h-3.5 w-3.5" />
       </span>
     </button>
   );

@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import React from "react";
 
 type NavItem = { label: string; target: string };
@@ -39,10 +40,10 @@ const Header: React.FC = () => {
         <div className="flex h-[72px] items-center justify-between gap-4">
           {/* LEFT: 4 logos (48x51) */}
           <div className="flex items-center gap-3">
-            <img src="/upshiftlogo.png" alt="UPSHIFT" className="w-[48px] h-[51px] object-contain" />
-            <img src="/moesd.png"       alt="MoESD"   className="w-[48px] h-[51px] object-contain" />
-            <img src="/ydflogo.png"     alt="YDF"     className="w-[48px] h-[51px] object-contain" />
-            <img src="/uniceflogo.png"  alt="UNICEF"  className="w-[48px] h-[51px] object-contain" />
+            <Image src="/upshiftlogo.png" alt="UPSHIFT" className="w-[48px] h-[51px] object-contain" />
+            <Image src="/moesd.png"       alt="MoESD"   className="w-[48px] h-[51px] object-contain" />
+            <Image src="/ydflogo.png"     alt="YDF"     className="w-[48px] h-[51px] object-contain" />
+            <Image src="/uniceflogo.png"  alt="UNICEF"  className="w-[48px] h-[51px] object-contain" />
           </div>
 
           {/* CENTER: nav (14px, weight 400) */}

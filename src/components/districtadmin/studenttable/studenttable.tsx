@@ -1,10 +1,12 @@
 "use client";
+import Image from "next/image";
 import React, { useMemo, useState } from "react";
 
 /* ✓ / ? using your assets */
 function StatusIcon({ type }: { type: "ok" | "warn" }) {
   const src = type === "ok" ? "/checkcircle.png" : "/questioncircle.png";
-  return <img src={src} alt="" className="h-6 w-6 inline-block" draggable={false} />;
+  return <Image src={src} alt=""       width={24} 
+      height={24} className="h-6 w-6 inline-block" draggable={false} />;
 }
 
 /* Orange progress with centered knob; red dot at extreme start */

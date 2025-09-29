@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 type Feature = {
@@ -84,7 +85,7 @@ const FeatureCard: React.FC<Feature> = ({
       >
         {/* Foreground image pinned toward top */}
         <div className="absolute inset-0 flex items-start justify-center pt-3 md:pt-4 px-6">
-          <img
+          <Image
             src={img}
             alt={alt}
             className={`${imgHeights} max-w-[86%] object-contain drop-shadow-sm`}

@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type Slide = { src: string; alt?: string };
@@ -124,7 +125,7 @@ const PilotTrainingCarousel: React.FC = () => {
         >
           {slides.map((s, i) => (
             <div key={i} className="min-w-full relative">
-              <img
+              <Image
                 src={s.src}
                 alt={s.alt ?? "Pilot slide"}
                 className="block w-screen h-[60vh] md:h-[70vh] object-cover"
