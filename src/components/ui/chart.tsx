@@ -22,6 +22,52 @@ type ChartContextProps = {
   config: ChartConfig
 }
 
+type ChartLegendContentProps = React.ComponentProps<"div"> & {
+  payload?: {
+    value: string
+    color: string
+    type?: string
+    dataKey?: string | number
+    [key: string]: any
+  }[]
+  verticalAlign?: "top" | "bottom" | "middle"
+  hideIcon?: boolean
+  nameKey?: string
+}
+
+
+type TooltipPayload = {
+  name?: string
+  value?: number | string
+  color?: string
+  dataKey?: string | number
+  type?: string
+  payload?: any
+}
+
+type ChartTooltipContentProps = {
+  active?: boolean
+  payload?: TooltipPayload[]
+  label?: string
+  className?: string
+  indicator?: "line" | "dot" | "dashed"
+  hideLabel?: boolean
+  hideIndicator?: boolean
+  labelFormatter?: (value: any, payload?: TooltipPayload[]) => React.ReactNode
+  formatter?: (
+    value: any,
+    name: string | number,
+    entry: TooltipPayload,
+    index: number,
+    payload?: any
+  ) => React.ReactNode
+  labelClassName?: string
+  color?: string
+  nameKey?: string
+  labelKey?: string
+}
+
+
 const ChartContext = React.createContext<ChartContextProps | null>(null)
 
 function useChart() {
@@ -144,6 +190,9 @@ function ChartTooltipContent({
   labelKey?: string
 }) {
   const { config } = useChart()
+
+
+
 
   const tooltipLabel = React.useMemo(() => {
     if (hideLabel || !payload?.length) {
@@ -275,12 +324,11 @@ function ChartLegendContent({
   payload,
   verticalAlign = "bottom",
   nameKey,
-}: React.ComponentProps<"div"> & {
-  payload?: any[]
-  verticalAlign?: string
-  hideIcon?: boolean
-  nameKey?: string
-}) {
+}: React.ComponentProps<"div"> &
+  Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+    hideIcon?: boolean
+    nameKey?: string
+  }) {
   const { config } = useChart()
 
   if (!payload?.length) {
@@ -325,6 +373,7 @@ function ChartLegendContent({
     </div>
   )
 }
+
 
 // Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(

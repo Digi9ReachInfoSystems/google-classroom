@@ -19,6 +19,8 @@ export function BadgesSection() {
           <div key={i} className="relative group">
             <Image
               src="/student/badge-first.png"
+              width={100}
+              height={100}
               alt="Class First Badge"
               className="w-20 h-20 md:w-24 md:h-24 mx-auto transition-transform group-hover:scale-105"
             width={24}

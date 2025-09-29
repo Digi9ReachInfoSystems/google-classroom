@@ -307,6 +307,8 @@ const Map: React.FC = () => {
       alt=""
       role="presentation"
       aria-hidden="true"
+      width={70}
+      height={270}
       className="absolute inset-0 h-[270px] w-[70px] object-contain select-none pointer-events-none"
     />
   </div>

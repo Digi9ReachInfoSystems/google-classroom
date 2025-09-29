@@ -27,7 +27,6 @@ export default function CertificateCard({
           src="/student/cetificate.png" 
           alt="Certificate" 
           className="w-full h-auto object-contain"
-       
         />
       </div>
 

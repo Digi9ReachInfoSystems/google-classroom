@@ -18,7 +18,14 @@ export function DashboardHeader() {
     { label: "Certificate", value: "Certificate", href: "/student/dashboard/certificate" },
   ] as const
 
-const currentTab = tabs.find((t) => (pathname ?? "").startsWith(t.href))?.value || "Overview"
+  const currentTab = (() => {
+    const match = tabs
+      .filter((t) => t.href !== "#")
+      .sort((a, b) => b.href.length - a.href.length)
+      .find((t) => (pathname ?? "").startsWith(t.href))
+
+    return match ? match.value : "Overview"
+  })()
 
   return (
     <header className="bg-white border-neutral-200 px-4 md:px-8 py-5">
@@ -26,16 +33,14 @@ const currentTab = tabs.find((t) => (pathname ?? "").startsWith(t.href))?.value 
         {/* Logo and Navigation */}
         <div className="flex items-center space-x-4 md:space-x-8 flex-1 min-w-0">
           <div className="flex items-center space-x-2">
-            <Image src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" className="h-12 md:h-16 w-auto"
-            height={48}
-            width={48} />
+            <img src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" className="h-12 md:h-16 w-auto" />
           </div>
 
           <Tabs value={currentTab} onValueChange={(val) => {
             const target = tabs.find((t) => t.value === val)
-           if (target) {
-  router.push(target.href)
-}
+            if (target && target.href && target.href !== "#") {
+              router.push(target.href)
+            }
           }}>
             <TabsList className="bg-neutral-100 border-0 h-12 gap-1 md:gap-2 rounded-full px-1 py-1 overflow-x-auto">
               {tabs.map((item) => (

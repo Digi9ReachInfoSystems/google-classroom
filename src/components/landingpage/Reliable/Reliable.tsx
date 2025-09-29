@@ -33,7 +33,7 @@ const ReliabilitySection: React.FC = () => {
               <div key={title} className="flex flex-col items-start gap-3">
                 {/* icon square */}
                 <div className="w-10 h-10 rounded-[10px] bg-[var(--warning-400)] flex items-center justify-center">
-                  <Image src={icon} alt="" className="w-5 h-5" />
+                  <Image src={icon} alt="" className="w-5 h-5" width={20} height={20} />
                 </div>
 
                 {/* 24px medium */}
@@ -58,6 +58,8 @@ const ReliabilitySection: React.FC = () => {
       src="/reliableimage.png"
       alt="Students in classroom"
       className="w-full h-full object-cover"
+      width={442}
+      height={448}
     />
   </div>
 </div>

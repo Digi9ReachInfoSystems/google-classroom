@@ -502,46 +502,38 @@ export function CourseUpdatesTable() {
             </thead>
           </table>
 
-          {/* Scrollable body only (shows ~10 rows) */}
-          <div className="max-h-[680px] overflow-y-auto rounded-b-lg custom-scrollbar">
-            <table className="w-[100%] table-fixed">
-              <colgroup>
-                <col className="w-[40%]" />
-                <col className="w-[15%]" />
-                <col className="w-[25%]" />
-                <col className="w-[20%]" />
-              </colgroup>
-              <tbody>
-                {courseData.map((item, index) => (
-                  <tr
-                    key={index}
-                    className={`bg-white hover:bg-muted/50 transition-colors`}
-                  >
-                    <td className="py-3 px-6 text-sm text-card-foreground">
-                      {item.module}
-                    </td>
-                    <td className="py-3 px-6 text-sm text-card-foreground tabular-nums">
-                      {item.score}
-                    </td>
-                    <td className="py-3 px-6 text-sm text-card-foreground">
-                      {item.date}
-                    </td>
-                    <td className="py-3 px-6">
-                      <Badge
-                        variant={
-                          item.status === "completed" ? "success" : "secondary"
-                        }
-                      >
-                        {item.status === "completed" ? "Completed" : "Pending"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {/* Scrollable body only (shows ~10 rows) */}
+        <div className="max-h-[680px] overflow-y-auto rounded-b-lg custom-scrollbar">
+          <table className="w-[100%] table-fixed">
+            <colgroup>
+              <col className="w-[40%]" />
+              <col className="w-[15%]" />
+              <col className="w-[25%]" />
+              <col className="w-[20%]" />
+            </colgroup>
+            <tbody>
+              {courseData.map((item, index) => (
+                <tr
+                  key={index}
+                  className={`bg-white hover:bg-muted/50 transition-colors`}
+                >
+                  <td className="py-3 px-6 text-sm text-card-foreground">{item.module}</td>
+                  <td className="py-3 px-6 text-sm text-card-foreground tabular-nums">{item.score}</td>
+                  <td className="py-3 px-6 text-sm text-card-foreground">{item.date}</td>
+                  <td className="py-3 px-6">
+                    <Badge
+                      variant={item.status === "completed" ? "success" : "pending"}
+                    >
+                      {item.status === "completed" ? "Completed" : "Pending"}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
     </>
   );
 }
