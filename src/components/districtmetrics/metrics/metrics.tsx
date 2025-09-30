@@ -69,7 +69,7 @@ function StatCard({
     <div className={`h-[112px] ${widthClass} rounded-xl bg-white shadow-sm`}>
       <div className="h-full w-full flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--warning-400)]">
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]">
             <Image
               src={icon}
               alt={label}
@@ -79,10 +79,10 @@ function StatCard({
             />
           </span>
           <div className="min-w-0 text-center">
-            <div className="text-[12px] font-normal leading-5 text-[var(--neutral-900)] truncate">
+            <div className="text-[12px] font-normal leading-5 text-black truncate">
               {label}
             </div>
-            <div className="text-[16px] font-normal leading-6 text-[var(--neutral-1000)]">
+            <div className="text-[16px] font-normal leading-6 text-black">
               {value}
             </div>
           </div>
@@ -95,7 +95,7 @@ function StatCard({
 const DistrictOverview: React.FC = () => {
   return (
     <section className="w-full px-5 sm:px-6 md:px-8 lg:px-10 xl:px-[20px]">
-      <h2 className="mb-6 text-[32px] font-medium text-[var(--neutral-1000)]">
+      <h2 className="mb-6 text-[32px] font-normal text-[var(--neutral-1000)]">
         District Overview
       </h2>
 
@@ -115,7 +115,7 @@ const DistrictOverview: React.FC = () => {
             <button
               type="button"
               className="absolute bottom-3 left-1/2 -translate-x-1/2 h-10 w-[200px] rounded-lg
-                 bg-[var(--neutral-300)] text-[12px] font-medium text-[var(--neutral-1000)]"
+                 bg-[var(--neutral-300)] text-[16px] font-medium text-[var(--neutral-1000)]"
             >
               GASA
             </button>
