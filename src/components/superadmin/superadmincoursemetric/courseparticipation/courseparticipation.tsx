@@ -67,19 +67,19 @@ export default function CoursePartition() {
           <SelectContent className="rounded-xl overflow-hidden">
             <SelectItem
               value="thisMonth"
-              className="data-[highlighted]:bg-[var(--warning-400)] data-[highlighted]:text-white focus:bg-[var(--warning-400)] focus:text-white"
+              className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
             >
               This Month
             </SelectItem>
             <SelectItem
               value="lastMonth"
-              className="data-[highlighted]:bg-[var(--warning-400)] data-[highlighted]:text-white focus:bg-[var(--warning-400)] focus:text-white"
+              className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
             >
               Last Month
             </SelectItem>
             <SelectItem
               value="thisYear"
-              className="data-[highlighted]:bg-[var(--warning-400)] data-[highlighted]:text-white focus:bg-[var(--warning-400)] focus:text-white"
+              className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
             >
               This Year
             </SelectItem>
