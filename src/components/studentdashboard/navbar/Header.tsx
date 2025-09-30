@@ -18,14 +18,7 @@ export function DashboardHeader() {
     { label: "Certificate", value: "Certificate", href: "/student/dashboard/certificate" },
   ] as const
 
- const currentTab = (() => {
-  const match = [...tabs] // spread to make a mutable array
-    .sort((a, b) => b.href.length - a.href.length)
-    .find((t) => (pathname ?? "").startsWith(t.href))
-
-  return match ? match.value : "Overview"
-})()
-
+const currentTab = tabs.find((t) => (pathname ?? "").startsWith(t.href))?.value || "Overview"
 
   return (
     <header className="bg-white border-neutral-200 px-4 md:px-8 py-5">
@@ -33,14 +26,16 @@ export function DashboardHeader() {
         {/* Logo and Navigation */}
         <div className="flex items-center space-x-4 md:space-x-8 flex-1 min-w-0">
           <div className="flex items-center space-x-2">
-            <Image src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" width={120} height={64} className="h-12 md:h-16 w-auto" />
+            <Image src="/student/upshift-logo.png" alt="UPSHIFT BHUTAN" className="h-12 md:h-16 w-auto"
+            height={48}
+            width={48} />
           </div>
 
           <Tabs value={currentTab} onValueChange={(val) => {
             const target = tabs.find((t) => t.value === val)
-            if (target) {
-              router.push(target.href)
-            }
+           if (target) {
+  router.push(target.href)
+}
           }}>
             <TabsList className="bg-neutral-100 border-0 h-12 gap-1 md:gap-2 rounded-full px-1 py-1 overflow-x-auto">
               {tabs.map((item) => (
