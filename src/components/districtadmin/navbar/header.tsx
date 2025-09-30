@@ -55,7 +55,7 @@ export function DashboardHeader() {
                   value={item.value}
                   className="
                     px-7 py-2 text-sm font-medium rounded-full border-0 shadow-none transition-colors
-                    data-[state=active]:bg-[var(--warning-400)] data-[state=active]:text-white
+                    data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white
                     
                     data-[state=inactive]:text-neutral-600 data-[state=inactive]:hover:text-neutral-800
                     data-[disabled]:opacity-60 data-[disabled]:text-neutral-400 data-[disabled]:cursor-not-allowed
@@ -70,22 +70,35 @@ export function DashboardHeader() {
 
         {/* Right: actions */}
         <div className="flex items-center space-x-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white"
-              >
-                Select courses
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Course 1</DropdownMenuItem>
-              <DropdownMenuItem>Course 2</DropdownMenuItem>
-              <DropdownMenuItem>Course 3</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+       <DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button
+      variant="ghost"
+      className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white"
+    >
+      Select courses
+      <ChevronDown className="h-4 w-4" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent className="rounded-xl overflow-hidden">
+    <DropdownMenuItem
+      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
+    >
+      Course 1
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
+    >
+      Course 2
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
+    >
+      Course 3
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+
 
           <Button variant="ghost" size="icon" className="text-neutral-600 hover:text-neutral-900">
             <Bell className="h-5 w-5" />

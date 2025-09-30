@@ -5,8 +5,16 @@ import React, { useMemo, useState } from "react";
 /* ✓ / ? using your assets */
 function StatusIcon({ type }: { type: "ok" | "warn" }) {
   const src = type === "ok" ? "/checkcircle.png" : "/questioncircle.png";
-  return <Image src={src} alt=""       width={24} 
-      height={24} className="h-6 w-6 inline-block" draggable={false} />;
+  return (
+    <Image
+      src={src}
+      alt=""
+      width={24}
+      height={24}
+      className="h-6 w-6 inline-block"
+      draggable={false}
+    />
+  );
 }
 
 /* Orange progress with centered knob; red dot at extreme start */
@@ -15,7 +23,6 @@ function LessonProgress({ value }: { value: number }) {
   const TRACK_H = 8;
   const KNOB = 14;
   const EXTREME = 6; // <= show red dot
-
   const isStart = v <= EXTREME;
 
   return (
@@ -28,7 +35,7 @@ function LessonProgress({ value }: { value: number }) {
       {/* filled orange */}
       {!isStart && (
         <div
-          className="absolute left-0 rounded-full bg-[var(--warning-400)]"
+          className="absolute left-0 rounded-full bg-[var(--primary)]"
           style={{ height: TRACK_H, width: `${v}%`, top: "50%", transform: "translateY(-50%)" }}
         />
       )}
@@ -111,13 +118,16 @@ export default function StudentsTable() {
         </label>
       </div>
 
-      {/* HEADER (separate table so body can scroll) */}
-      <div className="pr-2">
+      {/* HEADER with rounded corners */}
+      <div className="rounded-t-2xl overflow-hidden">
         <table className="w-full table-fixed border-0 [&_*]:!border-0">
           <thead className="bg-[var(--success-1000)]">
             <tr className="text-[12px] text-white">
               {headers.map(h => (
-                <th key={h} className="px-5 py-3 text-left font-normal border-r border-[var(--neutral-200)] last:border-r-0">
+                <th
+                  key={h}
+                  className="px-5 py-3 text-left font-normal border-r border-[var(--neutral-200)] last:border-r-0"
+                >
                   {h}
                 </th>
               ))}
@@ -126,8 +136,8 @@ export default function StudentsTable() {
         </table>
       </div>
 
-      {/* BODY: 4 rows tall, scroll inside; only vertical separators */}
-      <div className="max-h-[224px] overflow-y-auto scroll-thin">
+      {/* BODY: rectangular (no rounded corners) */}
+      <div className="max-h-[224px] overflow-y-auto custom-scrollbar">
         <table className="w-full table-fixed border-0 [&_*]:!border-0">
           <tbody>
             {rows.map((r) => (
