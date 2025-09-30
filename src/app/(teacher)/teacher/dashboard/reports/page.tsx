@@ -1,7 +1,10 @@
+import TeacherDistrictReports from "@/components/teacherdashboard/reports/reportspage"
 import React from "react"
 
 export default function Page() {
-  return <div className="text-neutral-800">Reports</div>
+  return <div>
+    <TeacherDistrictReports />
+  </div>
 }
 
 

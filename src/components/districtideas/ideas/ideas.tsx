@@ -23,7 +23,7 @@ function RingProgress({
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--neutral-300)" strokeWidth={stroke} strokeLinecap="round" />
       <circle
         cx={size/2} cy={size/2} r={r} fill="none"
-        stroke="var(--warning-400)" strokeWidth={stroke} strokeLinecap="round"
+        stroke="var(--primary)" strokeWidth={stroke} strokeLinecap="round"
         strokeDasharray={`${dash} ${c-dash}`} transform={`rotate(-90 ${size/2} ${size/2})`}
       />
       <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="14"
@@ -40,7 +40,7 @@ function KPI({ valueText, label, percentArc }: { valueText: string; label: strin
     <div className="h-[112px] w-[320px] rounded-xl bg-white shadow-sm px-5">
       <div className="h-full w-full flex items-center gap-4">
         <RingProgress percent={percentArc} text={valueText} />
-        <p className="text-[12px] leading-5 text-[var(--neutral-1000)]">{label}</p>
+        <p className="text-[14px] leading-5 text-[var(--neutral-1000)]">{label}</p>
       </div>
     </div>
   );
@@ -76,8 +76,8 @@ function CustomSelect({
         className="
           h-9 w-full px-3 rounded-full border border-[var(--neutral-300)] bg-white
           text-[12px] text-[var(--neutral-900)] transition
-          hover:bg-[var(--warning-400)] hover:text-white
-          focus:outline-none focus:ring-2 focus:ring-[var(--warning-400)]
+          hover:bg-[var(--primary)] hover:text-white
+          focus:outline-none focus:ring-2 focus:ring-[var(--primary)]
           flex items-center justify-center text-center
           bg-[right_0.6rem_center] bg-no-repeat
         "
@@ -113,7 +113,7 @@ function CustomSelect({
               }}
               className="
                 cursor-pointer px-3 py-2 text-[12px] text-[var(--neutral-900)]
-                hover:bg-[var(--warning-400)] hover:text-white
+                hover:bg-[var(--primary)] hover:text-white
               "
             >
               {opt}
@@ -132,7 +132,7 @@ const IdeasKPI: React.FC = () => {
     <section className="w-full space-y-5 px-5">
       {/* Row 1: Title + dropdowns */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-[32px] font-medium text-[var(--neutral-1000)]">Ideas</h2>
+        <h2 className="text-[32px] font-normal text-[var(--neutral-1000)]">Ideas</h2>
 
         <div className="flex items-center gap-3">
           <CustomSelect label="Select School"  options={["All", "School A", "School B"]} />
