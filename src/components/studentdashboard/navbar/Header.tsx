@@ -18,7 +18,13 @@ export function DashboardHeader() {
     { label: "Certificate", value: "Certificate", href: "/student/dashboard/certificate" },
   ] as const
 
-const currentTab = tabs.find((t) => (pathname ?? "").startsWith(t.href))?.value || "Overview"
+const currentTab = (() => {
+const match = [...tabs]
+.sort((a, b) => b.href.length - a.href.length)
+.find((t) => (pathname ?? "").startsWith(t.href))
+
+return match ? match.value : "Overview"
+})()
 
   return (
     <header className="bg-white border-neutral-200 px-4 md:px-8 py-5">
