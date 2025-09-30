@@ -1,7 +1,10 @@
+import TeacherLeaderboardpage from "@/components/teacherdashboard/teacherLeaderboards/teacherleaderboards"
 import React from "react"
 
 export default function Page() {
-  return <div className="text-neutral-800">Leaderboards</div>
+  return <div>
+    <TeacherLeaderboardpage />
+  </div>
 }
 
 
