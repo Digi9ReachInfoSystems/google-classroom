@@ -7,8 +7,6 @@ import Pagination from "@/components/ui/pagination";
 /* ---------- types & fake data ---------- */
 type Row = {
   no: number;
-  district: string;
-  school: string;
   file: string;
   focal: string[]; // chips
   course: string;
@@ -17,9 +15,18 @@ type Row = {
 
 const ALL_ROWS: Row[] = Array.from({ length: 87 }).map((_, i) => ({
   no: i + 1,
-  district: ["Gasa", "Punakha", "Haa"][i % 3],
-  school: "School Name",
-  file: "—",
+  file: [
+    "Report Name",
+    "Report Name",
+    "Report Name",
+    "Report Name",
+    "Report Name",
+    "Report Name",
+    "Report Name",
+    "Report Name",
+    "Report Name",
+    "Report Name"
+  ][i % 10],
   focal:
     i % 4 === 1
       ? ["Age"]
@@ -59,10 +66,8 @@ export default function TeacherPidata() {
           <table className="w-full table-fixed rounded-t-lg overflow-hidden border-collapse border-b border-neutral-200">
             <colgroup>
               <col className="w-[56px]" />
-              <col className="w-[120px]" />
               <col className="w-[200px]" />
-              <col className="w-[180px]" />
-              <col className="w-[220px]" />
+              <col className="w-[280px]" />
               <col className="w-[160px]" />
               <col className="w-[170px]" />
               <col className="w-[90px]" />
@@ -70,10 +75,8 @@ export default function TeacherPidata() {
             <thead className="bg-[#F1F5F6]">
               <tr className="text-[12px] text-[var(--neutral-900)]">
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[56px]">No</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[120px]">District</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[200px]">School</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[180px]">File name</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[220px]">Focal points</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[200px]">File name</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[280px]">Focal points</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[160px]">Course name</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[170px]">Date Range</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[90px]">Action</th>
@@ -87,10 +90,8 @@ export default function TeacherPidata() {
           <table className="w-full table-fixed">
             <colgroup>
               <col className="w-[56px]" />
-              <col className="w-[120px]" />
               <col className="w-[200px]" />
-              <col className="w-[180px]" />
-              <col className="w-[220px]" />
+              <col className="w-[280px]" />
               <col className="w-[160px]" />
               <col className="w-[170px]" />
               <col className="w-[90px]" />
@@ -100,12 +101,6 @@ export default function TeacherPidata() {
                 <tr key={r.no} className="text-[12px]">
                   <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)] text-[var(--neutral-1000)]">
                     {r.no}
-                  </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    {r.district}
-                  </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    {r.school}
                   </td>
                   <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
                     {r.file}
@@ -137,7 +132,7 @@ export default function TeacherPidata() {
               {rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={6}
                     className="px-5 py-10 text-center text-[var(--neutral-700)] border-t border-[var(--neutral-200)]"
                   >
                     No data.
