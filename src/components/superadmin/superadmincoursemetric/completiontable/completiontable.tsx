@@ -27,10 +27,10 @@ const chartData = [
 
 // labels + color tokens (uses your CSS variables)
 const chartConfig = {
-  s1: { label: "Pre survey", color: "var(--chart-1)" },
-  s2: { label: "Course progress", color: "var(--chart-2)" },
-  s3: { label: "Idea", color: "var(--chart-2)" },
-  s4: { label: "Post survey", color: "var(--chart-5)" },
+  s1: { label: "Pre survey", color: "#8979FF" },
+  s2: { label: "Course progress", color: "#FF928A" },
+  s3: { label: "Idea", color: "#3cc3Df" },
+  s4: { label: "Post survey", color: "#FF9A02" },
 } satisfies ChartConfig
 
 // custom legend so text is centered and black like the mock
@@ -109,10 +109,10 @@ export default function CompletionTable() {
             <ChartTooltip content={<ChartTooltipContent indicator="dashed" />} />
 
             {/* 4 bars per group, each 12px wide */}
-            <Bar dataKey="s1" fill="var(--chart-1)" barSize={12} radius={3} />
-            <Bar dataKey="s2" fill="var(--chart-2)" barSize={12} radius={3} />
-            <Bar dataKey="s3" fill="var(--chart-2)" barSize={12} radius={3} />
-            <Bar dataKey="s4" fill="var(--chart-5)" barSize={12}radius={3} />
+            <Bar dataKey="s1" fill="#8979FF" barSize={12} radius={3} />
+            <Bar dataKey="s2" fill="#FF928A" barSize={12} radius={3} />
+            <Bar dataKey="s3" fill="#3cc3Df" barSize={12} radius={3} />
+            <Bar dataKey="s4" fill="#FF9A02" barSize={12}radius={3} />
 
             {/* centered, black legend below */}
             <Legend content={<LegendCenteredBlack />} />
