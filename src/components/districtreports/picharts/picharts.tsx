@@ -27,21 +27,14 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
-/* -------------------- filter option values -------------------- */
 const AGES = ["10–12", "13–15", "16–18"] as const;
 const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
 const GENDERS = ["Male", "Female", "Other"] as const;
 const DISABILITY = ["None", "Hearing", "Vision", "Learning", "Mobility"] as const;
+const BLUE_100 = "var(--blue-800)";
+const ERROR_200 = "var(--pink-100)";
+const BLUE_700 = "var(--purple-100)";
 
-/* ---------------------------- Color rules ---------------------------- */
-/** Submit / Submitted ideas / Not started (course) */
-const BLUE_100 = "var(--blue-100)";
-/** Pending / In draft ideas / In progress */
-const ERROR_200 = "var(--error-200)";
-/** Not started ideas / Completed / Reviewed */
-const BLUE_700 = "var(--blue-700)";
-
-/* keys are buckets; we override `fill` per slice as needed */
 const baseConfig: ChartConfig = {
   submit:   { label: "Submit",   color: BLUE_100 },
   pending:  { label: "Pending",  color: ERROR_200 },
@@ -51,7 +44,6 @@ const baseConfig: ChartConfig = {
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
 type ChartSet = { pre: Slice[]; course: Slice[]; idea: Slice[]; post: Slice[] };
 
-/* --- deterministic “fake” data generator so selections change the pies --- */
 function hashStr(s: string) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
@@ -185,7 +177,6 @@ function PieBlock({
   );
 }
 
-/* --------------------------------- Page --------------------------------- */
 export default function PiCharts() {
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
   const [age, setAge] = React.useState<string | undefined>();
@@ -211,10 +202,10 @@ export default function PiCharts() {
     <section className="w-full px-4 py-4">
       <div className="space-y-3">
         <div>
-          <h1 className="text-[22px] md:text-[36px] font-normal text-[var(--neutral-1000)]">
+          <h1 className="text-[22px] md:text-[32px] font-normal text-[var(--neutral-1000)]">
             Reports & Exports
           </h1>
-          <p className="text-[12px] text-[var(--neutral-700)]">
+          <p className="text-[14px] text-[var(--neutral-700)]">
             Let’s see the current statistics performance
           </p>
         </div>
@@ -227,7 +218,7 @@ export default function PiCharts() {
               <div className="flex flex-wrap items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-8 rounded-full px-3 text-[12px] w-[210px] justify-start">
+                    <Button variant="outline" className="h-9 rounded-full px-4 text-[14px] w-[170px] justify-start font-normal">
                       {dateLabel}
                     </Button>
                   </PopoverTrigger>
@@ -250,15 +241,15 @@ export default function PiCharts() {
                 </Popover>
 
                 <Select value={age} onValueChange={setAge}>
-                  <SelectTrigger className="h-8 px-3 rounded-full w-[120px] text-[12px]">
+                  <SelectTrigger className="h-9 px-4 rounded-full w-[140px] text-[14px]">
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-xl text-center">
                     {AGES.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
-                        className="text-[12px] rounded-md data-[highlighted]:bg-[var(--warning-400)] data-[highlighted]:text-white"
+                        className="text-[14px] rounded-md data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white text-center flex justify-center"
                       >
                         {r}
                       </SelectItem>
@@ -267,15 +258,15 @@ export default function PiCharts() {
                 </Select>
 
                 <Select value={grade} onValueChange={setGrade}>
-                  <SelectTrigger className="h-8 px-3 rounded-full w-[130px] text-[12px]">
+                  <SelectTrigger className="h-9 px-4 rounded-full w-[160px] text-[14px]">
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-xl text-center">
                     {GRADES.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
-                        className="text-[12px] rounded-md data-[highlighted]:bg-[var(--warning-400)] data-[highlighted]:text-white"
+                        className="text-[14px] rounded-md data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white text-center flex justify-center"
                       >
                         {r}
                       </SelectItem>
@@ -284,15 +275,15 @@ export default function PiCharts() {
                 </Select>
 
                 <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger className="h-8 px-3 rounded-full w-[140px] text-[12px]">
+                  <SelectTrigger className="h-9 px-4 rounded-full w-[160px] text-[14px]">
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-xl text-center">
                     {GENDERS.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
-                        className="text-[12px] rounded-md data-[highlighted]:bg-[var(--warning-400)] data-[highlighted]:text-white"
+                        className="text-[14px] rounded-md data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white text-center flex justify-center"
                       >
                         {r}
                       </SelectItem>
@@ -301,15 +292,15 @@ export default function PiCharts() {
                 </Select>
 
                 <Select value={disability} onValueChange={setDisability}>
-                  <SelectTrigger className="h-8 px-3 rounded-full w-[150px] text-[12px]">
+                  <SelectTrigger className="h-9 px-4 rounded-full w-[170px] text-[14px]">
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-xl text-center">
                     {DISABILITY.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
-                        className="text-[12px] rounded-md data-[highlighted]:bg-[var(--warning-400)] data-[highlighted]:text-white"
+                        className="text-[14px] rounded-md data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white text-center flex justify-center"
                       >
                         {r}
                       </SelectItem>
@@ -320,7 +311,7 @@ export default function PiCharts() {
                 <Button
                   type="button"
                   onClick={onGenerate}
-                  className="h-8 rounded-full px-4 bg-[var(--warning-400)] hover:bg-[var(--warning-500)] text-white text-[12px]"
+                  className="h-9 rounded-full px-5 bg-[var(--primary)] hover:bg-[var(--primary)] text-white text-[14px]"
                 >
                   Generate
                 </Button>

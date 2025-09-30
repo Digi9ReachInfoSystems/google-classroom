@@ -31,10 +31,10 @@ const ALL_ROWS: Row[] = Array.from({ length: 87 }).map((_, i) => ({
   range: "10 Jun – 12 Sep",
 }));
 
-/* ---------- small chip (better padding) ---------- */
+/* ---------- small chip ---------- */
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-[var(--warning-400)] text-white text-[11px] px-2.5 py-[5px] leading-none">
+    <span className="inline-flex items-center rounded-full bg-[var(--primary)] text-white text-[11px] px-2.5 py-[5px] leading-none">
       {children}
     </span>
   );
@@ -49,7 +49,7 @@ function usePagination(total: number, perPage: number) {
   const next = () => go(page + 1);
   const prev = () => go(page - 1);
 
-  // compact window like the design
+  // compact window
   const window = 5;
   const start = Math.max(1, page - Math.floor(window / 2));
   const end = Math.min(pages, start + window - 1);
@@ -72,53 +72,29 @@ export default function Pidata() {
   return (
     <section className="w-full px-4 md:px-5 py-5 mt-5">
       <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
-        {/* scrollable body (still shows only 10 rows per page) */}
-        <div className="max-h-[520px] overflow-y-auto scroll-thin">
+        {/* scrollable body */}
+        <div className="max-h-[520px] overflow-y-auto custom-scrollbar">
           <table className="w-full table-fixed">
             <thead className="bg-[var(--success-100)]">
-              <tr className="text-[12px] text-[var(--neutral-900)]">
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[56px]">
-                  No
-                </th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[120px]">
-                  District
-                </th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[200px]">
-                  School
-                </th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[180px]">
-                  File name
-                </th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[220px]">
-                  Focal points
-                </th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[160px]">
-                  Course name
-                </th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[170px]">
-                  Date Range
-                </th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[90px]">
-                  Action
-                </th>
+              <tr className="text-[14px] text-[var(--neutral-900)]">
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[56px]">No</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[120px]">District</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[200px]">School</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[180px]">File name</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[220px]">Focal points</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[160px]">Course name</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[170px]">Date Range</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[90px]">Action</th>
               </tr>
             </thead>
 
             <tbody>
               {rows.map((r) => (
                 <tr key={r.no} className="text-[12px]">
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)] text-[var(--neutral-1000)]">
-                    {r.no}
-                  </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    {r.district}
-                  </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    {r.school}
-                  </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    {r.file}
-                  </td>
+                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)] text-[var(--neutral-1000)]">{r.no}</td>
+                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.district}</td>
+                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.school}</td>
+                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.file}</td>
                   <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
                     <div className="flex flex-wrap gap-2">
                       {r.focal.map((t) => (
@@ -126,12 +102,8 @@ export default function Pidata() {
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    {r.course}
-                  </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    {r.range}
-                  </td>
+                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.course}</td>
+                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.range}</td>
                   <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
                     <button
                       type="button"
@@ -143,6 +115,7 @@ export default function Pidata() {
                   </td>
                 </tr>
               ))}
+
               {rows.length === 0 && (
                 <tr>
                   <td
@@ -157,85 +130,121 @@ export default function Pidata() {
           </table>
         </div>
 
-        {/* pagination strip (dynamic; matches your style) */}
+        {/* slim pagination (design-matched) */}
         <div className="flex items-center justify-end px-4 md:px-5 py-3">
-          <div className="flex items-center gap-2 rounded-full bg-[var(--neutral-1000)]/90 px-2 md:px-3 py-2">
+          <nav className="flex items-center gap-4" aria-label="Pagination">
+            {/* Prev pill */}
             <button
               type="button"
               onClick={prev}
-              disabled={page === 1}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:text-white disabled:opacity-40"
-              aria-label="Previous page"
+              disabled={page <= 1}
+              className="
+                 h-7 w-[132px] rounded-full border border-black
+        text-[12px] text-black
+        disabled:opacity-40 disabled:cursor-not-allowed
+        bg-transparent
+              "
             >
-              <ChevronLeft className="h-4 w-4" />
+              Previous
             </button>
 
-            {nums[0] > 1 && (
-              <>
-                <PageDot n={1} active={page === 1} onClick={() => go(1)} />
-                <Ellipsis />
-              </>
-            )}
+            {/* dots rail */}
+            <div className="relative flex items-center gap-3 px-2">
+              {/* subtle rail outline behind dots */}
+            <div className="absolute inset-0 -z-10 rounded-full border border-black" />
+              <ul className="flex items-center gap-3 px-3 py-1">
+                {nums[0] > 1 && (
+                  <>
+                    <Dot page={1} active={page === 1} onClick={() => go(1)} />
+                    {nums[0] > 2 && <Ellipsis />}
+                  </>
+                )}
 
-            {nums.map((n) => (
-              <PageDot key={n} n={n} active={n === page} onClick={() => go(n)} />
-            ))}
+                {nums.map((n) => (
+                  <Dot key={n} page={n} active={n === page} onClick={() => go(n)} />
+                ))}
 
-            {nums[nums.length - 1] < pages && (
-              <>
-                <Ellipsis />
-                <PageDot
-                  n={pages}
-                  active={page === pages}
-                  onClick={() => go(pages)}
-                />
-              </>
-            )}
+                {nums[nums.length - 1] < pages && (
+                  <>
+                    {nums[nums.length - 1] < pages - 1 && <Ellipsis />}
+                    <Dot
+                      page={pages}
+                      active={page === pages}
+                      onClick={() => go(pages)}
+                    />
+                  </>
+                )}
+              </ul>
+            </div>
 
+            {/* Next pill */}
             <button
               type="button"
               onClick={next}
-              disabled={page === pages}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:text-white disabled:opacity-40"
-              aria-label="Next page"
+              disabled={page >= pages}
+              className="
+                h-7 w-[132px] rounded-full border border-black
+        text-[12px] text-black
+        disabled:opacity-40 disabled:cursor-not-allowed
+        bg-transparent
+              "
             >
-              <ChevronRight className="h-4 w-4" />
+              Next
             </button>
-          </div>
+          </nav>
         </div>
       </div>
     </section>
   );
 }
 
-/* ---------- pagination bits ---------- */
-function PageDot({
-  n,
+/* ---------- pagination bits (design) ---------- */
+// function Ellipsis() {
+//   return (
+//     <li
+//       aria-hidden
+//       className="h-5 px-1 grid place-items-center text-[12px] text-[color:var(--neutral-600)]"
+//     >
+//       …
+//     </li>
+//   );
+// }
+function Dot({
+  page,
   active,
   onClick,
 }: {
-  n: number;
+  page: number;
   active: boolean;
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px]",
-        active
-          ? "bg-[var(--warning-400)] text-white"
-          : "text-white/80 hover:text-white",
-      ].join(" ")}
-      aria-current={active ? "page" : undefined}
-      aria-label={`Page ${n}`}
-    >
-      {n}
-    </button>
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-current={active ? "page" : undefined}
+        title={`Page ${page}`}
+        className={`
+          inline-grid place-items-center
+          ${active ? "h-6 w-6" : "h-5 w-5"}
+          rounded-full transition-opacity text-black text-[12px]
+          ${active
+            ? "bg-[var(--primary)]"   /* active background */
+            : "border border-black"   /* inactive outline */
+          }
+          hover:opacity-90
+        `}
+      >
+        {page}
+      </button>
+    </li>
   );
 }
-
 function Ellipsis() {
-  return <span className="px-1 text-white/60">…</span>;
+  return (
+    <li aria-hidden className="h-5 px-2 grid place-items-center text-[12px] text-black/70">
+      …
+    </li>
+  );
 }
