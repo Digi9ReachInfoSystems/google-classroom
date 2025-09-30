@@ -68,7 +68,7 @@ export function Superadminheader() {
                   value={item.value}
                   className="
                     px-7 py-2 text-sm font-medium rounded-full border-0 shadow-none transition-colors
-                    data-[state=active]:bg-[var(--warning-400)] data-[state=active]:text-white
+                    data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white
                     
                     data-[state=inactive]:text-neutral-600 data-[state=inactive]:hover:text-neutral-800
                     data-[disabled]:opacity-60 data-[disabled]:text-neutral-400 data-[disabled]:cursor-not-allowed
