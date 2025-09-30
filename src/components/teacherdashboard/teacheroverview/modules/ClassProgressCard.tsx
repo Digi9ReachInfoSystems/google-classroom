@@ -35,8 +35,8 @@ export default function TeacherclassProgressCard() {
           <BarChart
             data={data}
             margin={{ top: 12, right: 8, bottom: 8, left: 24 }}
-            barCategoryGap={40}
-            barGap={8}
+            barCategoryGap={24}
+            barGap={6}
           >
             <CartesianGrid strokeDasharray="2 6" vertical horizontal stroke="var(--neutral-200)" />
 
@@ -65,7 +65,7 @@ export default function TeacherclassProgressCard() {
               dataKey="y2025"
               fill="#8979FF"
               radius={[70, 70, 70, 70]}
-              barSize={152}
+              barSize={120}
             />
           </BarChart>
         </ChartContainer>

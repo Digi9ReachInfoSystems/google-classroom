@@ -12,20 +12,33 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 
-export function DashboardHeader() {
+export function Superadminheader() {
   const router = useRouter();
-  const pathname = usePathname() ?? "/districtadmin/overview";
+  const pathname = usePathname() ?? "/superadmin/overview";
 
   const tabs = [
-    { label: "Overview", value: "overview", href: "/districtadmin/overview" },
-    { label: "Metrics",  value: "metrics",  href: "/districtadmin/metrics" },
-    { label: "Ideas",    value: "ideas",    href: "/districtadmin/ideas" },
-    { label: "Reports",  value: "reports",  href: "/districtadmin/reports" },
+    { label: "Overview", value: "overview", href: "/superadmin/overview" },
+    {
+      label: "Course Metrics",
+      value: "metrics",
+      href: "/superadmin/metrics",
+    },
+    { label: "Ideas", value: "ideas", href: "/superadmin/ideas" },
+    { label: "Reports", value: "reports", href: "/superadmin/reports" },
+    {
+      label: "Learning Resources",
+      value: "learningresources",
+      href: "/superadmin/learningresources",
+    },
+    {
+      label: "Course Management",
+      value: "coursemanagement",
+      href: "/superadmin/coursemanagement",
+    },
   ] as const;
 
-  // derive current tab from the 2nd segment after /districtadmin
   const seg = pathname.split("/")[2] || "overview";
-  const currentTab = tabs.some(t => t.value === seg) ? seg : "overview";
+  const currentTab = tabs.some((t) => t.value === seg) ? seg : "overview";
 
   return (
     <header className="bg-white border-neutral-200 px-8 py-5">
@@ -55,7 +68,7 @@ export function DashboardHeader() {
                   value={item.value}
                   className="
                     px-7 py-2 text-sm font-medium rounded-full border-0 shadow-none transition-colors
-                    data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white
+                    data-[state=active]:bg-[var(--warning-400)] data-[state=active]:text-white
                     
                     data-[state=inactive]:text-neutral-600 data-[state=inactive]:hover:text-neutral-800
                     data-[disabled]:opacity-60 data-[disabled]:text-neutral-400 data-[disabled]:cursor-not-allowed
@@ -70,43 +83,36 @@ export function DashboardHeader() {
 
         {/* Right: actions */}
         <div className="flex items-center space-x-4">
-       <DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button
-      variant="ghost"
-      className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white"
-    >
-      Select courses
-      <ChevronDown className="h-4 w-4" />
-    </Button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent className="rounded-xl overflow-hidden">
-    <DropdownMenuItem
-      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-    >
-      Course 1
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-    >
-      Course 2
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-    >
-      Course 3
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white"
+              >
+                Select courses
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>Course 1</DropdownMenuItem>
+              <DropdownMenuItem>Course 2</DropdownMenuItem>
+              <DropdownMenuItem>Course 3</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-
-          <Button variant="ghost" size="icon" className="text-neutral-600 hover:text-neutral-900">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-neutral-600 hover:text-neutral-900"
+          >
             <Bell className="h-5 w-5" />
           </Button>
 
           <Avatar className="h-8 w-8">
             <AvatarImage src="/placeholder-avatar.jpg" alt="Monish" />
-            <AvatarFallback className="bg-neutral-200 text-neutral-700">M</AvatarFallback>
+            <AvatarFallback className="bg-neutral-200 text-neutral-700">
+              M
+            </AvatarFallback>
           </Avatar>
         </div>
       </div>

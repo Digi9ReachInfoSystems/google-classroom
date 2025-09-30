@@ -14,20 +14,22 @@ function KPICard({
     <div
       className="
         bg-white border-0 shadow-none rounded-none
-        h-[112px] w-[280px]
+        h-[112px] w-full sm:w-[260px] md:w-full
         px-5 py-4
         flex items-center gap-4
       "
     >
       <TeacherRingProgress percent={percentArc} text={valueText} size={72} color="var(--primary)" />
-      <div className="text-[14px] leading-5 text-[var(--neutral-1000)] whitespace-nowrap">{label}</div>
+      <div className="text-[14px] leading-5 text-[var(--neutral-1000)] whitespace-normal break-words">
+        {label}
+      </div>
     </div>
   );
 }
 
 export default function CircleProgressRow() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
       <KPICard valueText="200" label="Enrolled Students" percentArc={62} />
       <KPICard
         valueText="50%"
