@@ -1,7 +1,10 @@
+import Geminipage from "@/components/teacherdashboard/gemini/geminipage"
 import React from "react"
 
 export default function Page() {
-  return <div className="text-neutral-800">Gemini</div>
+  return <div>
+    <Geminipage />
+  </div>
 }
 
 
