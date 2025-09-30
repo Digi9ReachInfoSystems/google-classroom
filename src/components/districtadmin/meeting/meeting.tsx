@@ -7,7 +7,7 @@ export default function MeetCard() {
         No class schedule
       </div>
 
-      <button className="mt-6 w-full rounded-full bg-[var(--warning-400)] hover:bg-[var(--warning-500)] text-white py-3 text-sm">
+      <button className="mt-6 w-full rounded-full bg-[var(--primary)]  text-white py-3 text-sm">
         Create Class
       </button>
     </div>

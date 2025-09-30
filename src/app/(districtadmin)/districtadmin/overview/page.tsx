@@ -7,8 +7,8 @@ import StudentsTable from "@/components/districtadmin/studenttable/studenttable"
 
 export default function Page() {
   return (
-    <section className="space-y-6">
-      <h1 className="text-[36px] md:text-[48px] font-normal text-[var(--neutral-1000)]">
+    <section className="space-y-6 px-5">
+      <h1 className="text-[32px] md:text-[32px] font-normal text-[var(--neutral-1000)]">
         School Overview
       </h1>
 
