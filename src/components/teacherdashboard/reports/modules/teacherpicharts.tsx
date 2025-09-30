@@ -2,8 +2,6 @@
 
 import React from "react";
 import { PieChart, Pie, LabelList } from "recharts";
-import { format } from "date-fns";
-import type { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -20,12 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 
 /* -------------------- filter option values -------------------- */
 const AGES = ["10–12", "13–15", "16–18"] as const;
@@ -61,7 +53,6 @@ const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
 
 function makeCharts(filters: {
-  dateRange?: DateRange;
   age?: string;
   grade?: string;
   gender?: string;
@@ -165,24 +156,17 @@ function PieBlock({
 
 /* --------------------------------- Page --------------------------------- */
 export default function TeacherPiCharts() {
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
   const [age, setAge] = React.useState<string | undefined>();
   const [grade, setGrade] = React.useState<string | undefined>();
   const [gender, setGender] = React.useState<string | undefined>();
   const [disability, setDisability] = React.useState<string | undefined>();
 
   const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts({ dateRange, age, grade, gender, disability })
+    makeCharts({ age, grade, gender, disability })
   );
 
-  const isLg = useMedia("(min-width: 1024px)");
-  const dateLabel =
-    dateRange?.from && dateRange?.to
-      ? `${format(dateRange.from, "dd MMM")} – ${format(dateRange.to, "dd MMM yyyy")}`
-      : "Select date range";
-
   const onGenerate = () => {
-    setCharts(makeCharts({ dateRange, age, grade, gender, disability }));
+    setCharts(makeCharts({ age, grade, gender, disability }));
   };
 
   return (
@@ -203,32 +187,8 @@ export default function TeacherPiCharts() {
               <div className="text-[16px] font-medium text-[var(--neutral-900)]">Data Analytics</div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-8 rounded-full px-3 text-[12px] w-[210px] justify-start">
-                      {dateLabel}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="end"
-                    side="bottom"
-                    sideOffset={8}
-                    collisionPadding={12}
-                    className="p-2 w-auto rounded-xl border bg-white shadow-xl"
-                  >
-                    <Calendar
-                      mode="range"
-                      numberOfMonths={isLg ? 2 : 1}
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      initialFocus
-                      className="w-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-
                 <Select value={age} onValueChange={setAge}>
-                  <SelectTrigger className="h-8 px-3 rounded-full w-[120px] text-[12px]">
+                  <SelectTrigger className="h-8 px-3 rounded-full w-[140px] text-[12px]">
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -245,7 +205,7 @@ export default function TeacherPiCharts() {
                 </Select>
 
                 <Select value={grade} onValueChange={setGrade}>
-                  <SelectTrigger className="h-8 px-3 rounded-full w-[130px] text-[12px]">
+                  <SelectTrigger className="h-8 px-3 rounded-full w-[150px] text-[12px]">
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -262,7 +222,7 @@ export default function TeacherPiCharts() {
                 </Select>
 
                 <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger className="h-8 px-3 rounded-full w-[140px] text-[12px]">
+                  <SelectTrigger className="h-8 px-3 rounded-full w-[160px] text-[12px]">
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -279,7 +239,7 @@ export default function TeacherPiCharts() {
                 </Select>
 
                 <Select value={disability} onValueChange={setDisability}>
-                  <SelectTrigger className="h-8 px-3 rounded-full w-[150px] text-[12px]">
+                  <SelectTrigger className="h-8 px-3 rounded-full w-[170px] text-[12px]">
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
