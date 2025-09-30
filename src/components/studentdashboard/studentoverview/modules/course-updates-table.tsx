@@ -6,7 +6,7 @@ interface CourseUpdate {
   dateOfSubmission: string
   status: "completed" | "pending"
 }
-
+ 
 const courseUpdates: CourseUpdate[] = [
   { module: "Video module -1", score: "N/A", dateOfSubmission: "N/A", status: "completed" },
   { module: "Assignment -1", score: "88%", dateOfSubmission: "Sep 1, 2025", status: "completed" },
@@ -77,7 +77,7 @@ const courseUpdates: CourseUpdate[] = [
   { module: "Assignment -5", score: "65%", dateOfSubmission: "Sep 10, 2025", status: "pending" },
   { module: "Video module -6", score: "N/A", dateOfSubmission: "N/A", status: "pending" },
 ]
-
+ 
 export function CourseUpdatesTable() {
   const courseData = courseUpdates.map((update) => ({
     module: update.module,
@@ -109,7 +109,7 @@ export function CourseUpdatesTable() {
             </tr>
           </thead>
         </table>
-
+ 
         {/* Scrollable body only (shows ~10 rows) */}
         <div className="max-h-[680px] overflow-y-auto rounded-b-lg custom-scrollbar">
           <table className="w-[100%] table-fixed">
@@ -129,12 +129,16 @@ export function CourseUpdatesTable() {
                   <td className="py-3 px-6 text-sm text-card-foreground tabular-nums">{item.score}</td>
                   <td className="py-3 px-6 text-sm text-card-foreground">{item.date}</td>
                   <td className="py-3 px-6">
-                  <Badge
-  variant={item.status === "completed" ? "default" : "secondary"}
->
-  {item.status === "completed" ? "Completed" : "Pending"}
-</Badge>
-
+                    <Badge
+                      variant={item.status === "completed" ? "default" : "secondary"}
+                      className={
+                        item.status === "completed"
+                          ? "bg-[var(--success-500)] text-white border-transparent"
+                          : "bg-[var(--neutral-200)] text-[var(--neutral-1000)] border-transparent"
+                      }
+                    >
+                      {item.status === "completed" ? "Completed" : "Pending"}
+                    </Badge>
                   </td>
                 </tr>
               ))}
@@ -146,3 +150,5 @@ export function CourseUpdatesTable() {
     </>
   )
 }
+ 
+ 
