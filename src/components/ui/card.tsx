@@ -9,11 +9,8 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-<<<<<<<<< Temporary merge branch 1
       "rounded-lg  text-card-foreground",
-=========
       "rounded-lg bg-card text-card-foreground shadow-sm",
->>>>>>>>> Temporary merge branch 2
       className
     )}
     {...props}
