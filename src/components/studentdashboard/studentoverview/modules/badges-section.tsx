@@ -23,6 +23,7 @@ export function BadgesSection() {
               height={100}
               alt="Class First Badge"
               className="w-20 h-20 md:w-24 md:h-24 mx-auto transition-transform group-hover:scale-105"
+         
             />
           </div>
         ))}
