@@ -22,13 +22,13 @@ export default function CertificateCard({
   return (
     <div className="bg-white rounded-xl overflow-hidden">
       {/* Certificate Image */}
-      <div className="relative">
+      <div className="relative shadow-sm border border-gray-100">
         <Image 
-          src="/student/cetificate.png" 
+          src="/student/certificate.jpg" 
           alt="Certificate" 
           width={1200}
           height={800}
-          className="w-full h-auto object-contain"
+          className="w-full h-auto object-contain "
         />
       </div>
 
