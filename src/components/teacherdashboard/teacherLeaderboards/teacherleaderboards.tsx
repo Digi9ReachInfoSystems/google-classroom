@@ -31,10 +31,15 @@ const leaderboardData: Student[] = [
 
 export default function TeacherLeaderboardpage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedStudentIndex, setSelectedStudentIndex] = useState<number | null>(null);
   const currentUser = leaderboardData.find(student => student.isCurrentUser);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleSelectStudent = (student: Student, index: number) => {
+    setSelectedStudentIndex(index);
   };
 
   return (
@@ -49,7 +54,7 @@ export default function TeacherLeaderboardpage() {
           {/* Left Panel - User Profile and Badges */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6 order-2 lg:order-1">
             <TeacherUserProfile 
-              rank={currentUser?.rank || 1}
+              rank={(selectedStudentIndex !== null ? leaderboardData[selectedStudentIndex]?.rank : (currentUser?.rank || leaderboardData[0]?.rank || 1))}
               schoolRank={18}
               districtRank={120}
               certificates={2}
@@ -64,6 +69,7 @@ export default function TeacherLeaderboardpage() {
               currentPage={currentPage}
               totalPages={3}
               onPageChange={handlePageChange}
+              onSelectStudent={handleSelectStudent}
             />
           </div>
         </div>
