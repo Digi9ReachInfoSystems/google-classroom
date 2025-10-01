@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import type { IdeaRow } from "@/components/teacherdashboard/Ideas/modules/IdeasTable";
+import { SearchBar } from "@/components/districtideas/submitteddata/seacrchBar";
 
 type Row = {
   student: string;
@@ -30,53 +33,32 @@ const DATA: Row[] = [
   { student: "Alice Smith", title: "—",                    category: "—",    date: "—",           status: "Pending" },
 ];
 
-// Badge component (exact colors per your request)
-// Badge component with fixed width
-function StatusBadge({ status }: { status: Row["status"] }) {
-  const base =
-    "inline-block rounded-[16px] px-3 py-2 text-[12px] leading-[14px] text-center min-w-[80px]";
-  if (status === "Completed") {
-    return (
-      <span
-        className={base}
-        style={{ background: "var(--success-500)", color: "#FFFFFF" }}
-      >
-        Completed
-      </span>
-    );
-  }
-  return (
-    <span
-      className={base}
-      style={{ background: "var(--neutral-500)", color: "#FFFFFF" }}
-    >
-      Pending
-    </span>
-  );
-}
+// Using shared IdeasTable component for consistent styling
 
 export default function Submitteddata() {
   const [q, setQ] = useState("");
 
-  const rows = useMemo(() => {
+  // Filter and map local data to IdeasTable rows
+  const ideaRows: IdeaRow[] = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return DATA;
-    return DATA.filter(
-      (r) =>
-        r.student.toLowerCase().includes(term) ||
-        r.title.toLowerCase().includes(term) ||
-        r.category.toLowerCase().includes(term)
-    );
-  }, [q]);
+    const filtered = term
+      ? DATA.filter(
+          (r) =>
+            r.student.toLowerCase().includes(term) ||
+            r.title.toLowerCase().includes(term) ||
+            r.category.toLowerCase().includes(term)
+        )
+      : DATA;
 
-  const headers = [
-    "Student Name",
-    "Idea Title",
-    "Category",
-    "Date Submitted",
-    "Status",
-    "File"
-  ];
+    return filtered.map<IdeaRow>((r) => ({
+      studentName: r.student,
+      ideaTitle: r.title,
+      category: r.category,
+      dateSubmitted: r.date,
+      status: r.status === "Completed" ? "completed" : "pending",
+      fileUrl: r.fileHref,
+    }));
+  }, [q]);
 
   return (
     <section className="bg-white overflow-hidden mt-[20px] px-5 py-5">
@@ -86,81 +68,79 @@ export default function Submitteddata() {
           My submitted data
         </h3>
 
-        <label className="flex items-center gap-2 rounded-full border border-[var(--neutral-300)] bg-[var(--neutral-100)] pl-3 pr-4 h-9 w-[300px] shadow-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" className="text-[var(--neutral-700)]">
-            <path
-              d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="bg-transparent outline-none flex-1 text-sm text-[var(--neutral-900)] placeholder-[var(--neutral-600)]"
-            placeholder="Search..."
-          />
-        </label>
+        <SearchBar searchQuery={q} onSearchChange={setQ} />
       </div>
 
-      {/* HEADER with rounded corners */}
+      {/* HEADER with rounded corners (align look to IdeasTable) */}
       <div className="mt-4 rounded-t-xl overflow-hidden">
-        <table className="w-full table-fixed border-0 [&_*]:!border-0">
+        <table className="w-full table-fixed border-0 [&_*]:!border-0 rounded-t-lg overflow-hidden border-collapse border-b border-neutral-200">
+          <colgroup>
+            <col className="w-[22%]" />
+            <col className="w-[23%]" />
+            <col className="w-[14%]" />
+            <col className="w-[17%]" />
+            <col className="w-[12%]" />
+            <col className="w-[12%]" />
+          </colgroup>
           <thead>
-            <tr
-              className="text-[14px] text-[var(--neutral-900)]"
-              style={{ backgroundColor: "var(--success-100)" }}
-            >
-              {headers.map((header, index) => (
-                <th
-                  key={header}
-                  className={`px-5 py-4 text-left font-normal ${
-                    index === 0 ? "first:rounded-tl-xl" : 
-                    index === headers.length - 1 ? "last:rounded-tr-xl" : ""
-                  }`}
-                >
-                  {header}
-                </th>
-              ))}
+            <tr className="bg-[#F1F5F6]">
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600 rounded-tl-lg">Student Name</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600">Idea Title</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600">Category</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600">Date Submitted</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600">Status</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600 rounded-tr-lg">File</th>
             </tr>
           </thead>
         </table>
       </div>
 
       {/* BODY: rectangular (no rounded corners) with scroll */}
-      <div className="max-h-[560px] overflow-y-auto custom-scrollbar">
-        <table className="w-full table-fixed border-0 [&_*]:!border-0">
+      <div className="max-h-[680px] overflow-y-auto custom-scrollbar rounded-b-lg">
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col className="w-[22%]" />
+            <col className="w-[23%]" />
+            <col className="w-[14%]" />
+            <col className="w-[17%]" />
+            <col className="w-[12%]" />
+            <col className="w-[12%]" />
+          </colgroup>
           <tbody>
-            {rows.map((r, idx) => (
-              <tr key={`${r.student}-${idx}`} className="text-[12px] bg-white">
-                <td className="px-5 py-4 border-t border-[var(--neutral-200)] text-[var(--neutral-1000)]">
-                  {r.student}
+            {ideaRows.map((r, idx) => (
+              <tr key={`${r.studentName}-${idx}`} className="bg-white hover:bg-muted/50 transition-colors">
+                <td className="py-3 px-6 text-sm text-card-foreground">{r.studentName}</td>
+                <td className="py-3 px-6 text-sm text-card-foreground">{r.ideaTitle}</td>
+                <td className="py-3 px-6 text-sm text-card-foreground">{r.category}</td>
+                <td className="py-3 px-6 text-sm text-card-foreground">{r.dateSubmitted}</td>
+                <td className="py-3 px-6">
+                  <Badge
+                    variant={r.status === "completed" ? "default" : "secondary"}
+                    className={
+                      r.status === "completed"
+                        ? "bg-[var(--success-500)] text-white border-transparent"
+                        : "bg-[var(--neutral-200)] text-[var(--neutral-1000)] border-transparent"
+                    }
+                  >
+                    {r.status === "completed" ? "Completed" : "Pending"}
+                  </Badge>
                 </td>
-                <td className="px-5 py-4 border-t border-[var(--neutral-200)]">{r.title}</td>
-                <td className="px-5 py-4 border-t border-[var(--neutral-200)]">{r.category}</td>
-                <td className="px-5 py-4 border-t border-[var(--neutral-200)]">{r.date}</td>
-                <td className="px-5 py-4 border-t border-[var(--neutral-200)]">
-                  <StatusBadge status={r.status} />
-                </td>
-                <td className="px-5 py-4 border-t border-[var(--neutral-200)]">
-                  {r.fileHref ? (
-                    <a href={r.fileHref} className="text-[12px] text-blue-600 hover:underline">
-                      Explore idea
+                <td className="py-3 px-6 text-sm whitespace-nowrap">
+                  {r.fileUrl ? (
+                    <a className="text-[#2E7CF6] hover:underline whitespace-nowrap inline-block" href={r.fileUrl} target="_blank" rel="noreferrer">
+                      Google form link
                     </a>
                   ) : (
-                    "—"
+                    <span className="text-neutral-400">-</span>
                   )}
                 </td>
               </tr>
             ))}
 
-            {rows.length === 0 && (
+            {ideaRows.length === 0 && (
               <tr>
                 <td
-                  colSpan={headers.length}
+                  colSpan={6}
                   className="px-5 py-8 text-center text-[var(--neutral-700)] border-t border-[var(--neutral-200)]"
                 >
                   No ideas found.

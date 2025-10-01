@@ -37,7 +37,7 @@ function RingProgress({
 /* ---------- KPI card (112 x 320) ---------- */
 function KPI({ valueText, label, percentArc }: { valueText: string; label: string; percentArc: number }) {
   return (
-    <div className="h-[112px] w-[320px] rounded-xl bg-white shadow-sm px-5">
+    <div className="h-[112px] w-[320px] rounded-xl bg-white border border-[var(--neutral-100)] px-5">
       <div className="h-full w-full flex items-center gap-4">
         <RingProgress percent={percentArc} text={valueText} />
         <p className="text-[14px] leading-5 text-[var(--neutral-1000)]">{label}</p>
@@ -132,7 +132,7 @@ const IdeasKPI: React.FC = () => {
     <section className="w-full space-y-5 px-5">
       {/* Row 1: Title + dropdowns */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-[32px] font-normal text-[var(--neutral-1000)]">Ideas</h2>
+        <h2 className="text-3xl font-semibold">Ideas</h2>
 
         <div className="flex items-center gap-3">
           <CustomSelect label="Select School"  options={["All", "School A", "School B"]} />
@@ -147,7 +147,6 @@ const IdeasKPI: React.FC = () => {
           <div className="flex flex-wrap gap-6">
             <KPI valueText="105" percentArc={78} label="Total no of students" />
             <KPI valueText="6"   percentArc={22} label="Total no of idea submitted" />
-            <KPI valueText="6"   percentArc={22} label="Total no of ideas accepted" />
           </div>
         </div>
         <div className="hidden lg:block flex-1" />
