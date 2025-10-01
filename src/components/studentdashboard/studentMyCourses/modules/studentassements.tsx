@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 
 export default function Studentassements() {
   return (
@@ -33,9 +34,12 @@ export default function Studentassements() {
       </div>
 
       <div className="mt-8 2xl:mt-10 flex justify-end">
-        <button className="px-6 py-2 2xl:px-8 2xl:py-3 rounded-full bg-orange-400 text-white text-sm 2xl:text-base font-medium shadow hover:bg-orange-500 transition-colors">
+        <Link
+          href="/student/dashboard/mycourses/certificate"
+          className="px-6 py-2 2xl:px-8 2xl:py-3 rounded-full bg-orange-400 text-white text-sm 2xl:text-base font-medium shadow hover:bg-orange-500 transition-colors"
+        >
           Continue
-        </button>
+        </Link>
       </div>
     </div>
   )

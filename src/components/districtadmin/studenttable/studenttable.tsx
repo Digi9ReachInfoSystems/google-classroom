@@ -5,8 +5,16 @@ import React, { useMemo, useState } from "react";
 /* ✓ / ? using your assets */
 function StatusIcon({ type }: { type: "ok" | "warn" }) {
   const src = type === "ok" ? "/checkcircle.png" : "/questioncircle.png";
-  return <Image src={src} alt=""       width={24} 
-      height={24} className="h-6 w-6 inline-block" draggable={false} />;
+  return (
+    <Image
+      src={src}
+      alt=""
+      width={24}
+      height={24}
+      className="h-6 w-6 inline-block"
+      draggable={false}
+    />
+  );
 }
 
 /* Orange progress with centered knob; red dot at extreme start */
@@ -15,7 +23,6 @@ function LessonProgress({ value }: { value: number }) {
   const TRACK_H = 8;
   const KNOB = 14;
   const EXTREME = 6; // <= show red dot
-
   const isStart = v <= EXTREME;
 
   return (
@@ -28,7 +35,7 @@ function LessonProgress({ value }: { value: number }) {
       {/* filled orange */}
       {!isStart && (
         <div
-          className="absolute left-0 rounded-full bg-[var(--warning-400)]"
+          className="absolute left-0 rounded-full bg-[var(--primary)]"
           style={{ height: TRACK_H, width: `${v}%`, top: "50%", transform: "translateY(-50%)" }}
         />
       )}
@@ -88,11 +95,11 @@ export default function StudentsTable() {
   ];
 
   return (
-    <div className="bg-white">
+    <div className="bg-white rounded-lg  border-neutral-200">
       {/* search pill */}
       <div className="px-5 pt-4 pb-4 flex justify-end">
-        <label className="flex items-center gap-2 rounded-full border border-[var(--neutral-300)] bg-[var(--neutral-100)] pl-3 pr-4 h-9 w-[300px] shadow-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" className="text-[var(--neutral-700)]">
+        <label className="flex items-center gap-2 rounded-full border border-[var(--neutral-300)] bg-white pl-4 pr-4 h-10 w-full sm:w-[300px] md:w-[360px] max-w-full shadow-[0_1px_2px_rgba(16,24,40,0.05)] focus-within:ring-2 focus-within:ring-[var(--neutral-200)]">
+          <svg width="16" height="16" viewBox="0 0 24 24" className="text-black">
             <path
               d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
               fill="none"
@@ -105,7 +112,7 @@ export default function StudentsTable() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="bg-transparent outline-none flex-1 text-sm text-[var(--neutral-900)] placeholder-[var(--neutral-600)]"
+            className="bg-transparent outline-none flex-1 text-sm text-[var(--neutral-900)] placeholder-[var(--neutral-500)]"
             placeholder="Search..."
           />
         </label>
@@ -114,10 +121,13 @@ export default function StudentsTable() {
       {/* HEADER (separate table so body can scroll) */}
       <div className="pr-2">
         <table className="w-full table-fixed border-0 [&_*]:!border-0">
-          <thead className="bg-[var(--success-1000)]">
-            <tr className="text-[12px] text-white">
-              {headers.map(h => (
-                <th key={h} className="px-5 py-3 text-left font-normal border-r border-[var(--neutral-200)] last:border-r-0">
+          <thead>
+            <tr className="bg-[#F1F5F6] text-[12px] text-neutral-600">
+              {headers.map((h, idx) => (
+                <th
+                  key={h}
+                  className={`px-5 py-3 text-left font-medium border-0 ${idx === 0 ? "rounded-tl-lg" : ""} ${idx === headers.length - 1 ? "rounded-tr-lg" : ""}`}
+                >
                   {h}
                 </th>
               ))}
@@ -126,28 +136,28 @@ export default function StudentsTable() {
         </table>
       </div>
 
-      {/* BODY: 4 rows tall, scroll inside; only vertical separators */}
-      <div className="max-h-[224px] overflow-y-auto scroll-thin">
-        <table className="w-full table-fixed border-0 [&_*]:!border-0">
+      {/* BODY: scrollable only, header remains static */}
+      <div className="max-h-[224px] overflow-y-auto rounded-b-lg custom-scrollbar pr-2">
+        <table className="w-full table-fixed">
           <tbody>
             {rows.map((r) => (
-              <tr key={r.name} className="text-[12px] bg-white">
-                <td className="px-5 py-4 font-light text-[var(--neutral-1000)] border-r border-[var(--neutral-200)] last:border-r-0">
+              <tr key={r.name} className="text-[12px] bg-white hover:bg-muted/50 transition-colors">
+                <td className="px-5 py-4 font-light text-[var(--neutral-1000)] border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   {r.name}
                 </td>
-                <td className="px-5 py-4 border-r border-[var(--neutral-200)] last:border-r-0">
+                <td className="px-5 py-4 border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   <StatusIcon type={r.pre} />
                 </td>
-                <td className="px-5 py-4 border-r border-[var(--neutral-200)] last:border-r-0">
+                <td className="px-5 py-4 border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   <LessonProgress value={r.lesson} />
                 </td>
-                <td className="px-5 py-4 border-r border-[var(--neutral-200)] last:border-r-0">
+                <td className="px-5 py-4 border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   <StatusIcon type={r.idea} />
                 </td>
-                <td className="px-5 py-4 border-r border-[var(--neutral-200)] last:border-r-0">
+                <td className="px-5 py-4 border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   <StatusIcon type={r.post} />
                 </td>
-                <td className="px-5 py-4 last:border-r-0">
+                <td className="px-5 py-4 border-b border-[var(--neutral-200)] last:border-r-0">
                   <StatusIcon type={r.cert} />
                 </td>
               </tr>

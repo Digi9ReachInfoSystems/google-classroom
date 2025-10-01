@@ -22,18 +22,18 @@ const Hero: React.FC = () => {
         {/* 600 / 48px / 58px */}
         <h1 className="font-semibold text-[48px] leading-[58px] text-white">
           Empowering Schools <br />
-          with Smarter <span className="text-[var(--warning-400)]">Insights</span>
+          with Smarter <span className="text-[var(--primary)]">Insights</span>
         </h1>
 
         {/* 400 / 12px */}
-        <p className="mt-4 font-normal text-[12px] text-neutral-200 max-w-2xl">
+        <p className="mt-4 font-normal text-[13px] text-neutral-200 max-w-2xl">
           Unlock real-time analytics, student progress tracking, and performance
-          dashboards all <br /> in one powerful platform designed for schools,
+          dashboards<br /> all in one powerful platform designed for schools,
           teachers, and students.
         </p>
 
         {/* Button text: 400 / 12px */}
-        <button className="mt-8 px-6 py-3 rounded-md font-normal text-[12px] bg-[var(--warning-400)] text-white">
+        <button className="mt-8 px-6 py-3 rounded-3xl font-normal text-[14px] bg-[var(--primary)] text-white">
           Get Started
         </button>
       </div>

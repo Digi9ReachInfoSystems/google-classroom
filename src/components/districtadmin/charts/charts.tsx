@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ReferenceArea } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ChartConfig,
@@ -12,16 +12,19 @@ import {
 
 /* data */
 const data = [
-  { stage: "Pre Survey",        y2025: 16 },
-  { stage: "Course completed",  y2025: 80 },
-  { stage: "idea submission",   y2025: 92 },
-  { stage: "Post Survey",       y2025: 18 },
-  { stage: "certificate",       y2025: 88 },
+  { stage: "Pre Survey", y2025: 16 },
+  { stage: "Course completed", y2025: 80 },
+  { stage: "idea submission", y2025: 92 },
+  { stage: "Post Survey", y2025: 18 },
+  { stage: "certificate", y2025: 88 },
 ];
 
 const chartConfig = {
-  y2025: { label: "2025", color: "var(--blue-400)" },
+  y2025: { label: "2025", color: "#8979FF" },
 } satisfies ChartConfig;
+
+// keep this in sync with <Bar barSize={...} />
+const BAR_SIZE = 120;
 
 export default function ClassProgressCard() {
   return (
@@ -35,22 +38,20 @@ export default function ClassProgressCard() {
           <BarChart
             data={data}
             margin={{ top: 12, right: 8, bottom: 8, left: 24 }}
-            barCategoryGap={40}
-            barGap={8}
+            barCategoryGap={24}
+            barGap={6}
           >
             <CartesianGrid strokeDasharray="2 6" vertical horizontal stroke="var(--neutral-200)" />
-
-            {/* light vertical bands */}
-            <ReferenceArea x1="Pre Survey" x2="Course completed" fill="var(--neutral-100)" />
-            <ReferenceArea x1="Post Survey" x2="certificate"    fill="var(--neutral-100)" />
 
             <XAxis
               dataKey="stage"
               tickLine={false}
-              axisLine={false}
+                            axisLine={{ stroke: "#00001A4D", strokeWidth: 2 }} // dark & thick
               tickMargin={8}
               tick={{ fill: "var(--neutral-800)", fontSize: 12 }}
+              
             />
+
             <YAxis
               width={28}
               domain={[0, 100]}
@@ -62,19 +63,14 @@ export default function ClassProgressCard() {
 
             <ChartTooltip cursor={{ fill: "transparent" }} content={<ChartTooltipContent className="text-[12px]" />} />
 
-            {/* Bars: width = 152px, color = --blue-400 */}
-            <Bar
-              dataKey="y2025"
-              fill="var(--blue-400)"
-              radius={[70, 70, 70, 70]}
-              barSize={152}
-            />
+            {/* Bars: width = 120px, color = #8979FF (to match teacher card) */}
+            <Bar dataKey="y2025" fill="#8979FF" radius={[70, 70, 70, 70]} barSize={BAR_SIZE} />
           </BarChart>
         </ChartContainer>
 
         {/* legend */}
         <div className="mt-3 flex items-center justify-center gap-2 text-[12px] text-[var(--neutral-900)]">
-          <span className="h-2.5 w-2.5 " style={{ background: "var(--blue-400)" }} />
+          <span className="h-2.5 w-2.5" style={{ background: "#8979FF" }} />
           2025
         </div>
       </CardContent>

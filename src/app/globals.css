@@ -38,6 +38,9 @@
   --warning-400: #ff7421;
   --warning-500: #a74000;
   --warning-600: #652500;
+
+  --purple-100: #8979FF;
+  --purple-200:#850bff;
  
   /* Success */
   --success-100: #e6ffe6;
@@ -55,6 +58,10 @@
   --blue-500: #1727fb;
   --blue-600: #0d86e4;
   --blue-700: #046d8c;
+  --blue-800:#3cc3Df;
+  --blue-900:#0b5eff;
+
+  --pink-100 : #FF928A;
  
   /* Fonts */
   --font-sans: "Geist Sans", Arial, Helvetica, sans-serif;
@@ -120,7 +127,7 @@ tbody tr:last-child td {
  
 th {
   /* Let component utilities (e.g., Tailwind bg-*) control header background */
-  background: var(--success-100);
+  background: #F1F5F6;
   font-weight: 600;
   text-align: left;
 }

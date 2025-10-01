@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import UserProfile from "./modules/UserProfile";
 import BadgesSection from "./modules/BadgesSection";
 import LeaderboardTable from "./modules/LeaderboardTable";
@@ -30,7 +30,13 @@ const leaderboardData: Student[] = [
 
 export default function Leaderboardpage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedStudentIndex, setSelectedStudentIndex] = useState<number | null>(null);
   const currentUser = leaderboardData.find(student => student.isCurrentUser);
+
+  const selectedStudent = useMemo(() => {
+    if (selectedStudentIndex === null) return null;
+    return leaderboardData[selectedStudentIndex] ?? null;
+  }, [selectedStudentIndex]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -48,10 +54,10 @@ export default function Leaderboardpage() {
           {/* Left Panel - User Profile and Badges */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6 order-2 lg:order-1">
             <UserProfile 
-              rank={currentUser?.rank || 5}
+              rank={selectedStudent?.rank ?? currentUser?.rank ?? 5}
               schoolRank={18}
               districtRank={120}
-              certificates={2}
+              certificates={selectedStudent?.certificates ?? 2}
             />
             <BadgesSection />
           </div>
@@ -63,6 +69,7 @@ export default function Leaderboardpage() {
               currentPage={currentPage}
               totalPages={3}
               onPageChange={handlePageChange}
+              onSelectStudent={(student, index) => setSelectedStudentIndex(index)}
             />
           </div>
         </div>

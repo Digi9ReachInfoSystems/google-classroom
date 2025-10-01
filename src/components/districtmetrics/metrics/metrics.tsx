@@ -20,14 +20,14 @@ const ROW2: Stat[] = [
   {
     label: "Male Teachers",
     value: "250,000",
-    icon: "/metrics/otherteacher.png",
+    icon: "/metrics/maleteachers.png",
   },
   {
     label: "Female Teachers",
     value: "250,000",
     icon: "/metrics/femaleteachers.png",
   },
-  { label: "Other Teachers", value: "105", icon: "/metrics/maleteachers.png" },
+  { label: "Other Teachers", value: "105", icon: "/metrics/otherteacher.png" },
 ];
 
 /* row 3 */
@@ -66,23 +66,23 @@ function StatCard({
   widthClass = "w-full",
 }: StatCardProps) {
   return (
-    <div className={`h-[112px] ${widthClass} rounded-xl bg-white shadow-sm`}>
-      <div className="h-full w-full flex items-center justify-center">
+    <div className={`h-[112px] ${widthClass} rounded-xl bg-white`}>
+      <div className="h-full w-full flex items-center justify-start px-4">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--warning-400)]">
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]">
             <Image
               src={icon}
               alt={label}
-              width={20}
-              height={20}
+              width={24}
+              height={24}
               className="object-contain"
             />
           </span>
-          <div className="min-w-0 text-center">
-            <div className="text-[12px] font-normal leading-5 text-[var(--neutral-900)] truncate">
+          <div className="min-w-0 text-left">
+            <div className="text-[12px] font-normal leading-5 text-black truncate">
               {label}
             </div>
-            <div className="text-[16px] font-normal leading-6 text-[var(--neutral-1000)]">
+            <div className="text-[16px] font-normal leading-6 text-black">
               {value}
             </div>
           </div>
@@ -95,14 +95,14 @@ function StatCard({
 const DistrictOverview: React.FC = () => {
   return (
     <section className="w-full px-5 sm:px-6 md:px-8 lg:px-10 xl:px-[20px]">
-      <h2 className="mb-6 text-[32px] font-medium text-[var(--neutral-1000)]">
+      <h2 className="text-3xl font-semibold">
         District Overview
       </h2>
 
-      <div className="grid grid-cols-12 auto-rows-[112px] gap-3 items-start">
+      <div className="grid grid-cols-12 auto-rows-[112px] gap-4 items-start mt-18">
         {/* Map card */}
         <div className="col-span-12 lg:col-span-3 row-span-3 flex justify-center">
-          <div className="relative w-[269px] h-[362px] rounded-xl bg-white shadow-sm flex flex-col items-center justify-center pb-14">
+          <div className="relative w-[269px] h-[362px] rounded-3xl bg-white  flex flex-col items-center justify-center pb-14">
             <div className="relative w-[85%] h-[85%]">
               <Image
                 src="/gasa.png"
@@ -115,7 +115,7 @@ const DistrictOverview: React.FC = () => {
             <button
               type="button"
               className="absolute bottom-3 left-1/2 -translate-x-1/2 h-10 w-[200px] rounded-lg
-                 bg-[var(--neutral-300)] text-[12px] font-medium text-[var(--neutral-1000)]"
+                 bg-[var(--neutral-300)] text-[16px] font-medium text-[var(--neutral-1000)]"
             >
               GASA
             </button>
