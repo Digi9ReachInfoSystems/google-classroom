@@ -3,6 +3,7 @@
 import React from "react";
 import { Download } from "lucide-react";
 import Pagination from "@/components/ui/pagination";
+import { useFilters } from "./FilterContext";
 
 /* ---------- types & fake data ---------- */
 type Row = {
@@ -11,13 +12,17 @@ type Row = {
   focal: string[]; // chips
   course: string;
   range: string;
+  age?: string;
+  grade?: string;
+  gender?: string;
+  disability?: string;
 };
 
 const ALL_ROWS: Row[] = Array.from({ length: 87 }).map((_, i) => ({
   no: i + 1,
   file: [
     "Report Name",
-    "Report Name",
+    "Report Name", 
     "Report Name",
     "Report Name",
     "Report Name",
@@ -37,7 +42,12 @@ const ALL_ROWS: Row[] = Array.from({ length: 87 }).map((_, i) => ({
       : ["Age", "Gender", "Disability", "Grade"],
   course: ["Biology", "Maths", "Physics"][i % 3],
   range: "10 Jun – 12 Sep",
+  age: ["10–12", "13–15", "16–18"][i % 3],
+  grade: ["6", "7", "8", "9", "10", "11", "12"][i % 7],
+  gender: ["Male", "Female", "Other"][i % 3],
+  disability: ["None", "Hearing", "Vision", "Learning", "Mobility"][i % 5],
 }));
+
 
 /* ---------- small chip (better padding) ---------- */
 function Chip({ children }: { children: React.ReactNode }) {
@@ -51,12 +61,33 @@ function Chip({ children }: { children: React.ReactNode }) {
 /* ---------- main ---------- */
 export default function TeacherPidata() {
   const itemsPerPage = 10;
-  const totalItems = ALL_ROWS.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const [currentPage, setCurrentPage] = React.useState(1);
+  
+  // Use shared filter context
+  const { filters } = useFilters();
+
+  // Filter the data based on selected filters
+  const filteredRows = React.useMemo(() => {
+    return ALL_ROWS.filter(row => {
+      if (filters.age && row.age !== filters.age) return false;
+      if (filters.grade && row.grade !== filters.grade) return false;
+      if (filters.gender && row.gender !== filters.gender) return false;
+      if (filters.disability && row.disability !== filters.disability) return false;
+      return true;
+    });
+  }, [filters]);
+
+  const totalItems = filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const start = (currentPage - 1) * itemsPerPage;
-  const rows = ALL_ROWS.slice(start, start + itemsPerPage);
+  const rows = filteredRows.slice(start, start + itemsPerPage);
+
 
   return (
     <section className="w-full px-4 md:px-5 py-5 mt-5">
