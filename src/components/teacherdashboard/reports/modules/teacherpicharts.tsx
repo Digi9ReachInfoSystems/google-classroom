@@ -182,7 +182,7 @@ export default function TeacherPiCharts() {
     <section className="w-full px-4 py-4">
       <div className="space-y-3">
         <div>
-          <h1 className="text-[22px] md:text-[36px] font-normal text-[var(--neutral-1000)]">
+          <h1 className="text-3xl font-semibold">
             Reports & Exports
           </h1>
           <p className="text-[12px] text-[var(--neutral-700)]">
