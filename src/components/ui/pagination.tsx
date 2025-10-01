@@ -81,7 +81,7 @@ export default function Pagination({
           size="sm"
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all duration-200"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:text-[var(--primary)] hover:border-[var(--primary)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all duration-200"
         >
           <ChevronLeft className="h-4 w-4" />
           Previous
@@ -100,8 +100,8 @@ export default function Pagination({
                   onClick={() => onPageChange(page as number)}
                   className={`w-8 h-8 p-0 text-xs font-semibold rounded-full transition-all duration-200 ${
                     currentPage === page
-                      ? "bg-orange-500 text-white hover:bg-orange-600 border-orange-500 shadow-lg transform scale-105"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600"
+                      ? "bg-[var(--primary)] text-white hover:opacity-90 border-[var(--primary)] shadow-sm"
+                      : "bg-white text-gray-700 border-gray-300 hover:text-[var(--primary)] hover:border-[var(--primary)]"
                   }`}
                 >
                   {page}
@@ -117,7 +117,7 @@ export default function Pagination({
           size="sm"
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all duration-200"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:text-[var(--primary)] hover:border-[var(--primary)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all duration-200"
         >
           Next
           <ChevronRight className="h-4 w-4" />
