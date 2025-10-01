@@ -27,7 +27,7 @@ const RoleBasedAccess: React.FC = () => {
           {roles.map(({ title, desc }) => (
            <div key={title} className="flex items-start gap-3">
   {/* Proper yellow circle */}
-  <span className="inline-flex flex-none items-center justify-center w-8 h-8 rounded-full bg-[var(--warning-400)] shadow-[inset_0_-1px_0_rgba(0,0,0,0.08)] mt-1">
+  <span className="inline-flex flex-none items-center justify-center w-8 h-8 rounded-full bg-[var(--primary)] shadow-[inset_0_-1px_0_rgba(0,0,0,0.08)] mt-1">
     <Image src="/tick.svg" alt="" className="w-3.5 h-3.5" width={12} height={12} />
   </span>
 

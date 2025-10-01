@@ -20,13 +20,15 @@ export default function CertificateCard({
   onDownload
 }: CertificateCardProps) {
   return (
-    <div className="bg-white rounded-lg overflow-hidden">
+    <div className="bg-white rounded-xl overflow-hidden">
       {/* Certificate Image */}
-      <div className="relative">
+      <div className="relative shadow-sm border border-gray-100">
         <Image 
-          src="/student/cetificate.png" 
+          src="/student/certificate.jpg" 
           alt="Certificate" 
-          className="w-full h-auto object-contain"
+          width={1200}
+          height={800}
+          className="w-full h-auto object-contain "
         />
       </div>
 
@@ -38,7 +40,7 @@ export default function CertificateCard({
         <div className="flex justify-center">
           <Button 
             onClick={onDownload}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-8 rounded-lg transition-colors w-full max-w-md flex items-center justify-center"
+            className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-[var(--primary-foreground)] font-medium py-3 px-8 rounded-xl transition-colors w-full max-w-md flex items-center justify-center"
           >
             <Download className="w-4 h-4 mr-2" />
             Download

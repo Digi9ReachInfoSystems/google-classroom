@@ -17,7 +17,7 @@ const Why: React.FC = () => {
       </h2>
 
       {/* Subheading */}
-      <p className="mt-4 max-w-4xl mx-auto text-center md:text-1xl font-weight-400 text-[var(--neutral-700)]">
+      <p className="mt-4 max-w-4xl mx-auto text-center md:text-1xl font-weight-400 text-[var(--neutral-800)]">
         Education data is powerful — when it’s easy to access and act on. UPSHIFT
         transforms raw classroom data into <br /> meaningful insights so schools can:
       </p>
@@ -25,7 +25,7 @@ const Why: React.FC = () => {
       {/* Feature pills */}
       <div className="mt-10 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 px-6">
         {/* Pill 1 */}
-        <div className="flex items-center gap-4 bg-[--blue-300] border border-[var(--neutral-600)] rounded-[40px] px-6 py-5 shadow-sm">
+        <div className="flex items-center gap-4 bg-[--blue-900] border border-[var(--neutral-600)] rounded-[40px] px-6 py-5 shadow-sm">
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--blue-400)]">
             <Image src="/piechart.svg" alt="" className="w-6 h-6" width={24} height={24}/>
           </div>
@@ -36,7 +36,7 @@ const Why: React.FC = () => {
 
         {/* Pill 2 */}
         <div className="flex items-center gap-4 bg-[var(--neutral-100)] border border-[var(--neutral-600)] rounded-[40px] px-6 py-5 shadow-sm">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--warning-400)]">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--primary)]">
             <Image src="/lock.svg" alt="" width={24} height={24} className="w-6 h-6" />
           </div>
           <p className="text-left font-semibold text-lg text-[var(--neutral-1000)]">
@@ -46,7 +46,7 @@ const Why: React.FC = () => {
 
         {/* Pill 3 */}
         <div className="flex items-center gap-4 bg-[var(--neutral-100)] border border-[var(--neutral-600)] rounded-[40px] px-6 py-5 shadow-sm">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--blue-600)]">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--purple-200)]">
             <Image src="/chat.svg" alt="" className="w-6 h-6" width={24} height={24}/>
           </div>
           <p className="text-left font-semibold text-lg text-[var(--neutral-1000)]">
