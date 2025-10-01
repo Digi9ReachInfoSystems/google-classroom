@@ -32,7 +32,7 @@ const ReliabilitySection: React.FC = () => {
             {items.map(({ icon, title, desc }) => (
               <div key={title} className="flex flex-col items-start gap-3">
                 {/* icon square */}
-                <div className="w-10 h-10 rounded-[10px] bg-[var(--warning-400)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-[10px] bg-[var(--primary)] flex items-center justify-center">
                   <Image src={icon} alt="" className="w-5 h-5" width={20} height={20} />
                 </div>
 

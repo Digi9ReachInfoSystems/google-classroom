@@ -33,7 +33,7 @@ const Footer: React.FC = () => {
             </p>
             <a
               href="#contact"
-              className="inline-flex mt-6 px-6 py-3 rounded-md font-semibold bg-[var(--warning-400)] text-white hover:bg-[var(--warning-500)] transition"
+              className="inline-flex mt-6 px-6 py-3 rounded-3xl font-semibold bg-[var(--primary)] text-white hover:bg-[var(--primary)] transition"
             >
               Get Started
             </a>
