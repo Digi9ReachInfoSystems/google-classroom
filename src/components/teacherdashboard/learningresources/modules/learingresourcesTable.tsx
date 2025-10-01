@@ -57,11 +57,11 @@ export default function TeacherLearningResources() {
                 <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">{r.details}</td>
                 <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">
                   {r.kind === "video" ? (
-                    <button className="h-8 md:h-8 lg:h-7 px-4 md:px-4 lg:px-3 rounded-full bg-[#FF8A00] text-white text-xs md:text-xs lg:text-[11px]">
+                    <button className="h-8 md:h-8 lg:h-7 px-4 md:px-4 lg:px-3 rounded-full bg-[var(--primary)] text-white text-xs md:text-xs lg:text-[11px]">
                       Watch for video
                     </button>
                   ) : (
-                    <button className="h-8 md:h-8 lg:h-7 px-4 md:px-4 lg:px-3 rounded-full bg-[#FF8A00] text-white text-xs md:text-xs lg:text-[11px]">
+                    <button className="h-8 md:h-8 lg:h-7 px-4 md:px-4 lg:px-3 rounded-full bg-[var(--primary)] text-white text-xs md:text-xs lg:text-[11px]">
                       Download
                     </button>
                   )}
