@@ -17,13 +17,15 @@ interface LeaderboardTableProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onSelectStudent?: (student: Student, index: number) => void;
 }
 
 export default function LeaderboardTable({ 
   students, 
   currentPage, 
   totalPages, 
-  onPageChange 
+  onPageChange,
+  onSelectStudent
 }: LeaderboardTableProps) {
   const itemsPerPage = 12;
   const totalItems = students.length;
@@ -32,6 +34,10 @@ export default function LeaderboardTable({
   const handleRowClick = (index: number) => {
     // Always select the clicked row, clearing any previous selection
     setSelectedRowIndex(index);
+    if (onSelectStudent) {
+      const student = students[index];
+      if (student) onSelectStudent(student, index);
+    }
   };
 
   return (
