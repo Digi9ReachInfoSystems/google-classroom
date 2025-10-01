@@ -27,8 +27,8 @@ export function Superadminheader() {
     { label: "Reports", value: "reports", href: "/superadmin/reports" },
     {
       label: "Learning Resources",
-      value: "learningresources",
-      href: "/superadmin/learningresources",
+      value: "learningresource",
+      href: "/superadmin/learningresource",
     },
     {
       label: "Course Management",
