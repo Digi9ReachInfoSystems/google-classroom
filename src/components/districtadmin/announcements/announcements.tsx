@@ -1,6 +1,6 @@
 "use client";
-import Image from "next/image";
 import React, { useState } from "react";
+import { Bell, Send } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -12,9 +12,9 @@ import {
 /* ========================= helpers ========================= */
 function StatusBell() {
   return (
-    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ring-[var(--neutral-300)] bg-white">
-      <Image src="/notification.png" alt="Notification" width={24} height={24} className="h-6 w-6" />
-    </span>
+    <div className="w-8 h-8 rounded-full border-2 border-neutral-200 flex items-center justify-center shrink-0 bg-white">
+      <Bell className="w-4 h-4 text-primary fill-primary stroke-none" />
+    </div>
   );
 }
 
@@ -140,37 +140,20 @@ const demo: Item[] = Array.from({ length: 12 }).map((_, i) => ({
     "Lorem ipsum dolor sit amet consectetur. Voluptate purus amet tincidunt nibh mauris interdum imperdiet elit in.",
 }));
 
-/* Inline comment box (no modal) */
-function CommentInput({ onSubmit }: { onSubmit: (text: string) => void }) {
-  const [val, setVal] = useState("");
-
+/* student-style comment input (opens modal on click) */
+function CommentInput() {
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        const t = val.trim();
-        if (!t) return;
-        onSubmit(t);
-        setVal("");
-      }}
-      className="relative w-full h-8"
-    >
+    <div className="relative">
       <input
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        placeholder="Add comment…"
-        className="w-full h-8 rounded-full bg-white border border-[var(--neutral-300)]
-                   pl-3 pr-10 text-[12px] text-[var(--neutral-900)] placeholder-[var(--neutral-600)]
-                   outline-none hover:bg-[var(--neutral-100)]"
+        type="text"
+        placeholder="Add comment..."
+        readOnly
+        className="w-full px-4 py-2 text-sm border border-neutral-200 rounded-full bg-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary pr-10"
       />
-      <button
-        type="submit"
-        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-8 grid place-items-center bg-[var(--neutral-100)] rounded-full"
-        aria-label="Send comment"
-      >
-        <Image src="/send.png" alt="" width={14} height={14} className="h-3.5 w-3.5" />
+      <button className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400" aria-label="Send comment" type="button">
+        <Send className="w-4 h-4" />
       </button>
-    </form>
+    </div>
   );
 }
 
@@ -181,41 +164,30 @@ export default function AnnouncementsCard() {
     console.log("POST announcement:", { audience, text });
   };
 
-  const handleInlineComment = (cardId: number, text: string) => {
-    console.log("ADD comment:", { cardId, text });
-  };
-
   return (
     <>
       <div className="bg-white rounded-xl p-5">
-        <h3 className="text-[14px] font-medium text-[var(--neutral-1000)] mb-4">
+        <h3 className="text-[18px] font-bold text-[var(--neutral-1000)] mb-4">
           Announcements
         </h3>
 
-        {/* apply custom-scrollbar here */}
-        <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
+        <div className="p-1 space-y-6 max-h-[30rem] overflow-y-auto custom-scrollbar pr-3">
           {demo.map((item) => (
-            <div key={item.id} className="rounded-lg bg-[var(--neutral-100)] p-3">
-              <div className="flex items-start gap-3">
+            <div key={item.id} className="space-y-3">
+              <div className="flex items-start space-x-3">
                 <StatusBell />
-                <p className="text-[12px] leading-5 text-[var(--foreground)]">
-                  {item.text}
-                </p>
+                <p className="text-sm text-neutral-700 leading-relaxed flex-1 line-clamp-2">{item.text}</p>
               </div>
 
-              <div className="mt-3">
-                <CommentInput onSubmit={(text) => handleInlineComment(item.id, text)} />
+              <div className="ml-11">
+                <CommentInput />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Open MODAL only from this button */}
-        <button
-          onClick={() => setOpen(true)}
-          className="mt-4 w-full rounded-full bg-[var(--primary)] text-white py-3 text-sm"
-        >
-          Post Announcement
+        <button onClick={() => setOpen(true)} className="mt-4 w-full rounded-full bg-[var(--primary)] hover:brightness-95 text-white py-3 text-sm">
+          Create Announcement
         </button>
       </div>
 
