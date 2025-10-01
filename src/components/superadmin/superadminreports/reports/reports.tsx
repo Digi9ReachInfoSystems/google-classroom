@@ -177,7 +177,7 @@ function PieBlock({
   );
 }
 
-export default function PiCharts() {
+export default function Reports() {
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
   const [age, setAge] = React.useState<string | undefined>();
   const [grade, setGrade] = React.useState<string | undefined>();

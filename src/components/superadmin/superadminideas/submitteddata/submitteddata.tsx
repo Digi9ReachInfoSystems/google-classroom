@@ -11,10 +11,13 @@ function normalizeStatus(s?: string | null): "Approved" | "Pending" {
   return "Pending"
 }
 
-// status pill (two states only)
+// status pill (two states only) with fixed width and centered
 function StatusBadge({ status }: { status: IdeaRow["status"] }) {
   const norm = normalizeStatus(status as string)
-  const cls = norm === "Approved" ? "label-success" : "label-warning"
+  const baseClass = "inline-block rounded-[16px] px-2 py-1 text-[12px] leading-[14px] text-center min-w-[80px]"
+  const cls = norm === "Approved" 
+    ? `${baseClass} bg-[var(--success-500)] text-white`
+    : `${baseClass} bg-[var(--neutral-400)] text-white`
   return <span className={cls}>{norm}</span>
 }
 
@@ -120,52 +123,54 @@ export default function Ideasubmitted({ rows }: { rows: IdeaRow[] }) {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table with custom scrollbar */}
       <div className="rounded-2xl overflow-hidden bg-[var(--card)]">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--secondary)]">
-            <tr>
-              <th className="py-4 px-6">Student Name</th>
-              <th className="py-4 px-6">Idea Title</th>
-              <th className="py-4 px-6">Category</th>
-              <th className="py-4 px-6">Date Submitted</th>
-              <th className="py-4 px-6">Status</th>
-              <th className="py-4 px-6">File</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((r, i) => (
-              <tr key={`${r.student}-${i}`}>
-                <td className="py-4 px-6">{r.student}</td>
-                <td className="py-4 px-6">{r.title}</td>
-                <td className="py-4 px-6">{r.category}</td>
-                <td className="py-4 px-6">{r.date}</td>
-                <td className="py-4 px-6">
-                  <StatusBadge status={r.status} />
-                </td>
-                <td className="py-4 px-6">
-                  {r.file && r.file !== "-" ? (
-                    <button
-                      type="button"
-                      onClick={() => exportRowToExcel(r)}
-                      className="text-[var(--blue-400)] hover:underline"
-                    >
-                      {r.file}
-                    </button>
-                  ) : "-"}
-                </td>
-              </tr>
-            ))}
-
-            {filtered.length === 0 && (
+        <div className="max-h-[520px] overflow-y-auto custom-scrollbar">
+          <table className="w-full text-sm">
+            <thead className="bg-[var(--secondary)] sticky top-0">
               <tr>
-                <td className="py-10 px-6 text-center text-muted-foreground" colSpan={6}>
-                  No results found.
-                </td>
+                <th className="py-4 px-6 text-left">Student Name</th>
+                <th className="py-4 px-6 text-left">Idea Title</th>
+                <th className="py-4 px-6 text-left">Category</th>
+                <th className="py-4 px-6 text-left">Date Submitted</th>
+                <th className="py-4 px-6 text-center">Status</th>
+                <th className="py-4 px-6 text-left">File</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map((r, i) => (
+                <tr key={`${r.student}-${i}`}>
+                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">{r.student}</td>
+                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">{r.title}</td>
+                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">{r.category}</td>
+                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">{r.date}</td>
+                  <td className="py-4 px-6 border-t border-[var(--neutral-200)] ">
+                    <StatusBadge status={r.status} />
+                  </td>
+                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">
+                    {r.file && r.file !== "-" ? (
+                      <button
+                        type="button"
+                        onClick={() => exportRowToExcel(r)}
+                        className="text-[var(--blue-400)] hover:underline"
+                      >
+                        {r.file}
+                      </button>
+                    ) : "-"}
+                  </td>
+                </tr>
+              ))}
+
+              {filtered.length === 0 && (
+                <tr>
+                  <td className="py-10 px-6 text-center text-muted-foreground border-t border-[var(--neutral-200)]" colSpan={6}>
+                    No results found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

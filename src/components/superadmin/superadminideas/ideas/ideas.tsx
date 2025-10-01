@@ -62,16 +62,15 @@ export default function Superadminideas({
   onSchoolChange, onDistrictChange, onStatusChange,
   totalStudents, totalIdeas,
 }: Props) {
-  // map counts to ring progress (cap at 100%)
-  const studentProgress = Math.min(1, totalStudents / 150) // target 150 demo
-  const ideasProgress   = Math.min(1, totalIdeas / 50)    // target 50 demo
+  const studentProgress = Math.min(1, totalStudents / 150)
+  const ideasProgress   = Math.min(1, totalIdeas / 50)
 
   const pillBase =
-    "h-9 px-5 rounded-full border text-[12px] font-normal bg-transparent data-[state=open]:ring-2 data-[state=open]:ring-[var(--warning-400)]"
+    "h-9 px-5 rounded-full border text-[12px] font-normal bg-transparent data-[state=open]:ring-2 data-[state=open]:ring-[var(--primary)]"
   const pillWhenSelected =
-    "ring-2 ring-[var(--warning-400)] border-[var(--neutral-300)]"
+    "ring-2 ring-[var(--primary)] border-[var(--neutral-300)]"
   const itemHover =
-    "data-[highlighted]:bg-[var(--warning-400)] data-[highlighted]:text-white focus:bg-[var(--warning-400)] focus:text-white"
+    "data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
 
   return (
     <div className="w-full">
@@ -99,10 +98,10 @@ export default function Superadminideas({
             <SelectTrigger className={`${pillBase} ${school ? pillWhenSelected : "border-[var(--neutral-300)]"}`}>
               <SelectValue placeholder="Select School" />
             </SelectTrigger>
-            <SelectContent className="rounded-xl overflow-hidden">
-              <SelectItem value="School A" className={itemHover}>School A</SelectItem>
-              <SelectItem value="School B" className={itemHover}>School B</SelectItem>
-              <SelectItem value="School C" className={itemHover}>School C</SelectItem>
+            <SelectContent className="rounded-xl overflow-hidden text-center">
+              <SelectItem value="School A" className={`${itemHover} justify-center text-center`}>School A</SelectItem>
+              <SelectItem value="School B" className={`${itemHover} justify-center text-center`}>School B</SelectItem>
+              <SelectItem value="School C" className={`${itemHover} justify-center text-center`}>School C</SelectItem>
             </SelectContent>
           </Select>
 
@@ -110,10 +109,10 @@ export default function Superadminideas({
             <SelectTrigger className={`${pillBase} ${district ? pillWhenSelected : "border-[var(--neutral-300)]"}`}>
               <SelectValue placeholder="Select District" />
             </SelectTrigger>
-            <SelectContent className="rounded-xl overflow-hidden">
-              <SelectItem value="District 1" className={itemHover}>District 1</SelectItem>
-              <SelectItem value="District 2" className={itemHover}>District 2</SelectItem>
-              <SelectItem value="District 3" className={itemHover}>District 3</SelectItem>
+            <SelectContent className="rounded-xl overflow-hidden text-center">
+              <SelectItem value="District 1" className={`${itemHover} justify-center text-center`}>District 1</SelectItem>
+              <SelectItem value="District 2" className={`${itemHover} justify-center text-center`}>District 2</SelectItem>
+              <SelectItem value="District 3" className={`${itemHover} justify-center text-center`}>District 3</SelectItem>
             </SelectContent>
           </Select>
 
@@ -121,10 +120,10 @@ export default function Superadminideas({
             <SelectTrigger className={`${pillBase} ${status ? pillWhenSelected : "border-[var(--neutral-300)]"}`}>
               <SelectValue placeholder="Select Idea status" />
             </SelectTrigger>
-            <SelectContent className="rounded-xl overflow-hidden">
-              <SelectItem value="Approved" className={itemHover}>Approved</SelectItem>
-              <SelectItem value="Pending"  className={itemHover}>Pending</SelectItem>
-              <SelectItem value="Rejected" className={itemHover}>Rejected</SelectItem>
+            <SelectContent className="rounded-xl overflow-hidden text-center">
+              <SelectItem value="Approved" className={`${itemHover} justify-center text-center`}>Approved</SelectItem>
+              <SelectItem value="Pending"  className={`${itemHover} justify-center text-center`}>Pending</SelectItem>
+              <SelectItem value="Rejected" className={`${itemHover} justify-center text-center`}>Rejected</SelectItem>
             </SelectContent>
           </Select>
         </div>

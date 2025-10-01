@@ -57,6 +57,10 @@
   --blue-500: #1727fb;
   --blue-600: #0d86e4;
   --blue-700: #046d8c;
+  --blue-800:#3cc3Df;
+  /* --blue-900:#3cc3Df; */
+
+  --pink-100 : #FF928A;
  
   /* Fonts */
   --font-sans: "Geist Sans", Arial, Helvetica, sans-serif;
