@@ -95,7 +95,7 @@ export default function IdeasPage() {
       <div className="max-w-full mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold text-[var(--neutral-1000)]">Ideas</h1>
+          <h1 className="text-3xl font-semibold">Ideas</h1>
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
