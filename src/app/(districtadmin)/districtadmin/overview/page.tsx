@@ -13,16 +13,16 @@ export default function Page() {
       </h1>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-6">
         {/* LEFT: KPI row + chart + table */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="md:col-span-7 lg:col-span-8 space-y-6">
           <KPIRow />
           <ClassProgressCard />
           <StudentsTable />
         </div>
 
         {/* RIGHT: Meet + Announcements */}
-        <aside className="lg:col-span-4 space-y-6">
+        <aside className="md:col-span-5 lg:col-span-4 space-y-6">
           <MeetCard />
           <AnnouncementsCard />
         </aside>
