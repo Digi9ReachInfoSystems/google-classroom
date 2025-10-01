@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useFilters } from "./FilterContext";
 
 /* -------------------- filter option values -------------------- */
 const AGES = ["10–12", "13–15", "16–18"] as const;
@@ -58,31 +59,42 @@ function makeCharts(filters: {
   gender?: string;
   disability?: string;
 }): ChartSet {
-  // Return the exact data from the image
-  return {
-    /* Pre survey - Submit: 58.62, Pending: 24.61 */
+  // Base data
+  let baseData = {
     pre: [
       { key: "submit",   value: 58.62, fill: PURPLE },
       { key: "pending",  value: 24.61, fill: SALMON },
     ],
-    /* Student course - Not started: 40, In progress: 20, Completed: 40 */
     course: [
-      { key: "submit",   value: 40, fill: PURPLE },   // Not started
-      { key: "pending",  value: 20, fill: SALMON },   // In progress
-      { key: "reviewed", value: 40, fill: LIGHT_BLUE }, // Completed
+      { key: "submit",   value: 40, fill: PURPLE },
+      { key: "pending",  value: 20, fill: SALMON },
+      { key: "reviewed", value: 40, fill: LIGHT_BLUE },
     ],
-    /* Idea submission - Submitted: 80, In draft: 2.75, Not started: 18.15 */
     idea: [
-      { key: "submit",   value: 80, fill: PURPLE },     // Submitted ideas
-      { key: "pending",  value: 2.75, fill: SALMON },  // In draft ideas
-      { key: "reviewed", value: 18.15, fill: LIGHT_BLUE }, // Not started ideas
+      { key: "submit",   value: 80, fill: PURPLE },
+      { key: "pending",  value: 2.75, fill: SALMON },
+      { key: "reviewed", value: 18.15, fill: LIGHT_BLUE },
     ],
-    /* Post survey - Submit: 97.69, Pending: 13.64 */
     post: [
       { key: "submit",   value: 97.69, fill: PURPLE },
       { key: "pending",  value: 13.64, fill: SALMON },
     ],
   };
+
+  // Apply filter variations based on selections
+  if (filters.age || filters.grade || filters.gender || filters.disability) {
+    const variation = hashStr(JSON.stringify(filters)) % 100;
+    const multiplier = 0.8 + (variation / 100) * 0.4; // 0.8 to 1.2 range
+    
+    baseData = {
+      pre: baseData.pre.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
+      course: baseData.course.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
+      idea: baseData.idea.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
+      post: baseData.post.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
+    };
+  }
+
+  return baseData;
 }
 
 /* ----------------------------- Legend ----------------------------- */
@@ -156,17 +168,14 @@ function PieBlock({
 
 /* --------------------------------- Page --------------------------------- */
 export default function TeacherPiCharts() {
-  const [age, setAge] = React.useState<string | undefined>();
-  const [grade, setGrade] = React.useState<string | undefined>();
-  const [gender, setGender] = React.useState<string | undefined>();
-  const [disability, setDisability] = React.useState<string | undefined>();
+  const { filters, setAge, setGrade, setGender, setDisability } = useFilters();
 
   const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts({ age, grade, gender, disability })
+    makeCharts(filters)
   );
 
   const onGenerate = () => {
-    setCharts(makeCharts({ age, grade, gender, disability }));
+    setCharts(makeCharts(filters));
   };
 
   return (
@@ -187,7 +196,7 @@ export default function TeacherPiCharts() {
               <div className="text-[16px] font-medium text-[var(--neutral-900)]">Data Analytics</div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Select value={age} onValueChange={setAge}>
+                <Select value={filters.age} onValueChange={setAge}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[140px] text-[12px]">
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
@@ -204,7 +213,7 @@ export default function TeacherPiCharts() {
                   </SelectContent>
                 </Select>
 
-                <Select value={grade} onValueChange={setGrade}>
+                <Select value={filters.grade} onValueChange={setGrade}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[150px] text-[12px]">
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
@@ -221,7 +230,7 @@ export default function TeacherPiCharts() {
                   </SelectContent>
                 </Select>
 
-                <Select value={gender} onValueChange={setGender}>
+                <Select value={filters.gender} onValueChange={setGender}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[160px] text-[12px]">
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
@@ -238,7 +247,7 @@ export default function TeacherPiCharts() {
                   </SelectContent>
                 </Select>
 
-                <Select value={disability} onValueChange={setDisability}>
+                <Select value={filters.disability} onValueChange={setDisability}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[170px] text-[12px]">
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
