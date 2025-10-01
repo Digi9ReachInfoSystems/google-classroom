@@ -71,6 +71,7 @@ const sampleIdeas: IdeaRow[] = [
 
 export default function IdeasPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
 
   // Filter the ideas based on search and status
   const filteredIdeas = useMemo(() => {
@@ -80,9 +81,14 @@ export default function IdeasPage() {
         idea.ideaTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
         idea.category.toLowerCase().includes(searchQuery.toLowerCase())
 
-      return matchesSearch
+      const matchesStatus = 
+        statusFilter === "all" || 
+        (statusFilter === "completed" && idea.status === "completed") ||
+        (statusFilter === "pending" && idea.status === "pending")
+
+      return matchesSearch && matchesStatus
     })
-  }, [searchQuery])
+  }, [searchQuery, statusFilter])
 
   return (
     <div className="min-h-screen bg-white p-6">
@@ -90,11 +96,14 @@ export default function IdeasPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-[var(--neutral-1000)]">Ideas</h1>
-          <select className="h-9 rounded-full border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-300">
-            <option>Select idea states</option>
-            <option>All</option>
-            <option>Completed</option>
-            <option>Pending</option>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-9 rounded-full border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
+          >
+            <option value="all">All</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
           </select>
         </div>
 
