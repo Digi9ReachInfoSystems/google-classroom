@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ReferenceArea } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ChartConfig,
@@ -37,6 +37,7 @@ export default function TeacherclassProgressCard() {
             margin={{ top: 12, right: 8, bottom: 8, left: 24 }}
             barCategoryGap={24}
             barGap={6}
+            
           >
             <CartesianGrid strokeDasharray="2 6" vertical horizontal stroke="var(--neutral-200)" />
 
@@ -45,7 +46,7 @@ export default function TeacherclassProgressCard() {
             <XAxis
               dataKey="stage"
               tickLine={false}
-              axisLine={false}
+              axisLine={{ stroke: "#00001A4D", strokeWidth: 2 }} // dark & thick
               tickMargin={8}
               tick={{ fill: "var(--neutral-800)", fontSize: 12 }}
             />
@@ -56,9 +57,13 @@ export default function TeacherclassProgressCard() {
               tickLine={false}
               axisLine={false}
               tick={{ fill: "var(--neutral-700)", fontSize: 11 }}
+              tickFormatter={(value) => `${value}%`}
             />
 
-            <ChartTooltip cursor={{ fill: "transparent" }} content={<ChartTooltipContent className="text-[12px]" />} />
+            <ChartTooltip
+              cursor={{ fill: "transparent" }}
+              content={<ChartTooltipContent className="text-[12px]" formatter={(value) => `${value}%`} />}
+            />
 
             {/* Bars: width = 152px, color = #8979FF */}
             <Bar
@@ -67,8 +72,12 @@ export default function TeacherclassProgressCard() {
               radius={[70, 70, 70, 70]}
               barSize={120}
             />
+            
           </BarChart>
+          
         </ChartContainer>
+
+        {/* divider above legend */}
 
         {/* legend */}
         <div className="mt-3 flex items-center justify-center gap-2 text-[12px] text-[var(--neutral-900)]">

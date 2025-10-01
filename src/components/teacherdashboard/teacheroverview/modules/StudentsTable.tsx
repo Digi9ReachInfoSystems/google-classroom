@@ -91,8 +91,9 @@ export default function TeacherstudentsTable() {
     <div className="bg-white rounded-lg  border-neutral-200">
       {/* search pill */}
       <div className="px-5 pt-4 pb-4 flex justify-end">
-        <label className="flex items-center gap-2 rounded-full border border-[var(--neutral-300)] bg-white pl-4 pr-4 h-10 w-full sm:w-[300px] md:w-[360px] max-w-full shadow-[0_1px_2px_rgba(16,24,40,0.05)] focus-within:ring-2 focus-within:ring-[var(--neutral-200)]">
-          <svg width="16" height="16" viewBox="0 0 24 24" className="text-[var(--neutral-600)]">
+        <label className="relative flex items-center gap-2 rounded-full border border-[var(--neutral-300)] bg-white pl-4 pr-4 h-10 w-full sm:w-[300px] md:w-[360px] max-w-full shadow-sm focus-within:ring-2 focus-within:ring-[var(--neutral-200)] transition-colors">
+          <span className="sr-only">Search students</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" className="text-black">
             <path
               d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
               fill="none"
@@ -103,10 +104,13 @@ export default function TeacherstudentsTable() {
             />
           </svg>
           <input
+            type="search"
+            enterKeyHint="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="bg-transparent outline-none flex-1 text-sm text-[var(--neutral-900)] placeholder-[var(--neutral-500)]"
+            className="bg-transparent outline-none flex-1 text-sm text-[var(--neutral-1000)] placeholder-[var(--neutral-500)]"
             placeholder="Search..."
+            aria-label="Search students"
           />
         </label>
       </div>
