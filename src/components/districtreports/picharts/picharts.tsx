@@ -407,7 +407,7 @@ function makeRows(): TableRow[] {
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-[var(--warning-400)] text-white text-[11px] px-2.5 py-[5px] leading-none">
+    <span className="inline-flex items-center rounded-full bg-[var(--primary)] text-white text-[11px] px-2.5 py-[5px] leading-none">
       {children}
     </span>
   );
