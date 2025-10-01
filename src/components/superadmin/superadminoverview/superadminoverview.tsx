@@ -352,8 +352,8 @@ export default function Superadminoverview() {
   );
 
   return (
-    <main className="min-h-screen p-6 md:p-10">
-      <h1 className="text-black text-2xl md:text-32px font-semibold mb-6">
+    <main className="min-h-screen p-6 md:p-5">
+      <h1 className="text-3xl font-semibold">
         Welcome, Super Admin!
       </h1>
 
