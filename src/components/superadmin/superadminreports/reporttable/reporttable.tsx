@@ -59,7 +59,7 @@ function usePagination(total: number, perPage: number) {
 }
 
 /* ---------- main ---------- */
-export default function Pidata() {
+export default function Reporttable() {
   const PER_PAGE = 10;
   const { page, pages, go, next, prev, nums } = usePagination(
     ALL_ROWS.length,

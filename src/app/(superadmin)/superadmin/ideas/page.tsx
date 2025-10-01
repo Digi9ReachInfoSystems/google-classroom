@@ -25,6 +25,14 @@ const ALL_ROWS: IdeaRow[] = [
   { student: "Alice Smith", title: "-",                   category: "-",   date: "-",           status: "-",        file: "-",           school: "School B", district: "District 2" },
   { student: "Alice Smith", title: "Smart Recycling Bin", category: "Arts", date: "Sep 10, 2025", status: "Pending",  file: "Explore idea", school: "School C", district: "District 3" },
   { student: "Alice Smith", title: "-",                   category: "-",   date: "-",           status: "-",        file: "-",           school: "School A", district: "District 1" },
+  { student: "Alice Smith", title: "Smart Recycling Bin", category: "STEM", date: "Sep 10, 2025", status: "Approved", file: "Explore idea", school: "School A", district: "District 1" },
+  { student: "Rahul P", title: "Digital Art Showcase", category: "Arts", date: "Sep 1, 2025", status: "Pending",  file: "Explore idea", school: "School B", district: "District 2" },
+  { student: "Sneha M", title: "-",                   category: "-",   date: "-",           status: "-",        file: "-",           school: "School C", district: "District 3" },
+  { student: "Arjun T",  title: "-",                   category: "-",   date: "-",           status: "Rejected", file: "-",           school: "School A", district: "District 1" },
+  { student: "Alice Smith", title: "Smart Recycling Bin", category: "Arts", date: "Sep 10, 2025", status: "Approved", file: "Explore idea", school: "School A", district: "District 1" },
+  { student: "Alice Smith", title: "-",                   category: "-",   date: "-",           status: "-",        file: "-",           school: "School B", district: "District 2" },
+  { student: "Alice Smith", title: "Smart Recycling Bin", category: "Arts", date: "Sep 10, 2025", status: "Pending",  file: "Explore idea", school: "School C", district: "District 3" },
+  { student: "Alice Smith", title: "-",                   category: "-",   date: "-",           status: "-",        file: "-",           school: "School A", district: "District 1" },
 ]
 
 export default function Page() {

@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend, Rectangle } from "recharts"
 import {
   Card,
   CardContent,
@@ -14,6 +14,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
+
+
 // --- data ---
 const chartData = [
   { name: "Course completion", value: 40 },
@@ -24,9 +26,25 @@ const chartData = [
 const chartConfig = {
   value: {
     label: "Course completion vs Idea submission",
-    color: "var(--blue-500)",
+    color: "var(--purple-100)",
   },
 } satisfies ChartConfig
+const BAR_SIZE = 150;
+function BarWidthCursor(props: any) {
+  const { x = 0, y = 0, width = 0, height = 0 } = props || {};
+  const cursorWidth = BAR_SIZE;
+  const cursorX = x + (width - cursorWidth) / 2;
+  return (
+    <Rectangle
+      x={cursorX}
+      y={y}
+      width={cursorWidth}
+      height={height}
+      fill="rgba(214, 219, 237, 0.4)" // #d6dbed @ 40%
+      // optional: slight rounding to match bars
+    />
+  );
+}
 
 // --- custom legend to force black text ---
 function LegendBlack() {
@@ -46,7 +64,7 @@ function LegendBlack() {
         style={{
           width: 10,
           height: 10,
-          background: "var(--blue-500)",
+          background: "var(--purple-100)",
           display: "inline-block",
           borderRadius: 2,
         }}
@@ -84,7 +102,7 @@ export default function ProgressTrends() {
             {/* X-axis */}
             <XAxis dataKey="name" axisLine={false} tickLine={false} />
 
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartTooltip  cursor={<BarWidthCursor />} content={<ChartTooltipContent />} />
 
             {/* Custom legend with black label */}
             <Legend content={<LegendBlack />} />
@@ -92,7 +110,7 @@ export default function ProgressTrends() {
             {/* Bars */}
             <Bar
               dataKey="value"
-              fill="var(--blue-500)"
+              fill="var(--purple-100)"
               barSize={135}
               radius={[67.5, 67.5, 67.5, 67.5]}
               name="Course completion vs Idea submission"
