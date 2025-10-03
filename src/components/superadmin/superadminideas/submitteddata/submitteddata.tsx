@@ -123,47 +123,69 @@ export default function Ideasubmitted({ rows }: { rows: IdeaRow[] }) {
         </div>
       </div>
 
-      {/* Table with custom scrollbar */}
-      <div className="rounded-2xl overflow-hidden bg-[var(--card)]">
-        <div className="max-h-[520px] overflow-y-auto custom-scrollbar">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--secondary)] sticky top-0">
-              <tr>
-                <th className="py-4 px-6 text-left">Student Name</th>
-                <th className="py-4 px-6 text-left">Idea Title</th>
-                <th className="py-4 px-6 text-left">Category</th>
-                <th className="py-4 px-6 text-left">Date Submitted</th>
-                <th className="py-4 px-6 text-center">Status</th>
-                <th className="py-4 px-6 text-left">File</th>
-              </tr>
-            </thead>
+      {/* Table with improved styling matching IdeasTable */}
+      <div className="overflow-x-auto">
+        {/* Header table (fixed) */}
+        <table className="w-full table-fixed rounded-t-lg overflow-hidden border-collapse border-b border-neutral-200">
+          <colgroup>
+            <col className="w-[22%]" />
+            <col className="w-[23%]" />
+            <col className="w-[14%]" />
+            <col className="w-[17%]" />
+            <col className="w-[12%]" />
+            <col className="w-[12%]" />
+          </colgroup>
+          <thead>
+            <tr className="bg-[#F1F5F6]">
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600 rounded-tl-lg">Student Name</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600">Idea Title</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600">Category</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600">Date Submitted</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600">Status</th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-neutral-600 rounded-tr-lg">File</th>
+            </tr>
+          </thead>
+        </table>
+
+        <div className="max-h-[680px] overflow-y-auto rounded-b-lg custom-scrollbar">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-[22%]" />
+              <col className="w-[23%]" />
+              <col className="w-[14%]" />
+              <col className="w-[17%]" />
+              <col className="w-[12%]" />
+              <col className="w-[12%]" />
+            </colgroup>
             <tbody>
               {filtered.map((r, i) => (
-                <tr key={`${r.student}-${i}`}>
-                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">{r.student}</td>
-                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">{r.title}</td>
-                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">{r.category}</td>
-                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">{r.date}</td>
-                  <td className="py-4 px-6 border-t border-[var(--neutral-200)] ">
+                <tr key={`${r.student}-${i}`} className="bg-white hover:bg-muted/50 transition-colors">
+                  <td className="py-3 px-6 text-sm text-card-foreground">{r.student}</td>
+                  <td className="py-3 px-6 text-sm text-card-foreground">{r.title}</td>
+                  <td className="py-3 px-6 text-sm text-card-foreground">{r.category}</td>
+                  <td className="py-3 px-6 text-sm text-card-foreground">{r.date}</td>
+                  <td className="py-3 px-6">
                     <StatusBadge status={r.status} />
                   </td>
-                  <td className="py-4 px-6 border-t border-[var(--neutral-200)]">
+                  <td className="py-3 px-6 text-sm whitespace-nowrap">
                     {r.file && r.file !== "-" ? (
                       <button
                         type="button"
                         onClick={() => exportRowToExcel(r)}
-                        className="text-[var(--blue-400)] hover:underline"
+                        className="text-[#2E7CF6] hover:underline whitespace-nowrap inline-block"
                       >
                         {r.file}
                       </button>
-                    ) : "-"}
+                    ) : (
+                      <span className="text-neutral-400">-</span>
+                    )}
                   </td>
                 </tr>
               ))}
 
               {filtered.length === 0 && (
                 <tr>
-                  <td className="py-10 px-6 text-center text-muted-foreground border-t border-[var(--neutral-200)]" colSpan={6}>
+                  <td className="py-10 px-6 text-center text-muted-foreground" colSpan={6}>
                     No results found.
                   </td>
                 </tr>
