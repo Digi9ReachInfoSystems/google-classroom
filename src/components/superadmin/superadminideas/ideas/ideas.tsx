@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -21,39 +20,82 @@ type Props = {
   totalIdeas: number
 }
 
-// --- circular progress ring (SVG) ---
-function ProgressRing({
+// --- circular progress ring (SVG) - using teacher's approach ---
+function RingIdeas({
   size = 56,
   stroke = 6,
-  value = 0, // 0..1
-  label = "",
-}: { size?: number; stroke?: number; value?: number; label?: string }) {
+  percent = 0,
+  text,
+  color = "var(--primary)",
+}: {
+  size?: number
+  stroke?: number
+  percent: number // 0–100
+  text: string
+  color?: string
+}) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
-  const dash = Math.max(0, Math.min(1, value)) * c
+  const dash = (percent / 100) * c
+
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="rotate-[-90deg]">
-        <circle cx={size/2} cy={size/2} r={r} stroke="var(--neutral-300)" strokeWidth={stroke} fill="none" />
-        <circle cx={size/2} cy={size/2} r={r} stroke="var(--primary)" strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${dash} ${c-dash}`} />
-      </svg>
-      <div className="absolute inset-0 grid place-items-center">
-        <span className="text-[14px] font-medium">{label}</span>
-      </div>
-    </div>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="var(--neutral-300)"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={`${dash} ${c - dash}`}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+      <text
+        x="50%"
+        y="50%"
+        dominantBaseline="middle"
+        textAnchor="middle"
+        fontSize="14"
+        fill="var(--neutral-1000)"
+        style={{ fontWeight: 400 }}
+      >
+        {text}
+      </text>
+    </svg>
   )
 }
 
-function StatCard({ valueText, caption, progress }: { valueText: string; caption: string; progress: number }) {
+function KPICard({
+  valueText,
+  label,
+  percentArc,
+}: {
+  valueText: string
+  label: React.ReactNode
+  percentArc: number
+}) {
   return (
-    <Card className="rounded-2xl border-0 shadow-none bg-white h-[112px] m-[20px]">
-      <CardContent className="px-6 h-[112px] flex items-center">
-        <div className="flex items-center gap-4">
-          <ProgressRing size={56} stroke={6} value={progress} label={valueText} />
-          <div className="text-[14px] text-foreground">{caption}</div>
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      className="
+        bg-white border-0 shadow-none rounded-none
+        h-[112px] w-[280px]
+        px-5 py-4
+        flex items-center gap-4
+      "
+    >
+      <RingIdeas percent={percentArc} text={valueText} size={72} />
+      <div className="text-[14px] leading-5 text-[var(--neutral-1000)] whitespace-nowrap">{label}</div>
+    </div>
   )
 }
 
@@ -62,8 +104,8 @@ export default function Superadminideas({
   onSchoolChange, onDistrictChange, onStatusChange,
   totalStudents, totalIdeas,
 }: Props) {
-  const studentProgress = Math.min(1, totalStudents / 150)
-  const ideasProgress   = Math.min(1, totalIdeas / 50)
+  const studentProgress = Math.min(100, (totalStudents / 150) * 100)
+  const ideasProgress   = Math.min(100, (totalIdeas / 50) * 100)
 
   const pillBase =
     "h-9 px-5 rounded-full border text-[12px] font-normal bg-transparent data-[state=open]:ring-2 data-[state=open]:ring-[var(--primary)]"
@@ -77,18 +119,14 @@ export default function Superadminideas({
       <div className="flex items-start justify-between gap-6 px-5">
         {/* Left: Title + two cards */}
         <div className="flex-1">
-          <h2 className="text-[32px] font-normal leading-tight mb-2">Ideas</h2>
+          <h2 className="text-3xl font-semibold">Ideas</h2>
           <h3 className="text-[14px] font-normal text-foreground mb-4">
-            Let’s see the current statistics performance
+            Let's see the current statistics performance
           </h3>
 
-          <div className="flex flex-wrap gap-6">
-            <div className="w-[360px]">
-              <StatCard valueText={String(totalStudents)} caption="Total no of students" progress={studentProgress} />
-            </div>
-            <div className="w-[360px]">
-              <StatCard valueText={String(totalIdeas)} caption="Total no of idea submitted" progress={ideasProgress} />
-            </div>
+          <div className="flex gap-6 mb-8">
+            <KPICard valueText={String(totalStudents)} label="Total no of students" percentArc={studentProgress} />
+            <KPICard valueText={String(totalIdeas)} label="Total no of idea submitted" percentArc={ideasProgress} />
           </div>
         </div>
 
