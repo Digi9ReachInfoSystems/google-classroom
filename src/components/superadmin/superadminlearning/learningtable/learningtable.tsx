@@ -4,6 +4,7 @@
 import React, { useMemo, useState } from "react";
 import { Eye, PencilLine, Trash, Search } from "lucide-react";
 import Pagination from "@/components/ui/pagination";
+import AddResourceModal from "../popup/addresourcesmodal";
 
 type Row = { id: number; name: string; type: "Course video" | "PDF" };
 
@@ -19,6 +20,7 @@ const seed: Row[] = Array.from({ length: 30 }, (_, i) => ({
 export default function LearningResourcesTable() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const pageSize = 10;
 
   // Filter then paginate
@@ -40,6 +42,20 @@ export default function LearningResourcesTable() {
 
   const handlePageChange = (newPage: number) => {
     setPage(Math.min(Math.max(1, newPage), totalPages));
+  };
+
+  const handleEditClick = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleResourceSubmit = (details: string, type: string, link: string) => {
+    console.log("Resource submitted:", { details, type, link });
+    // TODO: Implement actual resource submission logic
+    // This could involve API calls to save the resource
   };
 
   return (
@@ -97,6 +113,7 @@ export default function LearningResourcesTable() {
                       <Eye size={20} />
                     </button>
                     <button
+                      onClick={handleEditClick}
                       className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
                       aria-label="Edit"
                       title="Edit"
@@ -143,6 +160,13 @@ export default function LearningResourcesTable() {
           />
         </div>
       </div>
+
+      {/* Add Resource Modal */}
+      <AddResourceModal
+        open={isModalOpen}
+        onClose={handleModalClose}
+        onSubmit={handleResourceSubmit}
+      />
     </div>
   );
 }
