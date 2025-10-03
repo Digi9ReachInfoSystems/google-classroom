@@ -101,7 +101,7 @@ export default function CompletionTable() {
             />
             <XAxis
               dataKey="month"
-              axisLine={false}
+              axisLine={{ stroke: "#00001A4D", strokeWidth: 2 }}
               tickLine={false}
               tickMargin={8}
             />

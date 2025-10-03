@@ -100,7 +100,11 @@ export default function ProgressTrends() {
             />
 
             {/* X-axis */}
-            <XAxis dataKey="name" axisLine={false} tickLine={false} />
+            <XAxis
+             dataKey="name"
+            axisLine={{ stroke: "#00001A4D", strokeWidth: 2 }} // dark & thick
+            tickLine={false}
+             />
 
             <ChartTooltip  cursor={<BarWidthCursor />} content={<ChartTooltipContent />} />
 
