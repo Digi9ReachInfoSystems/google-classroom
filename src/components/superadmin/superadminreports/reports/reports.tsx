@@ -31,14 +31,14 @@ const AGES = ["10–12", "13–15", "16–18"] as const;
 const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
 const GENDERS = ["Male", "Female", "Other"] as const;
 const DISABILITY = ["None", "Hearing", "Vision", "Learning", "Mobility"] as const;
-const BLUE_100 = "var(--blue-800)";
-const ERROR_200 = "var(--pink-100)";
-const BLUE_700 = "var(--purple-100)";
+const CORAL = "#FF928A"; // Coral color for main segments
+const PURPLE = "#8979FF"; // Purple color for secondary segments  
+const CYAN = "#3CC3DF"; // Cyan color for tertiary segments
 
 const baseConfig: ChartConfig = {
-  submit:   { label: "Submit",   color: BLUE_100 },
-  pending:  { label: "Pending",  color: ERROR_200 },
-  reviewed: { label: "Reviewed", color: BLUE_700 },
+  submit:   { label: "Submit",   color: CORAL },
+  pending:  { label: "Pending",  color: PURPLE },
+  reviewed: { label: "Reviewed", color: CYAN },
 };
 
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
@@ -59,51 +59,29 @@ function makeCharts(filters: {
   gender?: string;
   disability?: string;
 }): ChartSet {
-  const key =
-    (filters.age ?? "-") +
-    (filters.grade ?? "-") +
-    (filters.gender ?? "-") +
-    (filters.disability ?? "-") +
-    (filters.dateRange?.from?.toDateString() ?? "-") +
-    (filters.dateRange?.to?.toDateString() ?? "-");
-
-  const base = hashStr(key || "default");
-  const mk3 = (s: number) => {
-    const a = 35 + ((base >> (s + 1)) % 45);
-    const b = 10 + ((base >> (s + 7)) % 35);
-    let c = 100 - (a + b);
-    c = clamp(c, 2, 80);
-    return [clamp(a, 20, 90), clamp(b, 5, 60), clamp(c, 2, 80)] as const;
-  };
-  const [p1, p2, p3] = mk3(0);
-  const [q1, q2, q3] = mk3(4);
-  const [r1, r2, r3] = mk3(8);
-  const [s1, s2, s3] = mk3(12);
-
+  // Return exact values from the image
   return {
-    /* Pre survey */
+    /* Pre survey status */
     pre: [
-      { key: "submit",   value: p1, fill: BLUE_100 },
-      { key: "pending",  value: p2, fill: ERROR_200 },
-      { key: "reviewed", value: p3, fill: BLUE_700 },
+      { key: "submit",   value: 58.62, fill: CORAL },
+      { key: "pending",  value: 24.61, fill: PURPLE },
     ],
-    /* Student course: Completed / In progress / Not started */
+    /* Student course status */
     course: [
-      { key: "submit",   value: q1, fill: BLUE_700 },  // Completed
-      { key: "pending",  value: q2, fill: ERROR_200 }, // In progress
-      { key: "reviewed", value: q3, fill: BLUE_100 },  // Not started
+      { key: "reviewed", value: 40, fill: CORAL },  // Not started
+      { key: "pending",  value: 20, fill: PURPLE },   // In progress
+      { key: "submit",   value: 40, fill: CYAN },    // Completed
     ],
-    /* Idea submission */
+    /* Idea submission status */
     idea: [
-      { key: "submit",   value: r1, fill: BLUE_100 },  // Submitted ideas
-      { key: "pending",  value: r2, fill: ERROR_200 }, // In draft ideas
-      { key: "reviewed", value: r3, fill: BLUE_700 },  // Not started ideas
+      { key: "submit",   value: 80, fill: CORAL },     // Submitted ideas
+      { key: "pending",  value: 2.75, fill: PURPLE },    // In draft ideas
+      { key: "reviewed", value: 18.15, fill: CYAN },    // Not started idea submission
     ],
-    /* Post survey */
+    /* Post survey status */
     post: [
-      { key: "submit",   value: s1, fill: BLUE_100 },
-      { key: "pending",  value: s2, fill: ERROR_200 },
-      { key: "reviewed", value: s3, fill: BLUE_700 },
+      { key: "submit",   value: 97.69, fill: CORAL },
+      { key: "pending",  value: 13.64, fill: PURPLE },
     ],
   };
 }
@@ -202,7 +180,7 @@ export default function Reports() {
     <section className="w-full px-4 py-4">
       <div className="space-y-3">
         <div>
-          <h1 className="text-[22px] md:text-[32px] font-normal text-[var(--neutral-1000)]">
+          <h1 className="text-3xl font-semibold">
             Reports & Exports
           </h1>
           <p className="text-[14px] text-[var(--neutral-700)]">
@@ -313,7 +291,7 @@ export default function Reports() {
                   onClick={onGenerate}
                   className="h-9 rounded-full px-5 bg-[var(--primary)] hover:bg-[var(--primary)] text-white text-[14px]"
                 >
-                  Generate
+                  Report
                 </Button>
               </div>
             </div>
@@ -324,12 +302,12 @@ export default function Reports() {
               <PieBlock
                 title="Pre survey status"
                 data={charts.pre}
-                legendLabels={["Submit", "Pending", "Reviewed"]}
+                legendLabels={["Submit", "Pending"]}
               />
               <PieBlock
                 title="Student course status"
                 data={charts.course}
-                legendLabels={["Completed", "In progress", "Not started"]}
+                legendLabels={["Not started", "In progress", "Completed"]}
               />
               <PieBlock
                 title="Idea Submission status"
@@ -339,7 +317,7 @@ export default function Reports() {
               <PieBlock
                 title="Post survey status"
                 data={charts.post}
-                legendLabels={["Submit", "Pending", "Reviewed"]}
+                legendLabels={["Submit", "pending"]}
               />
             </div>
           </CardContent>
