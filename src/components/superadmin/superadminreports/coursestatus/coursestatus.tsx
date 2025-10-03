@@ -88,7 +88,8 @@ export default function courseStatus() {
             <XAxis
               dataKey="stage"
               tickLine={false}
-              axisLine={{ stroke: "var(--neutral-1000)", strokeWidth: 2 }} // dark & thick
+              axisLine={{ stroke: "#00001A4D", strokeWidth: 2 }} // dark & thick
+
               tickMargin={8}
               tick={{ fill: "var(--neutral-800)", fontSize: 12 }}
             />

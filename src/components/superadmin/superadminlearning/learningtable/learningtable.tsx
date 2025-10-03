@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Eye, Pencil, Trash2, Search } from "lucide-react";
+import { Eye, PencilLine, Trash, Search } from "lucide-react";
+import Pagination from "@/components/ui/pagination";
 
 type Row = { id: number; name: string; type: "Course video" | "PDF" };
 
@@ -37,13 +38,15 @@ export default function LearningResourcesTable() {
   const start = (currentPage - 1) * pageSize;
   const pageRows = filtered.slice(start, start + pageSize);
 
-  const goTo = (p: number) => setPage(Math.min(Math.max(1, p), totalPages));
+  const handlePageChange = (newPage: number) => {
+    setPage(Math.min(Math.max(1, newPage), totalPages));
+  };
 
   return (
-    <div className="w-full">
-      {/* Header (same width as table) */}
-      <div className="mx-auto mt-6 flex w-[70%] items-center justify-between gap-4">
-        <h1 className="text-[32px] font-normal leading-tight text-[var(--neutral-1000)]">
+    <div className="bg-white rounded-lg mx-auto w-full max-w-[1600px]">
+      {/* Header */}
+      <div className="px-5 pt-4 pb-4 flex justify-between items-center">
+        <h1 className="text-3xl font-semibold text-gray-900">
           Learning Resources
         </h1>
 
@@ -66,121 +69,78 @@ export default function LearningResourcesTable() {
         </div>
       </div>
 
-      {/* Table card (70% width, centered) */}
-      <div className="mx-auto my-6 w-[70%] overflow-hidden rounded-xl border border-[var(--neutral-200)] bg-[var(--neutral-100)]">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="h-14">
-                <th className="px-6 text-sm text-[var(--neutral-900)]">No</th>
-                <th className="px-6 text-sm text-[var(--neutral-900)]">Details</th>
-                <th className="px-6 text-sm text-[var(--neutral-900)]">File type</th>
-                <th className="px-6 text-sm text-[var(--neutral-900)]">Actions</th>
+      {/* Table */}
+      <div className="overflow-x-auto lg:overflow-hidden rounded-lg flex justify-center">
+        <table className="w-[1140px] table-fixed border-0 ">
+          <thead>
+            <tr className="bg-[#F1F5F6] text-sm md:text-[14px] text-neutral-600 h-20">
+              <th className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 text-left font-medium rounded-tl-lg">No</th>
+              <th className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 text-left font-medium">Details</th>
+              <th className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 text-left font-medium">File type</th>
+              <th className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 text-left font-medium rounded-tr-lg">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {pageRows.map((r) => (
+              <tr key={r.id} className="text-sm md:text-[14px] bg-white">
+                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">{r.id}</td>
+                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">{r.name}</td>
+                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">{r.type}</td>
+                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">
+                  <div className="flex gap-4">
+                    <button
+                      className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
+                      aria-label="View"
+                      title="View"
+                    >
+                      <Eye size={20} />
+                    </button>
+                    <button
+                      className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
+                      aria-label="Edit"
+                      title="Edit"
+                    >
+                      <PencilLine size={20} />
+                    </button>
+                    <button
+                      className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
+                      aria-label="Delete"
+                      title="Delete"
+                    >
+                      <Trash size={20} />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-
-            <tbody className="bg-white">
-              {pageRows.map((r) => (
-                <tr key={r.id} className="h-12">
-                  <td className="px-6  text-sm text-[var(--neutral-900)]">
-                    {r.id}
-                  </td>
-                  <td className="px-6  text-sm text-[var(--neutral-900)]">
-                    {r.name}
-                  </td>
-                  <td className="px-6  text-sm text-[var(--neutral-800)]">
-                    {r.type}
-                  </td>
-                  <td className="px-6">
-                    <div className="flex gap-4">
-                      <button
-                        className="rounded-full p-1.5 transition-colors hover:bg-[var(--neutral-200)]"
-                        aria-label="View"
-                        title="View"
-                      >
-                        <Eye size={18} stroke="var(--neutral-1000)" />
-                      </button>
-                      <button
-                        className="rounded-full p-1.5 transition-colors hover:bg-[var(--neutral-200)]"
-                        aria-label="Edit"
-                        title="Edit"
-                      >
-                        <Pencil size={18} stroke="var(--neutral-1000)" />
-                      </button>
-                      <button
-                        className="rounded-full p-1.5 transition-colors hover:bg-[var(--neutral-200)]"
-                        aria-label="Delete"
-                        title="Delete"
-                      >
-                        <Trash2 size={18} stroke="var(--neutral-1000)" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-
-              {/* Empty state when search has no matches */}
-              {pageRows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-10 text-center text-sm text-[var(--neutral-700)]"
-                  >
-                    No resources found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer / pagination */}
-        <div className="flex flex-col items-center justify-between gap-4 bg-white px-6 py-4 sm:flex-row">
-          <div className="text-sm text-[var(--neutral-800)]">
-            Showing {filtered.length === 0 ? 0 : start + 1}–
-            {Math.min(start + pageSize, filtered.length)} of {filtered.length}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => goTo(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={`rounded-full border border-[var(--neutral-300)] px-4 py-1.5 text-sm ${
-                currentPage === 1
-                  ? "opacity-50"
-                  : "text-[var(--neutral-900)] hover:bg-[var(--neutral-200)]"
-              }`}
-            >
-              Previous
-            </button>
-
-            {/* Page numbers (compact) */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => goTo(p)}
-                className={`rounded-full px-3 py-1 text-sm ${
-                  p === currentPage
-                    ? "bg-[var(--primary)] text-white"
-                    : "border border-[var(--neutral-300)] text-[var(--neutral-900)] hover:bg-[var(--neutral-200)]"
-                }`}
-              >
-                {p}
-              </button>
             ))}
 
-            <button
-              onClick={() => goTo(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={`rounded-full border border-[var(--neutral-300)] px-4 py-1.5 text-sm ${
-                currentPage === totalPages
-                  ? "opacity-50"
-                  : "text-[var(--neutral-900)] hover:bg-[var(--neutral-200)]"
-              }`}
-            >
-              Next
-            </button>
-          </div>
+            {/* Empty state when search has no matches */}
+            {pageRows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-6 py-10 text-center text-sm text-[var(--neutral-700)]"
+                >
+                  No resources found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex justify-center">
+        <div className="w-[1140px]">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={pageSize}
+            onPageChange={handlePageChange}
+            className="border-t border-gray-200 "
+          />
         </div>
       </div>
     </div>
