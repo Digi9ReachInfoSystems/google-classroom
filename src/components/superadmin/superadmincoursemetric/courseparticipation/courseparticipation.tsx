@@ -20,7 +20,7 @@ type MetricCardProps = {
 function MetricCard({ iconSrc, iconAlt, label, value }: MetricCardProps) {
   return (
     <Card className="rounded-2xl border-0 shadow-none">
-      <CardContent className="p-4 h-[112px] flex items-center justify-center">
+      <CardContent className="p-6 h-[140px] flex items-center justify-center">
         <div className="flex items-center gap-3">
           {/* Icon in orange circle */}
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)]">
@@ -53,7 +53,7 @@ export default function CoursePartition() {
       {/* Header with title + dropdown */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-[32px] font-normal leading-tight">Course Participation</h2>
+          <h2 className="text-3xl font-semibold">Course Participation</h2>
           <p className="text-[14px] text-muted-foreground">
             Overview of student progress and survey status
           </p>
@@ -88,7 +88,7 @@ export default function CoursePartition() {
       </div>
 
       {/* Four metric cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-[112px]">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-[140px]">
         <MetricCard
           iconSrc="/metrics/teachers.png"   // or /students.png as per your asset
           iconAlt="Course icon"
