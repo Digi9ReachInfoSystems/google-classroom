@@ -54,13 +54,13 @@ export function LoginForm({
         <CardContent className="grid p-0 md:grid-cols-2">
           <form className="p-4 md:p-10 w-full" onSubmit={onSubmit}>
             <FieldGroup className="space-y-0">
-              <div className="flex flex-col items-center text-center mb-1">
+              <div className="flex flex-col items-center text-center mb-0">
                 <img 
                   src="/login/UPSHIFT logo.png" 
                   alt="UPSHIFT Bhutan" 
-                  className="h-12 mb-2"
+                  className="h-12 mb-1"
                 />
-                <h1 className="text-2xl font-bold text-[#1A1A1A] ">LOGIN</h1>
+                <h1 className="text-2xl font-bold text-[#1A1A1A] mb-0">LOGIN</h1>
                 <p className="text-[#6B6B6B] text-balance text-xs">
                   How to | get started lorem ipsum dolor at?
                 </p>
@@ -100,19 +100,19 @@ export function LoginForm({
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className="bg-[#FF9A02] hover:bg-[#e68a00] text-white font-medium py-2.5 px-8 rounded-full text-center shadow-md hover:shadow-lg transition-shadow text-sm disabled:opacity-50 w-auto max-w-[150px]"
+                  className="bg-[#FF9A02] hover:bg-[#e68a00] text-white font-medium py-2.5 px-8 rounded-full text-center shadow-xl hover:shadow-2xl transition-all text-sm disabled:opacity-50 w-auto max-w-[150px]"
                 >
                   {loading ? 'Login...' : 'Login Now'}
                 </button>
               </div>
               
-              <div className="flex items-center justify-center mb-1.5">
+              <div className="flex items-center justify-center mb-0.5">
                 <div className="bg-gray-300 h-px flex-grow max-w-[80px]"></div>
                 <p className="text-xs text-black-600 px-3"><span className="font-bold">Login</span> with Others</p>
                 <div className="bg-gray-300 h-px flex-grow max-w-[80px]"></div>
               </div>
               
-              <div className="flex justify-center">
+              <div className="flex justify-center -mt-1">
                 <button 
                   type="button" 
                   className="w-full max-w-[340px] mx-auto border border-gray-300 rounded-full py-2.5 px-5 flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow"
