@@ -14,24 +14,23 @@ export default function BadgesSection() {
           3 Earned
         </Badge>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
         {/* Earned Badges */}
         {[...Array(3)].map((_, i) => (
           <div key={i} className="relative group">
             <Image
               src="/student/badge-first.png"
               alt="Class First Badge"
-             width={100}
-             height={100}
-              className="w-24 h-24 md:w-40 md:h-40 mx-auto transition-transform group-hover:scale-105"
-   
-         />
+              width={100}
+              height={100}
+              className="w-20 h-20 md:w-24 md:h-24 mx-auto transition-transform group-hover:scale-105"
+            />
           </div>
         ))}
         {/* Locked Badges */}
-        {[...Array(3)].map((_, i) => (
-          <div key={`locked-${i}`} className="w-24 h-24 md:w-30 md:h-30 mx-auto bg-gray-100 rounded-full flex items-center justify-center opacity-60 border-2 border-gray-200">
-            <Lock className="w-4 h-4 md:w-6 md:h-6 text-gray-400" />
+        {[...Array(6)].map((_, i) => (
+          <div key={`locked-${i}`} className="w-20 h-20 md:w-24 md:h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center opacity-60 border-2 border-gray-200">
+            <Lock className="w-5 h-5 md:w-6 md:h-6 text-gray-400" />
           </div>
         ))}
       </div>
