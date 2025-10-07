@@ -2,9 +2,12 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import { Eye, PencilLine, Trash, Search } from "lucide-react";
+import { Eye, PencilLine, Trash, Search, Plus } from "lucide-react";
 import Pagination from "@/components/ui/pagination";
 import AddResourceModal from "../popup/addresourcesmodal";
+import ViewResourceModal from "../popup/viewresourcemodal";
+import EditResourceModal from "../popup/editresourcemodal";
+import DeleteResourceModal from "../popup/deleteresourcemodal";
 
 type Row = { 
   id: string; 
@@ -14,6 +17,19 @@ type Row = {
   createdBy: string;
   createdAt: string;
 };
+type ResourceModalData = { details: string; type: string; link: string };
+
+/** Demo data (30 rows so you can see pagination working).
+ * Replace with your own data source.
+ */
+const seed: Row[] = Array.from({ length: 30 }, (_, i) => ({
+  id: (i + 1).toString(),
+  details: "English courses",
+  type: i % 3 === 0 ? "Document" : "Video",
+  link: "www.UpshiftCoursesvideo.com",
+  createdBy: "Admin",
+  createdAt: new Date().toISOString(),
+}));
 
 export default function LearningResourcesTable() {
   const [query, setQuery] = useState("");
@@ -22,6 +38,12 @@ export default function LearningResourcesTable() {
   const [resources, setResources] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<ResourceModalData | null>(null);
+  const [selectedRow, setSelectedRow] = useState<Row | null>(null);
   const pageSize = 10;
 
   // Fetch resources from API
@@ -77,12 +99,22 @@ export default function LearningResourcesTable() {
     setPage(Math.min(Math.max(1, newPage), totalPages));
   };
 
-  const handleEditClick = () => {
-    setIsModalOpen(true);
+  const handleViewClick = (resource: Row) => {
+    setSelectedResource({ 
+      details: resource.details, 
+      type: resource.type, 
+      link: resource.link || "" 
+    });
+    setIsViewModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
+  const handleEditClick = (resource: Row) => {
+    setSelectedResource({ 
+      details: resource.details, 
+      type: resource.type, 
+      link: resource.link || "" 
+    });
+    setIsEditModalOpen(true);
   };
 
   const handleResourceSubmit = async (details: string, type: string, link: string) => {
@@ -112,6 +144,30 @@ export default function LearningResourcesTable() {
       console.error('Error creating resource:', err);
       setError(err instanceof Error ? err.message : 'Failed to create resource');
     }
+  };
+
+  const handleDeleteClick = (resource: Row) => {
+    setSelectedRow(resource);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleAddResourceClick = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddResourceSubmit = (details: string, type: string, link: string) => {
+    console.log("Resource added:", { details, type, link });
+    // TODO: Implement actual resource submission logic
+  };
+
+  const handleEditResourceSubmit = (details: string, type: string, link: string) => {
+    console.log("Resource edited:", { details, type, link });
+    // TODO: Implement actual resource edit logic
+  };
+
+  const handleDeleteConfirm = () => {
+    console.log("Resource deleted:", selectedRow);
+    // TODO: Implement actual resource delete logic
   };
 
   const handleDeleteResource = async (resourceId: string) => {
@@ -173,27 +229,37 @@ export default function LearningResourcesTable() {
   return (
     <div className="bg-white rounded-lg mx-auto w-full max-w-[1600px]">
       {/* Header */}
-      <div className="px-5 pt-4 pb-4 flex justify-between items-center">
+      <div className="px-5 pt-4 pb-4 flex justify-between items-center gap-4">
         <h1 className="text-3xl font-semibold text-gray-900">
           Learning Resources
         </h1>
 
-        <div className="relative w-full max-w-[520px]">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-            size={18}
-            stroke="var(--neutral-700)"
-          />
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1); // reset to first page when searching
-            }}
-            type="text"
-            placeholder="Search..."
-            className="w-full rounded-full border border-[var(--neutral-300)] bg-[var(--neutral-100)] py-2 pl-9 pr-4 text-sm text-[var(--neutral-900)] outline-none focus:border-[var(--blue-400)]"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative w-full max-w-[520px]">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+              size={18}
+              stroke="var(--neutral-700)"
+            />
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1); // reset to first page when searching
+              }}
+              type="text"
+              placeholder="Search..."
+              className="w-full rounded-full border border-[var(--neutral-300)] bg-[var(--neutral-100)] py-2 pl-9 pr-4 text-sm text-[var(--neutral-900)] outline-none focus:border-[var(--blue-400)]"
+            />
+          </div>
+
+          <button
+            onClick={handleAddResourceClick}
+            className="flex items-center gap-2 h-10 px-5 rounded-full bg-[var(--primary)] text-white hover:opacity-90 transition-all whitespace-nowrap"
+          >
+            <Plus size={18} />
+            Add Resource
+          </button>
         </div>
       </div>
 
@@ -250,7 +316,15 @@ export default function LearningResourcesTable() {
                       </a>
                     )}
                     <button
-                      onClick={handleEditClick}
+                      onClick={() => handleViewClick(r)}
+                      className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
+                      aria-label="View"
+                      title="View"
+                    >
+                      <Eye size={20} />
+                    </button>
+                    <button
+                      onClick={() => handleEditClick(r)}
                       className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
                       aria-label="Edit"
                       title="Edit"
@@ -309,9 +383,31 @@ export default function LearningResourcesTable() {
 
       {/* Add Resource Modal */}
       <AddResourceModal
-        open={isModalOpen}
-        onClose={handleModalClose}
-        onSubmit={handleResourceSubmit}
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddResourceSubmit}
+      />
+
+      {/* View Resource Modal */}
+      <ViewResourceModal
+        open={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        resource={selectedResource}
+      />
+
+      {/* Edit Resource Modal */}
+      <EditResourceModal
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditResourceSubmit}
+        resource={selectedResource}
+      />
+
+      {/* Delete Resource Modal */}
+      <DeleteResourceModal
+        open={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );

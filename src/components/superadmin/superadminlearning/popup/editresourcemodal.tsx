@@ -1,29 +1,36 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type ResourceType = "Video" | "Document" | "Link" | "Image" | "Other";
 
-export default function AddResourceModal({
+export default function EditResourceModal({
   open,
   onClose,
   onSubmit,
+  resource,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (details: string, type: string, link: string) => void;
+  resource: { details: string; type: string; link: string } | null;
 }) {
   const [details, setDetails] = useState("");
   const [type, setType] = useState<ResourceType>("Video");
   const [link, setLink] = useState("");
 
-  if (!open) return null;
+  useEffect(() => {
+    if (resource) {
+      setDetails(resource.details);
+      setType(resource.type as ResourceType);
+      setLink(resource.link);
+    }
+  }, [resource]);
+
+  if (!open || !resource) return null;
 
   const handleSubmit = () => {
     if (details.trim()) {
       onSubmit(details.trim(), type, link.trim());
-      setDetails("");
-      setType("Video");
-      setLink("");
       onClose();
     }
   };
@@ -33,7 +40,7 @@ export default function AddResourceModal({
       className="fixed inset-0 z-50"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="add-resource-title"
+      aria-labelledby="edit-resource-title"
     >
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
@@ -49,13 +56,13 @@ export default function AddResourceModal({
 
           <div className="mb-6">
             <h2 
-              id="add-resource-title"
+              id="edit-resource-title"
               className="text-2xl font-bold text-[var(--neutral-900)] mb-2"
             >
-              Add Resource
+              Edit Resource
             </h2>
             <p className="text-[var(--neutral-600)] text-sm">
-              You can add new resource by submitting details here.
+              You can add new resource by submitting details here
             </p>
           </div>
 
@@ -63,13 +70,13 @@ export default function AddResourceModal({
             {/* Details Field - First Row */}
             <div>
               <label 
-                htmlFor="details"
+                htmlFor="edit-details"
                 className="block text-sm font-medium text-[var(--neutral-900)] mb-2"
               >
                 Details<span className="text-red-500">*</span>
               </label>
               <input
-                id="details"
+                id="edit-details"
                 type="text"
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
@@ -84,14 +91,14 @@ export default function AddResourceModal({
               {/* Type Field */}
               <div className="flex-1">
                 <label 
-                  htmlFor="type"
+                  htmlFor="edit-type"
                   className="block text-sm font-medium text-[var(--neutral-900)] mb-2"
                 >
                   Type<span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <select
-                    id="type"
+                    id="edit-type"
                     value={type}
                     onChange={(e) => setType(e.target.value as ResourceType)}
                     className="w-full h-12 px-4 rounded-xl border border-[var(--neutral-200)] bg-white text-[var(--neutral-900)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent appearance-none pr-10"
@@ -120,13 +127,13 @@ export default function AddResourceModal({
               {/* Link Field */}
               <div className="flex-1">
                 <label 
-                  htmlFor="link"
+                  htmlFor="edit-link"
                   className="block text-sm font-medium text-[var(--neutral-900)] mb-2"
                 >
                   Link
                 </label>
                 <input
-                  id="link"
+                  id="edit-link"
                   type="url"
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
@@ -157,3 +164,4 @@ export default function AddResourceModal({
     </div>
   );
 }
+
