@@ -4,12 +4,14 @@ import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 interface ModuleItem {
   id: string
   title: string
   completed: boolean
   locked?: boolean
+  route?: string
 }
 
 interface ProgressModule {
@@ -23,6 +25,7 @@ interface ProgressModule {
 }
 
 const ProgressSidebar = () => {
+  const router = useRouter()
   const [modules, setModules] = useState<ProgressModule[]>([
     {
       id: "1",
@@ -39,8 +42,8 @@ const ProgressSidebar = () => {
       videoCount: 2,
       expanded: true,
       items: [
-        { id: "2-1", title: "Advance tech", completed: true },
-        { id: "2-2", title: "Advance tech assessment", completed: false },
+        { id: "2-1", title: "Advance tech", completed: true, route: "/student/dashboard/mycourses" },
+        { id: "2-2", title: "Advance tech assessment", completed: false, route: "/student/dashboard/mycourses/assessment" },
       ],
     },
     {
@@ -59,7 +62,36 @@ const ProgressSidebar = () => {
     },
   ])
 
-  // No dropdown interaction – modules render statically based on status
+  const handleItemClick = (item: ModuleItem, moduleId: string) => {
+    if (item.locked) return
+    
+    // Mark item as completed when clicked and check if module should be completed
+    setModules(prevModules =>
+      prevModules.map(module => {
+        if (module.id === moduleId && module.items) {
+          // Update the clicked item to completed
+          const updatedItems = module.items.map(i =>
+            i.id === item.id ? { ...i, completed: true } : i
+          )
+          
+          // Check if all items are now completed
+          const allItemsCompleted = updatedItems.every(i => i.completed)
+          
+          return {
+            ...module,
+            items: updatedItems,
+            // If all items are completed, mark the module as completed
+            status: allItemsCompleted ? "completed" as const : module.status,
+          }
+        }
+        return module
+      })
+    )
+    
+    if (item.route) {
+      router.push(item.route)
+    }
+  }
 
   const getStatusIcon = (status: "completed" | "current" | "locked") => {
     switch (status) {
@@ -80,7 +112,7 @@ const ProgressSidebar = () => {
   const getStatusStyle = (status: "completed" | "current" | "locked") => {
     switch (status) {
       case "completed":
-        return "text-gray-700"
+        return "text-green-600 font-medium"
       case "current":
         return "text-foreground font-medium"
       case "locked":
@@ -123,18 +155,24 @@ const ProgressSidebar = () => {
                 {module.items && module.status !== "locked" && (
                   <div className="mt-3 lg:mt-4 space-y-2 lg:space-y-3 pl-3 lg:pl-4 border-l border-gray-200">
                     {module.items.map((item) => (
-                      <div key={item.id} className="flex items-center space-x-2 lg:space-x-3">
+                      <div
+                        key={item.id}
+                        className={`flex items-center space-x-2 lg:space-x-3 ${
+                          !item.locked && item.route ? "cursor-pointer hover:bg-gray-50 rounded-md p-1 -m-1 transition-colors" : ""
+                        }`}
+                        onClick={() => handleItemClick(item, module.id)}
+                      >
                         <div className="flex-shrink-0">
                           {item.completed ? (
                             <div className="relative flex items-center justify-center">
                               <div className="h-4 w-4 rounded-full border-2 border-green-500 bg-white" />
-                              <Check className="absolute h-2.5 w-2.5 text-green-600" />
+                              <Check className="absolute h-2.5 w-2.5 text-green-600 font-bold" strokeWidth={3} />
                             </div>
                           ) : (
                             <div className="h-4 w-4 rounded-full border-2 border-gray-300 bg-white"></div>
                           )}
                         </div>
-                        <span className={`text-sm ${item.completed ? "text-gray-600" : "text-gray-800"}`}>
+                        <span className={`text-sm ${item.completed ? "text-green-600 font-medium" : "text-gray-800 font-medium"}`}>
                           {item.title}
                         </span>
                       </div>

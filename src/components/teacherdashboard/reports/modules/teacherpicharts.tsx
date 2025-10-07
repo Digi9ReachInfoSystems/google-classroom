@@ -2,6 +2,8 @@
 
 import React from "react";
 import { PieChart, Pie, LabelList } from "recharts";
+import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -18,6 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useFilters } from "./FilterContext";
 
 /* -------------------- filter option values -------------------- */
@@ -54,6 +62,7 @@ const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
 
 function makeCharts(filters: {
+  dateRange?: DateRange;
   age?: string;
   grade?: string;
   gender?: string;
@@ -169,13 +178,20 @@ function PieBlock({
 /* --------------------------------- Page --------------------------------- */
 export default function TeacherPiCharts() {
   const { filters, setAge, setGrade, setGender, setDisability } = useFilters();
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
 
   const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts(filters)
+    makeCharts({ ...filters, dateRange })
   );
 
+  const isLg = useMedia("(min-width: 1024px)");
+  const dateLabel =
+    dateRange?.from && dateRange?.to
+      ? `${format(dateRange.from, "dd MMM")} – ${format(dateRange.to, "dd MMM yyyy")}`
+      : "Select date range";
+
   const onGenerate = () => {
-    setCharts(makeCharts(filters));
+    setCharts(makeCharts({ ...filters, dateRange }));
   };
 
   return (
@@ -196,6 +212,30 @@ export default function TeacherPiCharts() {
               <div className="text-[16px] font-medium text-[var(--neutral-900)]">Data Analytics</div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-8 rounded-full px-4 text-[12px] w-[170px] justify-start font-normal">
+                      {dateLabel}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="end"
+                    side="bottom"
+                    sideOffset={8}
+                    collisionPadding={12}
+                    className="p-2 w-auto rounded-xl border bg-white shadow-xl"
+                  >
+                    <Calendar
+                      mode="range"
+                      numberOfMonths={isLg ? 2 : 1}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      initialFocus
+                      className="w-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+
                 <Select value={filters.age} onValueChange={setAge}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[140px] text-[12px]">
                     <SelectValue placeholder="Select Age" />
