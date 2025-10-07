@@ -1,7 +1,33 @@
-import React from 'react'
-import Link from 'next/link'
+"use client"
+
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 
 export default function Studentassements() {
+  const router = useRouter()
+  const [isCompleted, setIsCompleted] = useState(false)
+
+  useEffect(() => {
+    // Mark assessment as viewed/started when component mounts
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('assessment-started', 'true')
+    }
+  }, [])
+
+  const handleContinue = () => {
+    // Mark assessment as completed
+    setIsCompleted(true)
+    
+    // Save completion status
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('assessment-completed', 'true')
+    }
+    
+    // Navigate to certificate or next module
+    router.push("/student/dashboard/mycourses/certificate")
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-md p-4 sm:p-6 xl:p-8 2xl:p-10">
       <div className="mb-6 2xl:mb-8">
@@ -34,12 +60,12 @@ export default function Studentassements() {
       </div>
 
       <div className="mt-8 2xl:mt-10 flex justify-end">
-        <Link
-          href="/student/dashboard/mycourses/certificate"
+        <Button
+          onClick={handleContinue}
           className="px-6 py-2 2xl:px-8 2xl:py-3 rounded-full bg-orange-400 text-white text-sm 2xl:text-base font-medium shadow hover:bg-orange-500 transition-colors"
         >
           Continue
-        </Link>
+        </Button>
       </div>
     </div>
   )
