@@ -13,6 +13,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { User, Lock } from "lucide-react"
 
 export function LoginForm({
   className,
@@ -51,7 +52,7 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-2 w-full max-w-4xl", className)} {...props}>
       <Card className="overflow-hidden p-0 shadow-lg w-full">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-4 md:p-5 w-full" onSubmit={onSubmit}>
+          <form className="p-4 md:p-10 w-full" onSubmit={onSubmit}>
             <FieldGroup className="space-y-0">
               <div className="flex flex-col items-center text-center mb-1">
                 <img 
@@ -67,12 +68,9 @@ export function LoginForm({
               
               {error && <p className="text-sm text-red-600 text-center mb-2">{error}</p>}
               
-              <div className="space-y-2 mb-2">
+              <div className="space-y-3 ">
                 <div className="flex items-center bg-[#f2f0fa] rounded-full px-5 py-3 w-full max-w-[340px] mx-auto">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 flex-shrink-0">
-                    <circle cx="12" cy="8" r="5" />
-                    <path d="M20 21a8 8 0 0 0-16 0" />
-                  </svg>
+                  <User size={16} className="mr-2 flex-shrink-0 text-black" />
                   <input
                     id="username"
                     type="text"
@@ -85,10 +83,7 @@ export function LoginForm({
                 </div>
                 
                 <div className="flex items-center bg-[#f2f0fa] rounded-full px-5 py-3 w-full max-w-[340px] mx-auto">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 flex-shrink-0">
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
+                  <Lock size={16} className="mr-2 flex-shrink-0 text-black" />
                   <input 
                     id="password" 
                     type="password" 
@@ -105,7 +100,7 @@ export function LoginForm({
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className="bg-[#FF9A02] hover:bg-[#e68a00] text-white font-medium py-2.5 px-8 rounded-full text-center shadow-md hover:shadow-lg transition-shadow text-sm disabled:opacity-50 w-full max-w-[200px]"
+                  className="bg-[#FF9A02] hover:bg-[#e68a00] text-white font-medium py-2.5 px-8 rounded-full text-center shadow-md hover:shadow-lg transition-shadow text-sm disabled:opacity-50 w-auto max-w-[150px]"
                 >
                   {loading ? 'Login...' : 'Login Now'}
                 </button>
