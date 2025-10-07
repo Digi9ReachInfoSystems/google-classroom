@@ -23,6 +23,7 @@ export const dynamic = 'force-dynamic';
 export async function POST() {
 	try {
 		console.log('Starting sync courses...');
+		console.log('Using delegated admin email:', process.env.GOOGLE_DELEGATED_ADMIN || 'admin@digi9.co.in');
 		await connectToDatabase();
 		console.log('Connected to database');
 		
@@ -31,16 +32,37 @@ export async function POST() {
 		
 		const all: Course[] = [];
 		let pageToken: string | undefined = undefined;
-		do {
-			const res: any = await classroom.courses.list({ pageSize: 300, pageToken });
-			all.push(...(res.data.courses || []));
-			pageToken = res.data.nextPageToken || undefined;
-		} while (pageToken);
+		try {
+			do {
+				// Try without teacherId first to see all courses the service account can access
+				const res: any = await classroom.courses.list({ 
+					pageSize: 300, 
+					pageToken
+				});
+				console.log('Google Classroom API response:', res.data);
+				all.push(...(res.data.courses || []));
+				pageToken = res.data.nextPageToken || undefined;
+			} while (pageToken);
+		} catch (apiError) {
+			console.error('Google Classroom API error:', apiError);
+			return NextResponse.json({ 
+				message: 'Failed to fetch courses from Google Classroom. Check service account permissions.',
+				error: apiError instanceof Error ? apiError.message : 'Unknown API error'
+			}, { status: 500 });
+		}
 
 		console.log(`Fetched ${all.length} courses from Google Classroom`);
+		console.log('All courses:', all);
 
 		if (all.length === 0) {
-			return NextResponse.json({ synced: 0 });
+			console.log('No courses found. This could mean:');
+			console.log('1. No courses exist in Google Classroom for this service account');
+			console.log('2. Service account does not have proper permissions');
+			console.log('3. Delegated admin email does not have access to courses');
+			return NextResponse.json({ 
+				synced: 0,
+				message: 'No courses found. Check service account permissions and delegated admin access.'
+			});
 		}
 
 		const ops = all.map((c) => ({

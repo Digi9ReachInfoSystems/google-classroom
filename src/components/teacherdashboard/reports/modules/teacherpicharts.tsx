@@ -44,58 +44,7 @@ const baseConfig: ChartConfig = {
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
 type ChartSet = { pre: Slice[]; course: Slice[]; idea: Slice[]; post: Slice[] };
 
-/* --- deterministic “fake” data generator so selections change the pies --- */
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-const clamp = (n: number, lo: number, hi: number) =>
-  Math.max(lo, Math.min(hi, n));
-
-function makeCharts(filters: {
-  age?: string;
-  grade?: string;
-  gender?: string;
-  disability?: string;
-}): ChartSet {
-  // Base data
-  let baseData = {
-    pre: [
-      { key: "submit",   value: 58.62, fill: PURPLE },
-      { key: "pending",  value: 24.61, fill: SALMON },
-    ],
-    course: [
-      { key: "submit",   value: 40, fill: PURPLE },
-      { key: "pending",  value: 20, fill: SALMON },
-      { key: "reviewed", value: 40, fill: LIGHT_BLUE },
-    ],
-    idea: [
-      { key: "submit",   value: 80, fill: PURPLE },
-      { key: "pending",  value: 2.75, fill: SALMON },
-      { key: "reviewed", value: 18.15, fill: LIGHT_BLUE },
-    ],
-    post: [
-      { key: "submit",   value: 97.69, fill: PURPLE },
-      { key: "pending",  value: 13.64, fill: SALMON },
-    ],
-  };
-
-  // Apply filter variations based on selections
-  if (filters.age || filters.grade || filters.gender || filters.disability) {
-    const variation = hashStr(JSON.stringify(filters)) % 100;
-    const multiplier = 0.8 + (variation / 100) * 0.4; // 0.8 to 1.2 range
-    
-    baseData = {
-      pre: baseData.pre.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
-      course: baseData.course.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
-      idea: baseData.idea.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
-      post: baseData.post.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
-    };
-  }
-
-  return baseData;
-}
+import { useTeacherCourse } from "../../context/TeacherCourseContext";
 
 /* ----------------------------- Legend ----------------------------- */
 function Legend({ items }: { items: { color: string; label: string }[] }) {
@@ -169,14 +118,238 @@ function PieBlock({
 /* --------------------------------- Page --------------------------------- */
 export default function TeacherPiCharts() {
   const { filters, setAge, setGrade, setGender, setDisability } = useFilters();
+  const { selectedCourse } = useTeacherCourse();
+  
+  // Helper function to filter out zero values
+  const filterNonZero = (data: any[]) => {
+    return data.filter(item => item.value > 0);
+  };
+  const [charts, setCharts] = React.useState<ChartSet>({
+    pre: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
+    course: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }, { key: "reviewed", value: 0, fill: LIGHT_BLUE }],
+    idea: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }, { key: "reviewed", value: 0, fill: LIGHT_BLUE }],
+    post: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
+  });
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts(filters)
-  );
+  // Fetch real analytics data
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (!selectedCourse) {
+        console.log('No course selected, setting empty charts');
+        setCharts({
+          pre: [],
+          course: [],
+          idea: [],
+          post: [],
+        });
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Build query parameters
+        const params = new URLSearchParams({
+          courseId: selectedCourse.id,
+          ...(filters.age && { age: filters.age }),
+          ...(filters.grade && { grade: filters.grade }),
+          ...(filters.gender && { gender: filters.gender }),
+          ...(filters.disability && { disability: filters.disability }),
+        });
+
+        const response = await fetch(`/api/teacher/reports/analytics?${params}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+
+        if (data.success && data.analytics) {
+          const analytics = data.analytics;
+          
+          // Calculate percentages that add up to 100%
+          const preTotal = analytics.preSurvey.submit + analytics.preSurvey.pending;
+          const courseTotal = analytics.courseProgress.submit + analytics.courseProgress.pending + analytics.courseProgress.reviewed;
+          const ideaTotal = analytics.ideaSubmission.submit + analytics.ideaSubmission.pending + analytics.ideaSubmission.reviewed;
+          const postTotal = analytics.postSurvey.submit + analytics.postSurvey.pending;
+          
+          setCharts({
+            pre: filterNonZero([
+              { key: "submit", value: preTotal > 0 ? Math.round((analytics.preSurvey.submit / preTotal) * 100) : 0, fill: PURPLE },
+              { key: "pending", value: preTotal > 0 ? Math.round((analytics.preSurvey.pending / preTotal) * 100) : 0, fill: SALMON },
+            ]),
+            course: filterNonZero([
+              { key: "submit", value: courseTotal > 0 ? Math.round((analytics.courseProgress.submit / courseTotal) * 100) : 0, fill: PURPLE },
+              { key: "pending", value: courseTotal > 0 ? Math.round((analytics.courseProgress.pending / courseTotal) * 100) : 0, fill: SALMON },
+              { key: "reviewed", value: courseTotal > 0 ? Math.round((analytics.courseProgress.reviewed / courseTotal) * 100) : 0, fill: LIGHT_BLUE },
+            ]),
+            idea: filterNonZero([
+              { key: "submit", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.submit / ideaTotal) * 100) : 0, fill: PURPLE },
+              { key: "pending", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.pending / ideaTotal) * 100) : 0, fill: SALMON },
+              { key: "reviewed", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.reviewed / ideaTotal) * 100) : 0, fill: LIGHT_BLUE },
+            ]),
+            post: filterNonZero([
+              { key: "submit", value: postTotal > 0 ? Math.round((analytics.postSurvey.submit / postTotal) * 100) : 0, fill: PURPLE },
+              { key: "pending", value: postTotal > 0 ? Math.round((analytics.postSurvey.pending / postTotal) * 100) : 0, fill: SALMON },
+            ]),
+          });
+        } else {
+          console.error('Analytics API error:', data);
+          setError(data.error || 'Failed to fetch analytics data');
+        }
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch analytics data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [selectedCourse, filters]);
 
   const onGenerate = () => {
-    setCharts(makeCharts(filters));
+    // Trigger a refresh of the analytics data
+    const fetchAnalytics = async () => {
+      if (!selectedCourse) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams({
+          courseId: selectedCourse.id,
+          ...(filters.age && { age: filters.age }),
+          ...(filters.grade && { grade: filters.grade }),
+          ...(filters.gender && { gender: filters.gender }),
+          ...(filters.disability && { disability: filters.disability }),
+        });
+
+        const response = await fetch(`/api/teacher/reports/analytics?${params}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+
+        if (data.success && data.analytics) {
+          const analytics = data.analytics;
+          
+          // Calculate percentages that add up to 100%
+          const preTotal = analytics.preSurvey.submit + analytics.preSurvey.pending;
+          const courseTotal = analytics.courseProgress.submit + analytics.courseProgress.pending + analytics.courseProgress.reviewed;
+          const ideaTotal = analytics.ideaSubmission.submit + analytics.ideaSubmission.pending + analytics.ideaSubmission.reviewed;
+          const postTotal = analytics.postSurvey.submit + analytics.postSurvey.pending;
+          
+          setCharts({
+            pre: filterNonZero([
+              { key: "submit", value: preTotal > 0 ? Math.round((analytics.preSurvey.submit / preTotal) * 100) : 0, fill: PURPLE },
+              { key: "pending", value: preTotal > 0 ? Math.round((analytics.preSurvey.pending / preTotal) * 100) : 0, fill: SALMON },
+            ]),
+            course: filterNonZero([
+              { key: "submit", value: courseTotal > 0 ? Math.round((analytics.courseProgress.submit / courseTotal) * 100) : 0, fill: PURPLE },
+              { key: "pending", value: courseTotal > 0 ? Math.round((analytics.courseProgress.pending / courseTotal) * 100) : 0, fill: SALMON },
+              { key: "reviewed", value: courseTotal > 0 ? Math.round((analytics.courseProgress.reviewed / courseTotal) * 100) : 0, fill: LIGHT_BLUE },
+            ]),
+            idea: filterNonZero([
+              { key: "submit", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.submit / ideaTotal) * 100) : 0, fill: PURPLE },
+              { key: "pending", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.pending / ideaTotal) * 100) : 0, fill: SALMON },
+              { key: "reviewed", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.reviewed / ideaTotal) * 100) : 0, fill: LIGHT_BLUE },
+            ]),
+            post: filterNonZero([
+              { key: "submit", value: postTotal > 0 ? Math.round((analytics.postSurvey.submit / postTotal) * 100) : 0, fill: PURPLE },
+              { key: "pending", value: postTotal > 0 ? Math.round((analytics.postSurvey.pending / postTotal) * 100) : 0, fill: SALMON },
+            ]),
+          });
+        } else {
+          console.error('Analytics API error:', data);
+          setError(data.error || 'Failed to fetch analytics data');
+        }
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch analytics data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
   };
+
+  if (!selectedCourse) {
+    return (
+      <section className="w-full px-4 py-4">
+        <div className="space-y-3">
+          <div>
+            <h1 className="text-3xl font-semibold">
+              Reports & Exports
+            </h1>
+            <p className="text-[12px] text-[var(--neutral-700)]">
+              Let's see the current statistics performance
+            </p>
+          </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-600 text-sm">Please select a course to view analytics.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (loading) {
+    return (
+      <section className="w-full px-4 py-4">
+        <div className="space-y-3">
+          <div>
+            <h1 className="text-3xl font-semibold">
+              Reports & Exports
+            </h1>
+            <p className="text-[12px] text-[var(--neutral-700)]">
+              Let's see the current statistics performance
+            </p>
+          </div>
+          <div className="bg-white border-none shadow-none rounded-lg p-6">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-gray-600">Loading analytics...</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="w-full px-4 py-4">
+        <div className="space-y-3">
+          <div>
+            <h1 className="text-3xl font-semibold">
+              Reports & Exports
+            </h1>
+            <p className="text-[12px] text-[var(--neutral-700)]">
+              Let's see the current statistics performance
+            </p>
+          </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-600 text-sm">Error loading analytics: {error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="w-full px-4 py-4">

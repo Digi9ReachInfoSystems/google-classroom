@@ -1,3 +1,5 @@
+"use client";
+
 // app/districtadmin/overview/page.tsx
 import AnnouncementsCard from "@/components/districtadmin/announcements/announcements";
 import ClassProgressCard from "@/components/districtadmin/charts/charts";
@@ -5,15 +7,30 @@ import MeetCard from "@/components/districtadmin/meeting/meeting";
 import KPIRow from "@/components/districtadmin/overview/overview";
 import StudentsTable from "@/components/districtadmin/studenttable/studenttable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect } from "react";
 
 export default function Page() {
+  const [schools, setSchools] = useState<{id: string, name: string}[]>([]);
+  const [selectedSchool, setSelectedSchool] = useState<string>("all");
+
+  // Fetch schools (simplified for now)
+  useEffect(() => {
+    // In a real implementation, this would fetch from an API
+    setSchools([
+      { id: "all", name: "All Schools" },
+      { id: "school1", name: "School A" },
+      { id: "school2", name: "School B" },
+      { id: "school3", name: "School C" }
+    ]);
+  }, []);
+
   return (
     <section className="space-y-6 px-5">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">
           School Overview
         </h1>
-        <Select>
+        <Select value={selectedSchool} onValueChange={setSelectedSchool}>
           <SelectTrigger
             className="h-9 w-[160px] rounded-full bg-white ring-1 ring-[var(--neutral-300)] px-4 text-sm focus:outline-none data-[state=open]:ring-2 data-[state=open]:ring-[var(--primary)]"
             aria-label="Select school filter"
@@ -21,9 +38,11 @@ export default function Page() {
             <SelectValue placeholder="Select School" />
           </SelectTrigger>
           <SelectContent className="rounded-xl bg-white ring-1 ring-[var(--neutral-300)]">
-            <SelectItem value="all">All Schools</SelectItem>
-            <SelectItem value="a">School A</SelectItem>
-            <SelectItem value="b">School B</SelectItem>
+            {schools.map((school) => (
+              <SelectItem key={school.id} value={school.id}>
+                {school.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

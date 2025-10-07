@@ -3,7 +3,7 @@ import { Schema, model, models } from 'mongoose';
 export interface IUser {
 	email: string;
 	externalId?: string;
-	role: 'student' | 'teacher' | 'admin';
+	role: 'student' | 'teacher' | 'district-admin' | 'super-admin';
 	schoolId?: string;
 	gender?: string;
 	state?: string;
@@ -20,7 +20,7 @@ const UserSchema = new Schema<IUser>(
 	{
 		email: { type: String, required: true, index: true, unique: true },
 		externalId: { type: String },
-		role: { type: String, enum: ['student', 'teacher', 'admin'], required: true, index: true },
+		role: { type: String, enum: ['student', 'teacher', 'district-admin', 'super-admin'], required: true, index: true },
 		schoolId: { type: String },
 		gender: { type: String, index: true },
 		state: { type: String, index: true },

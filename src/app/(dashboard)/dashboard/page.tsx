@@ -110,6 +110,9 @@ export default function DashboardPage() {
 						<button onClick={syncCourses} disabled={syncing} className="px-3 py-2 rounded-md bg-gray-900 text-white text-sm hover:bg-gray-800">
 							{syncing ? 'Syncing…' : 'Sync classroom'}
 						</button>
+						<Link href="/dashboard/sync" className="px-3 py-2 rounded-md bg-purple-600 text-white text-sm hover:bg-purple-700">
+							Sync Users
+						</Link>
 						<Link href="/dashboard/create-course" className="px-3 py-2 rounded-md bg-green-600 text-white text-sm hover:bg-green-700">
 							Create Course
 						</Link>

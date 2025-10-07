@@ -5,11 +5,19 @@ import Pagination from "@/components/ui/pagination";
 
 interface Student {
   rank: number;
+  id: string;
   name: string;
+  email: string;
+  profilePicture?: string;
+  completionPercentage: number;
+  totalAssignments: number;
+  completedAssignments: number;
+  averageGrade?: number;
+  isCurrentUser?: boolean;
+  // Legacy fields for compatibility
   badges: number;
   certificates: number;
   completion: number;
-  isCurrentUser?: boolean;
 }
 
 interface LeaderboardTableProps {

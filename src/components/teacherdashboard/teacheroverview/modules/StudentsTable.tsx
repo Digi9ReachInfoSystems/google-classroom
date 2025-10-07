@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useTeacherCourse } from "../../context/TeacherCourseContext";
 
 /* ✓ / ? using your assets */
 function StatusIcon({ type }: { type: "ok" | "warn" }) {
@@ -50,42 +51,162 @@ function LessonProgress({ value }: { value: number }) {
   );
 }
 
-type Row = {
+interface StudentData {
+  userId: string;
+  profile: {
+    name: {
+      givenName?: string;
+      familyName?: string;
+      fullName?: string;
+    };
+    emailAddress?: string;
+    photoUrl?: string;
+  };
+  courseId: string;
+  courseName: string;
+  courseSection?: string;
+}
+
+interface Row {
   name: string;
+  email: string;
+  course: string;
   pre: "ok" | "warn";
   lesson: number;
   idea: "ok" | "warn";
   post: "ok" | "warn";
   cert: "ok" | "warn";
-};
-
-const DATA: Row[] = [
-  { name: "Sam",  pre: "ok",   lesson: 64, idea: "warn", post: "ok",   cert: "warn" },
-  { name: "Jack", pre: "warn", lesson: 52, idea: "ok",   post: "warn", cert: "warn" },
-  { name: "Tina", pre: "warn", lesson: 6,  idea: "ok",   post: "ok",   cert: "warn" },
-  { name: "Lee",  pre: "warn", lesson: 18, idea: "ok",   post: "ok",   cert: "warn" },
-  { name: "Ssam",  pre: "ok",   lesson: 64, idea: "warn", post: "ok",   cert: "warn" },
-  { name: "Jasck", pre: "warn", lesson: 52, idea: "ok",   post: "warn", cert: "warn" },
-  { name: "Tisna", pre: "warn", lesson: 6,  idea: "ok",   post: "ok",   cert: "warn" },
-  { name: "Lsee",  pre: "warn", lesson: 18, idea: "ok",   post: "ok",   cert: "warn" },
-];
+}
 
 export default function TeacherstudentsTable() {
+  const { selectedCourse } = useTeacherCourse();
   const [q, setQ] = useState("");
+  const [students, setStudents] = useState<StudentData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const fetchStudents = async () => {
+      // Don't fetch if no course is selected
+      if (!selectedCourse) {
+        setStudents([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const url = `/api/teacher/students?courseId=${selectedCourse.id}`;
+        console.log('Fetching students for course:', selectedCourse.id);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch students');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          setStudents(data.students);
+        } else {
+          throw new Error(data.error || 'Failed to load students');
+        }
+      } catch (err) {
+        console.error('Error fetching students:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load students');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, [selectedCourse]);
+
+  // Transform student data to table rows
   const rows = useMemo(() => {
+    const transformedRows: Row[] = students.map(student => {
+      const name = student.profile.name?.fullName || 
+        `${student.profile.name?.givenName || ''} ${student.profile.name?.familyName || ''}`.trim() ||
+        'Unknown Name';
+      
+      // Use real progress data from the API
+      const progress = student.progress || {};
+      const lessonProgress = progress.lessonProgress || 0;
+      
+      return {
+        name,
+        email: student.profile.emailAddress || '',
+        course: `${student.courseName}${student.courseSection ? ` - ${student.courseSection}` : ''}`,
+        pre: progress.preSurveyCompleted ? "ok" : "warn",
+        lesson: lessonProgress,
+        idea: progress.ideaSubmissionCompleted ? "ok" : "warn",
+        post: progress.postSurveyCompleted ? "ok" : "warn",
+        cert: progress.certificateEarned ? "ok" : "warn"
+      };
+    });
+
     const term = q.trim().toLowerCase();
-    return term ? DATA.filter(r => r.name.toLowerCase().includes(term)) : DATA;
-  }, [q]);
+    return term ? transformedRows.filter(r => 
+      r.name.toLowerCase().includes(term) || 
+      r.email.toLowerCase().includes(term) ||
+      r.course.toLowerCase().includes(term)
+    ) : transformedRows;
+  }, [students, q]);
 
   const headers = [
     "Student Name",
+    "Email",
+    "Course",
     "Pre survey",
     "Lesson progress",
     "Idea submission",
     "Post survey",
     "Course certificate",
   ];
+
+  if (!selectedCourse) {
+    return (
+      <div className="bg-white rounded-lg border-neutral-200 p-6">
+        <div className="text-center">
+          <p className="text-yellow-600 text-sm">Please select a course to view students.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border-neutral-200">
+        <div className="px-5 pt-4 pb-4">
+          <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="px-5 pb-4 space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border-neutral-200 p-6">
+        <div className="text-center">
+          <p className="text-red-600 text-sm">Error loading students: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg  border-neutral-200">
@@ -137,10 +258,16 @@ export default function TeacherstudentsTable() {
       <div className="max-h-[224px] overflow-y-auto rounded-b-lg custom-scrollbar pr-2">
         <table className="w-full table-fixed">
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.name} className="text-[12px] bg-white hover:bg-muted/50 transition-colors">
+            {rows.map((r, index) => (
+              <tr key={`${r.email}-${index}`} className="text-[12px] bg-white hover:bg-muted/50 transition-colors">
                 <td className="px-5 py-4 font-light text-[var(--neutral-1000)] border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   {r.name}
+                </td>
+                <td className="px-5 py-4 font-light text-[var(--neutral-700)] border-r border-b border-[var(--neutral-200)] last:border-r-0">
+                  {r.email}
+                </td>
+                <td className="px-5 py-4 font-light text-[var(--neutral-700)] border-r border-b border-[var(--neutral-200)] last:border-r-0">
+                  {r.course}
                 </td>
                 <td className="px-5 py-4 border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   <StatusIcon type={r.pre} />

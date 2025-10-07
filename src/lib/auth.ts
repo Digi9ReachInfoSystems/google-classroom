@@ -13,12 +13,30 @@ export function verifyStaticCredentials(username: string, password: string): boo
 }
 
 export interface AuthTokenPayload {
-	username: string;
-	role: 'admin';
+	email: string;
+	role: 'student' | 'teacher' | 'district-admin' | 'super-admin';
+	userId?: string;
+	accessToken?: string;
+	refreshToken?: string;
 }
 
 export function signAuthToken(payload: AuthTokenPayload): string {
 	return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
+
+export function getRoleBasedRedirect(role: string): string {
+	switch (role) {
+		case 'student':
+			return '/student/dashboard';
+		case 'teacher':
+			return '/teacher/dashboard';
+		case 'district-admin':
+			return '/districtadmin/overview';
+		case 'super-admin':
+			return '/superadmin/overview';
+		default:
+			return '/dashboard';
+	}
 }
 
 export function verifyAuthToken(token: string): AuthTokenPayload | null {
