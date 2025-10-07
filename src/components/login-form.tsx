@@ -115,7 +115,7 @@ export function LoginForm({
               <div className="flex justify-center">
                 <button 
                   type="button" 
-                  className="w-full max-w-[280px] mx-auto border border-gray-300 rounded-full py-2.5 px-5 flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow"
+                  className="w-full max-w-[340px] mx-auto border border-gray-300 rounded-full py-2.5 px-5 flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="flex-shrink-0">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
