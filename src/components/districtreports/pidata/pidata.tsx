@@ -83,7 +83,6 @@ export default function Pidata() {
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[180px]">File name</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[220px]">Focal points</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[160px]">Course name</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[170px]">Date Range</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[90px]">Action</th>
               </tr>
             </thead>

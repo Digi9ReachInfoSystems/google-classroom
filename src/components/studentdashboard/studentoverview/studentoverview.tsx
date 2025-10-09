@@ -66,12 +66,6 @@ export default function Dashboard() {
                 {user.studentProfile.district && ` • ${user.studentProfile.district}`}
               </div>
             )}
-            {selectedCourse && (
-              <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                Viewing: {selectedCourse.name}
-                {selectedCourse.section && ` (${selectedCourse.section})`}
-              </div>
-            )}
           </div>
         </div>
 

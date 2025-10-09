@@ -65,12 +65,6 @@ export default function TeacherOverview() {
             </div>
           )}
         </div>
-        {selectedCourse && (
-          <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-            Viewing: {selectedCourse.name}
-            {selectedCourse.section && ` (${selectedCourse.section})`}
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-6">

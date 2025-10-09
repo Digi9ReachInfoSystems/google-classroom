@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { getClassroom } from '@/lib/google';
 import { verifyAuthToken } from '@/lib/auth';
+import { StageCompletionModel } from '@/models/StageCompletion';
+import { google } from 'googleapis';
 
 export async function GET(req: NextRequest) {
 	try {
@@ -21,6 +22,14 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({ message: 'Access denied' }, { status: 403 });
 		}
 
+		// Check OAuth credentials
+		if (!payload.accessToken) {
+			return NextResponse.json({ 
+				success: false,
+				message: 'No OAuth credentials found. Please log in again.' 
+			}, { status: 401 });
+		}
+
 		// Get course ID from query parameters
 		const { searchParams } = new URL(req.url);
 		const courseId = searchParams.get('courseId');
@@ -30,31 +39,66 @@ export async function GET(req: NextRequest) {
 		}
 
 		await connectToDatabase();
-		const classroom = getClassroom();
+		
+		// Create OAuth2 client with user's credentials
+		const oauth2Client = new google.auth.OAuth2(
+			process.env.GOOGLE_CLIENT_ID,
+			process.env.GOOGLE_CLIENT_SECRET,
+			process.env.GOOGLE_REDIRECT_URI
+		);
+
+		oauth2Client.setCredentials({
+			access_token: payload.accessToken,
+			refresh_token: payload.refreshToken
+		});
+
+		const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
 
 		try {
 			// Fetch coursework from Google Classroom API
-			const coursework = await classroom.courses.courseWork.list({
+			const courseworkResponse = await classroom.courses.courseWork.list({
 				courseId: courseId,
-				pageSize: 50,
+				pageSize: 100,
 				orderBy: 'updateTime desc'
 			});
 
-			// Fetch student submissions for this course
-			const submissions = await classroom.courses.courseWork.studentSubmissions.list({
+			const allCoursework = courseworkResponse.data.courseWork || [];
+
+			// Get all material completions from MongoDB
+			const materialCompletions = await StageCompletionModel.find({
 				courseId: courseId,
-				userId: payload.email,
-				pageSize: 50
+				studentEmail: payload.email,
+				stageId: { $regex: '^material-' }
 			});
 
-			// Transform the data for the frontend
-			const courseworkData = coursework.data.courseWork?.map((work: any) => {
-				// Find corresponding submission
-				const submission = submissions.data.studentSubmissions?.find(
-					(sub: any) => sub.courseWorkId === work.id
-				);
+			const completedMaterialIds = new Set(
+				materialCompletions.map(mc => mc.stageId.replace('material-', ''))
+			);
 
-				return {
+			// Fetch submissions for each coursework individually
+			const courseworkData = [];
+			for (const work of allCoursework) {
+				if (!work.id) continue;
+
+				let submission = null;
+				try {
+					const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
+						courseId: courseId,
+						courseWorkId: work.id,
+						userId: payload.email,
+						pageSize: 10
+					});
+
+					const submissions = submissionsResponse.data.studentSubmissions || [];
+					submission = submissions.find((sub: any) => sub.userId === payload.email);
+				} catch (error) {
+					console.warn(`Error fetching submission for coursework ${work.id}:`, error);
+				}
+
+				// Check if material is completed in MongoDB (for video-based assignments)
+				const isCompletedLocally = completedMaterialIds.has(work.id);
+
+				courseworkData.push({
 					id: work.id,
 					title: work.title,
 					description: work.description,
@@ -66,8 +110,9 @@ export async function GET(req: NextRequest) {
 					dueTime: work.dueTime,
 					maxPoints: work.maxPoints,
 					workType: work.workType,
+					materials: work.materials || [],
 					submissionModificationMode: work.submissionModificationMode,
-					// Submission data
+					// Submission data - use local completion if no Google submission
 					submission: submission ? {
 						id: submission.id,
 						state: submission.state,
@@ -78,9 +123,19 @@ export async function GET(req: NextRequest) {
 						submitted: submission.submitted,
 						late: submission.late,
 						alternateLink: submission.alternateLink
-					} : null
-				};
-			}) || [];
+					} : (isCompletedLocally ? {
+						id: work.id,
+						state: 'TURNED_IN',
+						assignedGrade: null,
+						draftGrade: null,
+						creationTime: null,
+						updateTime: null,
+						submitted: true,
+						late: false,
+						alternateLink: null
+					} : null)
+				});
+			}
 
 			return NextResponse.json({
 				success: true,

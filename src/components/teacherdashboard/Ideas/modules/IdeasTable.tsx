@@ -67,7 +67,7 @@ export function IdeasTable({ rows }: { rows: IdeaRow[] }) {
                 <td className="py-3 px-6 text-sm whitespace-nowrap">
                   {row.fileUrl ? (
                     <a className="text-[#2E7CF6] hover:underline whitespace-nowrap inline-block" href={row.fileUrl} target="_blank" rel="noreferrer">
-                      Google form link
+                      Explore Idea
                     </a>
                   ) : (
                     <span className="text-neutral-400">-</span>

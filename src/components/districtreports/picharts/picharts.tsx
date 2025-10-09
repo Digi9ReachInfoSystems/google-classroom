@@ -2,8 +2,6 @@
 
 import React from "react";
 import { PieChart, Pie, LabelList } from "recharts";
-import { format } from "date-fns";
-import type { DateRange } from "react-day-picker";
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,13 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import Pagination from "@/components/ui/pagination";
+import { useDistrictCourse } from "../../districtadmin/context/DistrictCourseContext";
 
 const AGES = ["10–12", "13–15", "16–18"] as const;
 const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
@@ -55,7 +48,6 @@ const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
 
 function makeCharts(filters: {
-  dateRange?: DateRange;
   age?: string;
   grade?: string;
   gender?: string;
@@ -66,8 +58,6 @@ function makeCharts(filters: {
     (filters.grade ?? "-") +
     (filters.gender ?? "-") +
     (filters.disability ?? "-") +
-    (filters.dateRange?.from?.toDateString() ?? "-") +
-    (filters.dateRange?.to?.toDateString() ?? "-");
 
   const base = hashStr(key || "default");
   const mk3 = (s: number) => {
@@ -146,14 +136,36 @@ function PieBlock({
   data: Slice[];
   legendLabels: string[];
 }) {
-  const legend = data.map((d, i) => {
+  // Filter out zero values
+  const nonZeroData = data.filter(d => d.value > 0);
+  
+  // Create legend only for non-zero items
+  const legend = nonZeroData.map((d, i) => {
     const baseColor =
       (baseConfig as Record<string, { color: string }>)[d.key]?.color;
+    const originalIndex = data.findIndex(item => item.key === d.key);
     return {
-      color: d.fill ?? baseColor ?? "var(--neutral-300)", // ← safe fallback, no non-null assertion
-      label: legendLabels[i],
+      color: d.fill ?? baseColor ?? "var(--neutral-300)",
+      label: legendLabels[originalIndex] || legendLabels[i],
     };
   });
+
+  // If no data, show empty state
+  if (nonZeroData.length === 0) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(260px,380px)_auto] items-center gap-5">
+        <div className="flex flex-col items-center">
+          <div className="mx-auto aspect-square max-h-[260px] w-full flex items-center justify-center">
+            <p className="text-sm text-gray-400">No data available</p>
+          </div>
+          <p className="mt-2 text-[11px] text-[var(--neutral-700)] text-center">{title}</p>
+        </div>
+        <div className="justify-self-start sm:justify-self-auto">
+          <p className="text-sm text-gray-400">No data to display</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[minmax(260px,380px)_auto] items-center gap-5">
@@ -164,7 +176,7 @@ function PieBlock({
         >
           <PieChart>
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Pie data={data} dataKey="value" nameKey="key" stroke="transparent">
+            <Pie data={nonZeroData} dataKey="value" nameKey="key" stroke="transparent">
               <LabelList dataKey="value" className="fill-background" stroke="none" fontSize={12} />
             </Pie>
           </PieChart>
@@ -180,24 +192,91 @@ function PieBlock({
 }
 
 export default function PiCharts() {
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
+  const { selectedCourse } = useDistrictCourse();
   const [age, setAge] = React.useState<string | undefined>();
   const [grade, setGrade] = React.useState<string | undefined>();
   const [gender, setGender] = React.useState<string | undefined>();
   const [disability, setDisability] = React.useState<string | undefined>();
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts({ dateRange, age, grade, gender, disability })
-  );
+  const [charts, setCharts] = React.useState<ChartSet>({
+    pre: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
+    course: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }, { key: "reviewed", value: 0, fill: BLUE_700 }],
+    idea: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }, { key: "reviewed", value: 0, fill: BLUE_700 }],
+    post: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
+  });
+
+  const [reportData, setReportData] = React.useState<any[]>([]);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 10;
 
   const isLg = useMedia("(min-width: 1024px)");
-  const dateLabel =
-    dateRange?.from && dateRange?.to
-      ? `${format(dateRange.from, "dd MMM")} – ${format(dateRange.to, "dd MMM yyyy")}`
-      : "Select date range";
+
+  // Fetch report data when course changes
+  React.useEffect(() => {
+    const fetchReportData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const url = selectedCourse
+          ? `/api/districtadmin/report-analytics?courseId=${selectedCourse.id}`
+          : '/api/districtadmin/report-analytics';
+
+        console.log('Fetching report analytics:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch report data: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          setCharts(data.charts);
+          setReportData(data.reportData || []);
+        } else {
+          throw new Error(data.message || 'Failed to load report data');
+        }
+      } catch (err) {
+        console.error('Error fetching report data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load report data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReportData();
+  }, [selectedCourse]);
 
   const onGenerate = () => {
-    setCharts(makeCharts({ dateRange, age, grade, gender, disability }));
+    // Re-fetch with filters applied
+    const fetchFiltered = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (selectedCourse) params.set('courseId', selectedCourse.id);
+        if (age) params.set('age', age);
+        if (grade) params.set('grade', grade);
+        if (gender) params.set('gender', gender);
+        if (disability) params.set('disability', disability);
+
+        const response = await fetch(`/api/districtadmin/report-analytics?${params.toString()}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setCharts(data.charts);
+          setReportData(data.reportData || []);
+        }
+      } catch (err) {
+        console.error('Error generating filtered report:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFiltered();
   };
 
   return (
@@ -218,30 +297,6 @@ export default function PiCharts() {
               <div className="text-[16px] font-medium text-[var(--neutral-900)]">Data Analytics</div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-9 rounded-full px-4 text-[14px] w-[170px] justify-start font-normal">
-                      {dateLabel}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="end"
-                    side="bottom"
-                    sideOffset={8}
-                    collisionPadding={12}
-                    className="p-2 w-auto rounded-xl border bg-white shadow-xl"
-                  >
-                    <Calendar
-                      mode="range"
-                      numberOfMonths={isLg ? 2 : 1}
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      initialFocus
-                      className="w-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-
                 <Select value={age} onValueChange={setAge}>
                   <SelectTrigger className="h-9 px-4 rounded-full w-[140px] text-[14px]">
                     <SelectValue placeholder="Select Age" />
@@ -347,7 +402,8 @@ export default function PiCharts() {
 
             {/* Data table (student) */}
             <StudentDataTable
-              filters={{ dateRange, age, grade, gender, disability }}
+              filters={{ age, grade, gender, disability }}
+              reportData={reportData}
             />
           </CardContent>
         </Card>
@@ -415,26 +471,25 @@ function Chip({ children }: { children: React.ReactNode }) {
 
 function StudentDataTable({
   filters,
+  reportData,
 }: {
   filters: {
-    dateRange?: DateRange;
     age?: string;
     grade?: string;
     gender?: string;
     disability?: string;
   };
+  reportData: any[];
 }) {
-  const ALL_ROWS = React.useMemo(() => makeRows(), []);
-
   const filteredRows = React.useMemo(() => {
-    return ALL_ROWS.filter((row) => {
+    return reportData.filter((row) => {
       if (filters.age && row.age !== filters.age) return false;
       if (filters.grade && row.grade !== filters.grade) return false;
       if (filters.gender && row.gender !== filters.gender) return false;
       if (filters.disability && row.disability !== filters.disability) return false;
       return true;
     });
-  }, [ALL_ROWS, filters]);
+  }, [reportData, filters]);
 
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -499,7 +554,7 @@ function StudentDataTable({
                   <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.file}</td>
                   <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
                     <div className="flex flex-wrap gap-2">
-                      {r.focal.map((t) => (
+                      {r.focal.map((t: string) => (
                         <Chip key={t}>{t}</Chip>
                       ))}
                     </div>

@@ -25,11 +25,27 @@ function KPICard({
   )
 }
 
-export default function TeacherCircleProgressRow() {
+export default function TeacherCircleProgressRow({ 
+  totalStudents = 0, 
+  totalIdeasSubmitted = 0,
+  submittedPercentage = 0
+}: { 
+  totalStudents?: number
+  totalIdeasSubmitted?: number
+  submittedPercentage?: number
+}) {
   return (
     <div className="flex gap-6 mb-8">
-      <KPICard valueText="105" label="Total no of students" percentArc={78} />
-      <KPICard valueText="6" label={"Total no of idea submitted"} percentArc={22} />
+      <KPICard 
+        valueText={totalStudents.toString()} 
+        label="Total no of students" 
+        percentArc={100} 
+      />
+      <KPICard 
+        valueText={totalIdeasSubmitted.toString()} 
+        label="Total no of idea submitted" 
+        percentArc={submittedPercentage} 
+      />
     </div>
   )
 }

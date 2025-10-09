@@ -9,6 +9,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useDistrictCourse } from "../context/DistrictCourseContext";
+import { useSchoolFilter } from "@/app/(districtadmin)/districtadmin/overview/page";
 
 interface ClassProgressData {
   stage: string;
@@ -23,6 +25,8 @@ const chartConfig = {
 const BAR_SIZE = 120;
 
 export default function ClassProgressCard() {
+  const { selectedCourse } = useDistrictCourse();
+  const { selectedSchool } = useSchoolFilter();
   const [data, setData] = useState<ClassProgressData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +37,15 @@ export default function ClassProgressCard() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/districtadmin/class-progress');
+        // Build URL with courseId and schoolName filters
+        const params = new URLSearchParams();
+        if (selectedCourse) params.set('courseId', selectedCourse.id);
+        if (selectedSchool && selectedSchool !== 'all') params.set('schoolName', selectedSchool);
+        
+        const url = `/api/districtadmin/class-progress?${params.toString()}`;
+        
+        console.log('Fetching class progress:', url);
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch class progress: ${response.status}`);
@@ -55,7 +67,7 @@ export default function ClassProgressCard() {
     };
 
     fetchClassProgress();
-  }, []);
+  }, [selectedCourse, selectedSchool]); // Re-fetch when course or school changes
 
   if (loading) {
     return (

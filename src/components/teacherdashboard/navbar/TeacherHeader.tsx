@@ -128,12 +128,6 @@ export function TeacherDashboardHeader() {
                   >
                     <div className="flex flex-col items-start w-full">
                       <div className="font-medium">{course.name}</div>
-                      {course.section && (
-                        <div className="text-xs text-neutral-500">Section: {course.section}</div>
-                      )}
-                      <div className="text-xs text-neutral-500">
-                        {course.studentCount} students
-                      </div>
                     </div>
                   </DropdownMenuItem>
                 ))

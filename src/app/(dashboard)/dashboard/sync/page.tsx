@@ -26,14 +26,20 @@ export default function SyncPage() {
 		setResult(null);
 
 		try {
-			const res = await fetch('/api/sync/courses', { method: 'POST' });
+			const res = await fetch('/api/sync/comprehensive', { 
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ syncType: 'courses' })
+			});
 			const data = await res.json();
 
 			if (res.ok) {
 				setResult({
 					success: true,
 					message: 'Courses synced successfully',
-					courses: data.synced
+					courses: data.recordsSynced
 				});
 			} else {
 				throw new Error(data.message || 'Failed to sync courses');
@@ -51,15 +57,21 @@ export default function SyncPage() {
 		setResult(null);
 
 		try {
-			const res = await fetch('/api/sync/users', { method: 'POST' });
+			const res = await fetch('/api/sync/comprehensive', { 
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ syncType: 'users' })
+			});
 			const data = await res.json();
 
 			if (res.ok) {
 				setResult({
 					success: true,
 					message: 'Users synced successfully',
-					users: data.users,
-					rosterMemberships: data.rosterMemberships
+					users: data.recordsSynced,
+					rosterMemberships: data.recordsSynced
 				});
 			} else {
 				throw new Error(data.message || 'Failed to sync users');
@@ -77,29 +89,26 @@ export default function SyncPage() {
 		setResult(null);
 
 		try {
-			// First sync courses
-			const coursesRes = await fetch('/api/sync/courses', { method: 'POST' });
-			const coursesData = await coursesRes.json();
-
-			if (!coursesRes.ok) {
-				throw new Error(coursesData.message || 'Failed to sync courses');
-			}
-
-			// Then sync users
-			const usersRes = await fetch('/api/sync/users', { method: 'POST' });
-			const usersData = await usersRes.json();
-
-			if (!usersRes.ok) {
-				throw new Error(usersData.message || 'Failed to sync users');
-			}
-
-			setResult({
-				success: true,
-				message: 'Full sync completed successfully',
-				courses: coursesData.synced,
-				users: usersData.users,
-				rosterMemberships: usersData.rosterMemberships
+			const res = await fetch('/api/sync/comprehensive', { 
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ syncType: 'full' })
 			});
+			const data = await res.json();
+
+			if (res.ok) {
+				setResult({
+					success: true,
+					message: 'Full sync completed successfully',
+					courses: data.recordsSynced,
+					users: data.recordsSynced,
+					rosterMemberships: data.recordsSynced
+				});
+			} else {
+				throw new Error(data.message || 'Failed to perform full sync');
+			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to sync');
 		} finally {

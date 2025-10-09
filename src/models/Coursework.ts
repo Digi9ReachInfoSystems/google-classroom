@@ -10,6 +10,7 @@ export interface ICoursework {
 	maxPoints?: number | null;
 	updateTime?: Date;
 	creationTime?: Date;
+	materials?: any[]; // Store materials including forms, links, etc.
 }
 
 const CourseworkSchema = new Schema<ICoursework>(
@@ -23,6 +24,7 @@ const CourseworkSchema = new Schema<ICoursework>(
 		maxPoints: Number,
 		updateTime: Date,
 		creationTime: Date,
+		materials: [Schema.Types.Mixed], // Store materials array
 	},
 	{ timestamps: true }
 );

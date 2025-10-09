@@ -3,10 +3,61 @@ import { verifyAuthToken } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { LearningResourceModel } from '@/models/LearningResource';
 
-// PUT - Update learning resource
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// GET - Fetch a single learning resource
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    // Check authentication
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const payload = verifyAuthToken(token);
+    if (!payload) {
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+
+    await connectToDatabase();
+
+    const resource = await LearningResourceModel.findById(params.id).lean();
+
+    if (!resource) {
+      return NextResponse.json({
+        success: false,
+        message: 'Resource not found'
+      }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      resource: {
+        id: resource._id.toString(),
+        details: resource.details,
+        type: resource.type,
+        link: resource.link || '',
+        createdBy: resource.createdBy,
+        createdAt: resource.createdAt.toISOString(),
+      }
+    });
+
+  } catch (error) {
+    console.error('Learning resource GET error:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+// PUT - Update a learning resource
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
     const token = req.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -16,6 +67,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!payload || payload.role !== 'super-admin') {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 });
     }
+
+    await connectToDatabase();
 
     const body = await req.json();
     const { details, type, link } = body;
@@ -28,58 +81,61 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }, { status: 400 });
     }
 
-    // Connect to database
-    await connectToDatabase();
+    // Validate type
+    const validTypes = ['Video', 'Document', 'Link', 'Image', 'Other'];
+    if (!validTypes.includes(type)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid resource type'
+      }, { status: 400 });
+    }
 
-    // Get the params
-    const { id } = await params;
-
-    // Find and update the resource
-    const resource = await LearningResourceModel.findByIdAndUpdate(
-      id,
+    const updatedResource = await LearningResourceModel.findByIdAndUpdate(
+      params.id,
       {
-        details: details.trim(),
+        details,
         type,
-        link: link?.trim() || undefined
+        link: link || '',
       },
       { new: true }
     );
 
-    if (!resource) {
+    if (!updatedResource) {
       return NextResponse.json({
         success: false,
         message: 'Resource not found'
       }, { status: 404 });
     }
 
-    console.log('Learning resource updated:', resource._id);
-
     return NextResponse.json({
       success: true,
+      message: 'Resource updated successfully',
       resource: {
-        id: resource._id.toString(),
-        details: resource.details,
-        type: resource.type,
-        link: resource.link,
-        createdBy: resource.createdBy,
-        createdAt: resource.createdAt.toISOString(),
-        updatedAt: resource.updatedAt.toISOString()
+        id: updatedResource._id.toString(),
+        details: updatedResource.details,
+        type: updatedResource.type,
+        link: updatedResource.link || '',
+        createdBy: updatedResource.createdBy,
+        createdAt: updatedResource.createdAt.toISOString(),
       }
     });
 
   } catch (error) {
-    console.error('Learning resource update error:', error);
+    console.error('Learning resource PUT error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
 
-// DELETE - Delete learning resource
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// DELETE - Delete a learning resource
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    // Check authentication
     const token = req.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -90,23 +146,16 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ message: 'Access denied' }, { status: 403 });
     }
 
-    // Connect to database
     await connectToDatabase();
 
-    // Get the params
-    const { id } = await params;
+    const deletedResource = await LearningResourceModel.findByIdAndDelete(params.id);
 
-    // Find and delete the resource
-    const resource = await LearningResourceModel.findByIdAndDelete(id);
-
-    if (!resource) {
+    if (!deletedResource) {
       return NextResponse.json({
         success: false,
         message: 'Resource not found'
       }, { status: 404 });
     }
-
-    console.log('Learning resource deleted:', resource._id);
 
     return NextResponse.json({
       success: true,
@@ -114,10 +163,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     });
 
   } catch (error) {
-    console.error('Learning resource deletion error:', error);
+    console.error('Learning resource DELETE error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

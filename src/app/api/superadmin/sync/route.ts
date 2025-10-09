@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
-import { CourseModel } from '@/models/Course';
+import { google } from 'googleapis';
 import { UserModel } from '@/models/User';
-import { getClassroom } from '@/lib/google';
+import { CourseModel } from '@/models/Course';
+import { CourseworkModel } from '@/models/Coursework';
+import { SubmissionModel } from '@/models/Submission';
+import { RosterMembershipModel } from '@/models/RosterMembership';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,140 +21,238 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 });
     }
 
-    console.log('Starting sync for superadmin:', payload.email);
-    console.log('Using delegated admin email:', process.env.GOOGLE_DELEGATED_ADMIN || 'admin@digi9.co.in');
-
-    // Connect to database
-    await connectToDatabase();
-
-    // Get Google Classroom service
-    const classroom = getClassroom();
-
-    // Sync courses using delegated admin email
-    console.log('Syncing courses...');
-    let coursesResponse;
-    try {
-      coursesResponse = await classroom.courses.list({
-        pageSize: 100
-      });
-    } catch (error) {
-      console.error('Error fetching courses from Google Classroom:', error);
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to fetch courses from Google Classroom. Check service account permissions.',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }, { status: 500 });
-    }
-
-    console.log('Courses response:', coursesResponse.data);
-    
-    if (!coursesResponse.data.courses || coursesResponse.data.courses.length === 0) {
-      console.log('No courses found in response');
+    if (!payload.accessToken) {
       return NextResponse.json({ 
         success: false, 
-        message: 'No courses found. The delegated admin may not have access to any courses.' 
-      }, { status: 404 });
+        message: 'No OAuth credentials found' 
+      }, { status: 401 });
     }
 
-    const courses = coursesResponse.data.courses;
-    console.log(`Found ${courses.length} courses`);
+    await connectToDatabase();
 
-    // Sync courses to database
+    // Create OAuth2 client
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI
+    );
+
+    oauth2Client.setCredentials({
+      access_token: payload.accessToken,
+      refresh_token: payload.refreshToken
+    });
+
+    const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+    const adminDirectory = google.admin({ version: 'directory_v1', auth: oauth2Client });
+
     let syncedCourses = 0;
-    for (const course of courses) {
-      if (!course.id || !course.name) continue;
-
-      try {
-        await CourseModel.findOneAndUpdate(
-          { courseId: course.id },
-          {
-            courseId: course.id,
-            name: course.name,
-            description: course.description || '',
-            ownerId: course.ownerId || '',
-            creationTime: course.creationTime || new Date(),
-            updateTime: course.updateTime || new Date(),
-            enrollmentCode: course.enrollmentCode || '',
-            courseState: course.courseState || 'ACTIVE',
-            alternateLink: course.alternateLink || '',
-            teacherGroupEmail: course.teacherGroupEmail || '',
-            courseGroupEmail: course.courseGroupEmail || '',
-            guardianEnabled: course.guardianEnabled || false,
-            calendarId: course.calendarId || '',
-            teacherFolder: course.teacherFolder?.id || '',
-            courseMaterialSets: course.courseMaterialSets || []
-          },
-          { upsert: true, new: true }
-        );
-        console.log(`Synced course: ${course.name} (${course.id})`);
-        syncedCourses++;
-      } catch (error) {
-        console.error(`Error syncing course ${course.id}:`, error);
-      }
-    }
-
-    // Sync students for each course
-    console.log('Syncing students...');
     let syncedStudents = 0;
-    for (const course of courses) {
-      if (!course.id) continue;
+    let syncedCoursework = 0;
+    let syncedSubmissions = 0;
 
-      try {
-        // Get students for this course
-        const studentsResponse = await classroom.courses.students.list({
+    // 1. Sync Courses
+    const coursesResponse = await classroom.courses.list({
+      teacherId: 'me',
+      pageSize: 100,
+      courseStates: ['ACTIVE']
+    });
+
+    const courses = coursesResponse.data.courses || [];
+    
+    for (const course of courses) {
+      await CourseModel.findOneAndUpdate(
+        { courseId: course.id },
+        {
           courseId: course.id,
+          name: course.name,
+          section: course.section,
+          descriptionHeading: course.descriptionHeading,
+          description: course.description,
+          room: course.room,
+          ownerId: course.ownerId,
+          creationTime: course.creationTime,
+          updateTime: course.updateTime,
+          enrollmentCode: course.enrollmentCode,
+          courseState: course.courseState,
+          alternateLink: course.alternateLink,
+          teacherGroupEmail: course.teacherGroupEmail,
+          courseGroupEmail: course.courseGroupEmail,
+        },
+        { upsert: true, new: true }
+      );
+      syncedCourses++;
+
+      // 2. Sync Students for each course
+      try {
+        const studentsResponse = await classroom.courses.students.list({
+          courseId: course.id!,
           pageSize: 100
         });
 
-        if (studentsResponse.data.students) {
-          for (const student of studentsResponse.data.students) {
-            if (!student.userId || !student.profile) continue;
+        const students = studentsResponse.data.students || [];
+        
+        for (const student of students) {
+          const profile = student.profile;
+          if (!profile) continue;
 
-            try {
-              await UserModel.findOneAndUpdate(
-                { email: student.profile.emailAddress },
+          // Fetch custom attributes from Admin Directory
+          let customAttributes: any = {};
+          try {
+            const userResponse = await adminDirectory.users.get({
+              userKey: profile.emailAddress!,
+              projection: 'full'
+            });
+
+            const userData = userResponse.data;
+            if (userData.customSchemas) {
+              customAttributes = userData.customSchemas;
+            }
+          } catch (error) {
+            console.log(`Could not fetch custom attributes for ${profile.emailAddress}`);
+          }
+
+          // Extract custom attributes
+          const studentProfile = customAttributes.StudentProfile || {};
+          const gender = studentProfile.Gender || '';
+          const district = studentProfile.District || '';
+          const grade = studentProfile.Grade || '';
+          const schoolName = studentProfile.SchoolName || '';
+          const age = studentProfile.Age || '';
+
+          await UserModel.findOneAndUpdate(
+            { email: profile.emailAddress },
+            {
+              email: profile.emailAddress,
+              googleId: profile.id,
+              givenName: profile.name?.givenName,
+              familyName: profile.name?.familyName,
+              fullName: profile.name?.fullName,
+              photoUrl: profile.photoUrl,
+              role: 'student',
+              gender,
+              district,
+              grade,
+              schoolName,
+              age,
+              customSchemas: customAttributes
+            },
+            { upsert: true, new: true }
+          );
+
+          // Save roster membership
+          await RosterMembershipModel.findOneAndUpdate(
+            { courseId: course.id, userId: profile.emailAddress },
+            {
+              courseId: course.id,
+              userId: profile.emailAddress,
+              role: 'STUDENT',
+              profile: {
+                id: profile.id,
+                name: profile.name,
+                emailAddress: profile.emailAddress,
+                photoUrl: profile.photoUrl
+              }
+            },
+            { upsert: true, new: true }
+          );
+
+          syncedStudents++;
+        }
+      } catch (error) {
+        console.error(`Error syncing students for course ${course.id}:`, error);
+      }
+
+      // 3. Sync Coursework for each course
+      try {
+        const courseworkResponse = await classroom.courses.courseWork.list({
+          courseId: course.id!,
+          pageSize: 100
+        });
+
+        const courseworks = courseworkResponse.data.courseWork || [];
+        
+        for (const work of courseworks) {
+          await CourseworkModel.findOneAndUpdate(
+            { courseWorkId: work.id },
+            {
+              courseId: course.id,
+              courseWorkId: work.id,
+              title: work.title,
+              description: work.description,
+              materials: work.materials || [],
+              state: work.state,
+              alternateLink: work.alternateLink,
+              creationTime: work.creationTime,
+              updateTime: work.updateTime,
+              dueDate: work.dueDate,
+              dueTime: work.dueTime,
+              maxPoints: work.maxPoints,
+              workType: work.workType,
+              assigneeMode: work.assigneeMode,
+            },
+            { upsert: true, new: true }
+          );
+          syncedCoursework++;
+
+          // 4. Sync Submissions for each coursework
+          try {
+            const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
+              courseId: course.id!,
+              courseWorkId: work.id!,
+              pageSize: 100
+            });
+
+            const submissions = submissionsResponse.data.studentSubmissions || [];
+            
+            for (const submission of submissions) {
+              await SubmissionModel.findOneAndUpdate(
+                { submissionId: submission.id },
                 {
-                  email: student.profile.emailAddress || '',
-                  name: {
-                    givenName: student.profile.name?.givenName || '',
-                    familyName: student.profile.name?.familyName || '',
-                    fullName: student.profile.name?.fullName || ''
-                  },
-                  role: 'student',
                   courseId: course.id,
-                  courseName: course.name || ''
+                  courseWorkId: work.id,
+                  submissionId: submission.id,
+                  userId: submission.userId,
+                  userEmail: submission.userId,
+                  creationTime: submission.creationTime,
+                  updateTime: submission.updateTime,
+                  state: submission.state,
+                  draftGrade: submission.draftGrade,
+                  assignedGrade: submission.assignedGrade,
+                  alternateLink: submission.alternateLink,
+                  courseWorkType: submission.courseWorkType,
+                  assignmentSubmission: submission.assignmentSubmission,
+                  shortAnswerSubmission: submission.shortAnswerSubmission,
+                  multipleChoiceSubmission: submission.multipleChoiceSubmission,
                 },
                 { upsert: true, new: true }
               );
-              console.log(`Synced student: ${student.profile.emailAddress}`);
-              syncedStudents++;
-            } catch (error) {
-              console.error(`Error syncing student ${student.userId}:`, error);
+              syncedSubmissions++;
             }
+          } catch (error) {
+            console.error(`Error syncing submissions for coursework ${work.id}:`, error);
           }
         }
       } catch (error) {
-        console.error(`Error fetching students for course ${course.id}:`, error);
+        console.error(`Error syncing coursework for course ${course.id}:`, error);
       }
     }
-
-    console.log(`Sync completed: ${syncedCourses} courses, ${syncedStudents} students`);
 
     return NextResponse.json({
       success: true,
       message: 'Sync completed successfully',
-      data: {
+      stats: {
         courses: syncedCourses,
         students: syncedStudents,
-        syncTime: new Date().toISOString()
+        coursework: syncedCoursework,
+        submissions: syncedSubmissions
       }
     });
 
   } catch (error) {
-    console.error('Sync error:', error);
+    console.error('Super admin sync error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Sync failed',
+      message: 'Internal server error',
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }

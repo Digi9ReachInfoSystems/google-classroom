@@ -1,6 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Poppins } from "next/font/google";
 import { Superadminheader } from "@/components/superadmin/navbar/superadminheader";
+import { SuperAdminCourseProvider } from "@/components/superadmin/context/SuperAdminCourseContext";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -13,9 +16,11 @@ export default function StudentDashboardLayout({
   children: ReactNode;
 }) {
   return (
-    <div className={`${poppins.className} min-h-screen bg-white`}>
-      <Superadminheader />
-      <main className="px-6 py-6">{children}</main>
-    </div>
+    <SuperAdminCourseProvider>
+      <div className={`${poppins.className} min-h-screen bg-white`}>
+        <Superadminheader />
+        <main className="px-6 py-6">{children}</main>
+      </div>
+    </SuperAdminCourseProvider>
   );
 }

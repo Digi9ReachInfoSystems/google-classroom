@@ -13,44 +13,43 @@ export async function GET(req: NextRequest) {
     }
 
     const payload = verifyAuthToken(token);
-    if (!payload || payload.role !== 'super-admin') {
-      return NextResponse.json({ message: 'Access denied' }, { status: 403 });
+    if (!payload) {
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Connect to database
     await connectToDatabase();
 
-    // Fetch all learning resources
+    // Fetch all resources, sorted by most recent first
     const resources = await LearningResourceModel.find({})
-      .sort({ createdAt: -1 }) // Most recent first
+      .sort({ createdAt: -1 })
       .lean();
 
-    console.log(`Found ${resources.length} learning resources`);
+    // Format resources for frontend
+    const formattedResources = resources.map((resource: any) => ({
+      id: resource._id.toString(),
+      details: resource.details,
+      type: resource.type,
+      link: resource.link || '',
+      createdBy: resource.createdBy,
+      createdAt: resource.createdAt.toISOString(),
+    }));
 
     return NextResponse.json({
       success: true,
-      resources: resources.map(resource => ({
-        id: resource._id.toString(),
-        details: resource.details,
-        type: resource.type,
-        link: resource.link,
-        createdBy: resource.createdBy,
-        createdAt: resource.createdAt.toISOString(),
-        updatedAt: resource.updatedAt.toISOString()
-      })),
-      total: resources.length
+      resources: formattedResources
     });
 
   } catch (error) {
-    console.error('Learning resources GET API error:', error);
+    console.error('Learning resources GET error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
 
-// POST - Create new learning resource
+// POST - Create a new learning resource
 export async function POST(req: NextRequest) {
   try {
     // Check authentication
@@ -64,6 +63,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 });
     }
 
+    await connectToDatabase();
+
     const body = await req.json();
     const { details, type, link } = body;
 
@@ -75,38 +76,43 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Connect to database
-    await connectToDatabase();
+    // Validate type
+    const validTypes = ['Video', 'Document', 'Link', 'Image', 'Other'];
+    if (!validTypes.includes(type)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid resource type'
+      }, { status: 400 });
+    }
 
-    // Create new learning resource
-    const resource = new LearningResourceModel({
-      details: details.trim(),
+    // Create new resource
+    const newResource = await LearningResourceModel.create({
+      details,
       type,
-      link: link?.trim() || undefined,
-      createdBy: payload.email
+      link: link || '',
+      createdBy: payload.name || payload.email,
+      createdByEmail: payload.email,
     });
-
-    await resource.save();
-    console.log('Learning resource created:', resource._id);
 
     return NextResponse.json({
       success: true,
+      message: 'Resource created successfully',
       resource: {
-        id: resource._id.toString(),
-        details: resource.details,
-        type: resource.type,
-        link: resource.link,
-        createdBy: resource.createdBy,
-        createdAt: resource.createdAt.toISOString(),
-        updatedAt: resource.updatedAt.toISOString()
+        id: newResource._id.toString(),
+        details: newResource.details,
+        type: newResource.type,
+        link: newResource.link || '',
+        createdBy: newResource.createdBy,
+        createdAt: newResource.createdAt.toISOString(),
       }
     });
 
   } catch (error) {
-    console.error('Learning resource creation error:', error);
+    console.error('Learning resources POST error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

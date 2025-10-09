@@ -5,7 +5,6 @@ import React, { useMemo, useState, useEffect } from "react";
 import { Eye, PencilLine, Trash, Search, Plus } from "lucide-react";
 import Pagination from "@/components/ui/pagination";
 import AddResourceModal from "../popup/addresourcesmodal";
-import ViewResourceModal from "../popup/viewresourcemodal";
 import EditResourceModal from "../popup/editresourcemodal";
 import DeleteResourceModal from "../popup/deleteresourcemodal";
 
@@ -39,7 +38,6 @@ export default function LearningResourcesTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<ResourceModalData | null>(null);
@@ -99,16 +97,9 @@ export default function LearningResourcesTable() {
     setPage(Math.min(Math.max(1, newPage), totalPages));
   };
 
-  const handleViewClick = (resource: Row) => {
-    setSelectedResource({ 
-      details: resource.details, 
-      type: resource.type, 
-      link: resource.link || "" 
-    });
-    setIsViewModalOpen(true);
-  };
 
   const handleEditClick = (resource: Row) => {
+    setSelectedRow(resource);
     setSelectedResource({ 
       details: resource.details, 
       type: resource.type, 
@@ -155,19 +146,50 @@ export default function LearningResourcesTable() {
     setIsAddModalOpen(true);
   };
 
-  const handleAddResourceSubmit = (details: string, type: string, link: string) => {
-    console.log("Resource added:", { details, type, link });
-    // TODO: Implement actual resource submission logic
+  const handleAddResourceSubmit = async (details: string, type: string, link: string) => {
+    await handleResourceSubmit(details, type, link);
+    setIsAddModalOpen(false);
   };
 
-  const handleEditResourceSubmit = (details: string, type: string, link: string) => {
-    console.log("Resource edited:", { details, type, link });
-    // TODO: Implement actual resource edit logic
+  const handleEditResourceSubmit = async (details: string, type: string, link: string) => {
+    if (!selectedRow) return;
+
+    try {
+      const response = await fetch(`/api/superadmin/learning-resources/${selectedRow.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ details, type, link }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update resource: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update the resource in the list
+        setResources(prev => prev.map(r => 
+          r.id === selectedRow.id ? data.resource : r
+        ));
+        setIsEditModalOpen(false);
+        console.log('Resource updated successfully:', data.resource);
+      } else {
+        throw new Error(data.message || 'Failed to update resource');
+      }
+    } catch (err) {
+      console.error('Error updating resource:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update resource');
+    }
   };
 
-  const handleDeleteConfirm = () => {
-    console.log("Resource deleted:", selectedRow);
-    // TODO: Implement actual resource delete logic
+  const handleDeleteConfirm = async () => {
+    if (!selectedRow) return;
+    
+    await handleDeleteResource(selectedRow.id);
+    setIsDeleteModalOpen(false);
   };
 
   const handleDeleteResource = async (resourceId: string) => {
@@ -310,19 +332,11 @@ export default function LearningResourcesTable() {
                         rel="noopener noreferrer"
                         className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
                         aria-label="View"
-                        title="View"
+                        title="Open Link"
                       >
                         <Eye size={20} />
                       </a>
                     )}
-                    <button
-                      onClick={() => handleViewClick(r)}
-                      className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
-                      aria-label="View"
-                      title="View"
-                    >
-                      <Eye size={20} />
-                    </button>
                     <button
                       onClick={() => handleEditClick(r)}
                       className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
@@ -388,12 +402,6 @@ export default function LearningResourcesTable() {
         onSubmit={handleAddResourceSubmit}
       />
 
-      {/* View Resource Modal */}
-      <ViewResourceModal
-        open={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
-        resource={selectedResource}
-      />
 
       {/* Edit Resource Modal */}
       <EditResourceModal

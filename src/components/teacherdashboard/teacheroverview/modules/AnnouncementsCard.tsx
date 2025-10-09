@@ -133,11 +133,6 @@ export default function TeacherAnnouncementsCard() {
           <h3 className="text-[18px] font-bold text-[var(--neutral-1000)]">
             Announcements
           </h3>
-          {selectedCourse && (
-            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-              {selectedCourse.name}
-            </div>
-          )}
         </div>
 
         {error && (

@@ -13,11 +13,13 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState } from "react";
+import { useSuperAdminCourse } from "@/components/superadmin/context/SuperAdminCourseContext";
 
 export function Superadminheader() {
   const router = useRouter();
   const pathname = usePathname() ?? "/superadmin/overview";
   const [syncing, setSyncing] = useState(false);
+  const { selectedCourse, setSelectedCourse, courses } = useSuperAdminCourse();
 
   const tabs = [
     { label: "Overview", value: "overview", href: "/superadmin/overview" },
@@ -47,8 +49,7 @@ export function Superadminheader() {
     try {
       setSyncing(true);
       
-      // Use the working sync API from the dashboard
-      const response = await fetch('/api/sync/courses', {
+      const response = await fetch('/api/superadmin/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +59,10 @@ export function Superadminheader() {
       if (response.ok) {
         const data = await response.json();
         console.log('Sync successful:', data);
-        alert(`Sync completed! Synced ${data.synced || 0} courses.`);
+        const stats = data.stats || {};
+        alert(`Sync completed!\nCourses: ${stats.courses || 0}\nStudents: ${stats.students || 0}\nCoursework: ${stats.coursework || 0}\nSubmissions: ${stats.submissions || 0}`);
+        // Reload the page to show updated data
+        window.location.reload();
       } else {
         const errorData = await response.json();
         console.error('Sync request failed:', response.status, errorData);
@@ -128,14 +132,24 @@ export function Superadminheader() {
                 variant="ghost"
                 className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white"
               >
-                Select courses
+                {selectedCourse ? selectedCourse.name : 'Select courses'}
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Course 1</DropdownMenuItem>
-              <DropdownMenuItem>Course 2</DropdownMenuItem>
-              <DropdownMenuItem>Course 3</DropdownMenuItem>
+            <DropdownMenuContent className="max-h-[400px] overflow-y-auto">
+              {courses.length > 0 ? (
+                courses.map((course) => (
+                  <DropdownMenuItem
+                    key={course.id}
+                    onClick={() => setSelectedCourse(course)}
+                    className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
+                  >
+                    {course.name}
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>No courses available</DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -168,13 +182,6 @@ export function Superadminheader() {
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="rounded-xl overflow-hidden">
-              <DropdownMenuItem className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white">
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white">
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="data-[highlighted]:bg-red-500 data-[highlighted]:text-white focus:bg-red-500 focus:text-white"
                 onClick={handleLogout}

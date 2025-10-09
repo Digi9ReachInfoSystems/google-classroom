@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import RingProgress from "../progress/progress";
+import { useDistrictCourse } from "../context/DistrictCourseContext";
+import { useSchoolFilter } from "@/app/(districtadmin)/districtadmin/overview/page";
 
 function KPICard({
   valueText,
@@ -40,6 +42,8 @@ interface AnalyticsData {
 }
 
 const KPIRow: React.FC = () => {
+  const { selectedCourse } = useDistrictCourse();
+  const { selectedSchool } = useSchoolFilter();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +54,15 @@ const KPIRow: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/districtadmin/analytics');
+        // Build URL with courseId and schoolName filters
+        const params = new URLSearchParams();
+        if (selectedCourse) params.set('courseId', selectedCourse.id);
+        if (selectedSchool && selectedSchool !== 'all') params.set('schoolName', selectedSchool);
+        
+        const url = `/api/districtadmin/analytics?${params.toString()}`;
+        
+        console.log('Fetching district analytics:', url);
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch analytics: ${response.status}`);
@@ -72,7 +84,7 @@ const KPIRow: React.FC = () => {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [selectedCourse, selectedSchool]); // Re-fetch when course or school changes
 
   if (loading) {
     return (

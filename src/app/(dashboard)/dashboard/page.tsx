@@ -63,8 +63,20 @@ export default function DashboardPage() {
 	async function syncCourses() {
 		setSyncing(true);
 		try {
-			const res = await fetch('/api/sync/courses', { method: 'POST' });
-			if (!res.ok) throw new Error('Sync failed');
+			// Use the comprehensive sync API for better data synchronization
+			const res = await fetch('/api/sync/comprehensive', { 
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ syncType: 'courses' })
+			});
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.message || 'Sync failed');
+			}
+			const data = await res.json();
+			console.log('Sync completed:', data);
 			await load();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : 'Sync failed');

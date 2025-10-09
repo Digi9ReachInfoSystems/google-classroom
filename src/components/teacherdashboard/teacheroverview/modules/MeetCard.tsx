@@ -76,17 +76,6 @@ export default function TeacherMeetCard() {
     <div className="bg-white rounded-xl p-5">
       <div className="text-[18px] font-bold text-[var(--neutral-1000)]">Meet</div>
 
-      {selectedCourse && (
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <div className="text-sm font-medium text-blue-900">
-            {selectedCourse.name}
-          </div>
-          <div className="text-xs text-blue-700">
-            Selected Course
-          </div>
-        </div>
-      )}
-
       {error && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-red-700 text-sm">{error}</p>
@@ -147,7 +136,7 @@ export default function TeacherMeetCard() {
         onClick={handleCreateClass}
         disabled={loading}
       >
-        {loading ? 'Creating...' : 'Create Class'}
+        {loading ? 'Creating...' : 'Create Meeting'}
       </Button>
     </div>
   );

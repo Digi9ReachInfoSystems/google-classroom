@@ -61,11 +61,6 @@ export function Announcements() {
       <div className="bg-white rounded-lg border-neutral-200">
         <div className="flex items-center justify-between p-6 border-neutral-200">
           <h2 className="text-lg font-semibold text-neutral-900">Announcements</h2>
-          {selectedCourse && (
-            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-              {selectedCourse.name}
-            </div>
-          )}
         </div>
 
         {error && (

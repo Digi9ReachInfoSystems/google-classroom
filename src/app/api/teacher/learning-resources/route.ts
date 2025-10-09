@@ -3,7 +3,7 @@ import { verifyAuthToken } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { LearningResourceModel } from '@/models/LearningResource';
 
-// GET - Fetch all learning resources for teachers
+// GET - Fetch all learning resources (for teachers)
 export async function GET(req: NextRequest) {
   try {
     // Check authentication
@@ -17,35 +17,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 });
     }
 
-    // Connect to database
     await connectToDatabase();
 
-    // Fetch all learning resources (teachers can view all resources)
+    // Fetch all resources, sorted by most recent first
     const resources = await LearningResourceModel.find({})
-      .sort({ createdAt: -1 }) // Most recent first
+      .sort({ createdAt: -1 })
       .lean();
 
-    console.log(`Found ${resources.length} learning resources for teacher ${payload.email}`);
+    // Format resources for frontend
+    const formattedResources = resources.map((resource: any) => ({
+      id: resource._id.toString(),
+      details: resource.details,
+      type: resource.type,
+      link: resource.link || '',
+      createdBy: resource.createdBy,
+      createdAt: resource.createdAt.toISOString(),
+    }));
 
     return NextResponse.json({
       success: true,
-      resources: resources.map(resource => ({
-        id: resource._id.toString(),
-        details: resource.details,
-        type: resource.type,
-        link: resource.link,
-        createdBy: resource.createdBy,
-        createdAt: resource.createdAt.toISOString(),
-        updatedAt: resource.updatedAt.toISOString()
-      })),
-      total: resources.length
+      resources: formattedResources
     });
 
   } catch (error) {
-    console.error('Teacher learning resources API error:', error);
+    console.error('Teacher learning resources GET error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

@@ -1,39 +1,35 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
-export interface ILearningResource extends Document {
-  id: string;
+export interface ILearningResource {
   details: string;
   type: 'Video' | 'Document' | 'Link' | 'Image' | 'Other';
   link?: string;
-  createdBy: string; // superadmin email
+  createdBy: string;
+  createdByEmail: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const LearningResourceSchema = new Schema<ILearningResource>(
   {
-    details: { type: String, required: true, trim: true },
+    details: { type: String, required: true },
     type: { 
       type: String, 
-      enum: ['Video', 'Document', 'Link', 'Image', 'Other'], 
-      required: true 
+      required: true,
+      enum: ['Video', 'Document', 'Link', 'Image', 'Other']
     },
-    link: { type: String, trim: true },
-    createdBy: { type: String, required: true, index: true }
+    link: { type: String },
+    createdBy: { type: String, required: true },
+    createdByEmail: { type: String, required: true },
   },
   { 
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    timestamps: true 
   }
 );
 
-// Virtual for id field
-LearningResourceSchema.virtual('id').get(function() {
-  return this._id.toHexString();
-});
+// Index for faster queries
+LearningResourceSchema.index({ createdAt: -1 });
+LearningResourceSchema.index({ type: 1 });
+LearningResourceSchema.index({ createdByEmail: 1 });
 
-// Index for efficient queries
-LearningResourceSchema.index({ createdBy: 1, createdAt: -1 });
-
-export const LearningResourceModel = mongoose.models.LearningResource || mongoose.model<ILearningResource>('LearningResource', LearningResourceSchema);
+export const LearningResourceModel = models.LearningResource || model<ILearningResource>('LearningResource', LearningResourceSchema);

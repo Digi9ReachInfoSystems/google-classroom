@@ -117,7 +117,7 @@ export default function MeetCard() {
       )}
 
       {loading ? (
-        <div className="mt-6 space-y-3 max-h-48 overflow-y-auto">
+        <div className="mt-6 space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="p-3 bg-gray-50 rounded-md border animate-pulse">
               <div className="h-4 bg-gray-200 rounded mb-2"></div>
@@ -126,31 +126,31 @@ export default function MeetCard() {
           ))}
         </div>
       ) : meetings.length > 0 ? (
-        <div className="mt-6 space-y-3 max-h-48 overflow-y-auto">
-          {meetings.slice(0, 3).map((meeting) => (
-            <div key={meeting.meetingId} className="p-3 bg-gray-50 rounded-md border">
+        <div className="mt-6 space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 pr-2">
+          {meetings.map((meeting) => (
+            <div key={meeting.meetingId} className="p-3 bg-gray-50 rounded-md border hover:bg-gray-100 transition-colors">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm font-medium text-gray-900 truncate flex-1 mr-2">
                   {meeting.courseName}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={() => copyMeetLink(meeting.meetLink)}
-                    className="p-1 hover:bg-gray-200 rounded"
+                    className="p-1 hover:bg-gray-200 rounded transition-colors"
                     title="Copy link"
                   >
                     <Copy className="h-3 w-3 text-gray-500" />
                   </button>
                   <button
                     onClick={() => openMeetLink(meeting.meetLink)}
-                    className="p-1 hover:bg-gray-200 rounded"
+                    className="p-1 hover:bg-gray-200 rounded transition-colors"
                     title="Open meeting"
                   >
                     <ExternalLink className="h-3 w-3 text-gray-500" />
                   </button>
                 </div>
               </div>
-              <div className="text-xs text-gray-600 mb-2">
+              <div className="text-xs text-gray-600 mb-2 truncate" title={meeting.meetLink}>
                 {meeting.meetLink}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -161,11 +161,6 @@ export default function MeetCard() {
               </div>
             </div>
           ))}
-          {meetings.length > 3 && (
-            <div className="text-xs text-gray-500 text-center">
-              +{meetings.length - 3} more meetings
-            </div>
-          )}
         </div>
       ) : (
         <div className="mt-6 h-24 rounded-md bg-[var(--neutral-100)] grid place-items-center text-[var(--neutral-400)] text-sm">
@@ -179,7 +174,7 @@ export default function MeetCard() {
         onClick={handleCreateClass}
         disabled={loading}
       >
-        {loading ? 'Creating...' : 'Create Class'}
+        {loading ? 'Creating...' : 'Create Meeting'}
       </Button>
     </div>
   );

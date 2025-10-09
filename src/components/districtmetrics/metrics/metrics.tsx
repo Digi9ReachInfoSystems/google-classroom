@@ -1,63 +1,32 @@
-import Image from "next/image";
-import React from "react";
+"use client";
 
-type Stat = { label: string; value: string; icon: string };
+import Image from "next/image";
+import React, { useState, useEffect } from "react";
+import { useDistrictCourse } from "../../districtadmin/context/DistrictCourseContext";
+
+type Stat = { label: string; value: string | number; icon: string };
 
 type StatCardProps = Stat & {
   /** Tailwind width class; defaults to w-full */
   widthClass?: string;
 };
 
-/* row 1 */
-const ROW1: Stat[] = [
-  { label: "schools", value: "15,800", icon: "/metrics/school.png" },
-  { label: "Teachers", value: "450,000", icon: "/metrics/teachers.png" },
-  { label: "Students", value: "2,000", icon: "/metrics/students.png" },
-];
-
-/* row 2 */
-const ROW2: Stat[] = [
-  {
-    label: "Male Teachers",
-    value: "250,000",
-    icon: "/metrics/maleteachers.png",
-  },
-  {
-    label: "Female Teachers",
-    value: "250,000",
-    icon: "/metrics/femaleteachers.png",
-  },
-  { label: "Other Teachers", value: "105", icon: "/metrics/otherteacher.png" },
-];
-
-/* row 3 */
-const ROW3: Stat[] = [
-  {
-    label: "Male Students",
-    value: "850,000",
-    icon: "/metrics/malestudents.png",
-  },
-  {
-    label: "Female Students",
-    value: "730,000",
-    icon: "/metrics/femalestudents.png",
-  },
-  { label: "Other Students", value: "105", icon: "/metrics/otherstudent.png" },
-];
-
-/* row 4 (right side) */
-const ROW4_RIGHT: Stat[] = [
-  { label: "Pre survey", value: "30,000", icon: "/metrics/ideas.png" },
-  { label: "Course completion", value: "30,000", icon: "/metrics/ideas.png" },
-  { label: "Post survey", value: "30,000", icon: "/metrics/ideas.png" },
-];
-
-/* under the map (row 4, first column) */
-const IDEA_SUBMITTED: Stat = {
-  label: "Idea Submitted",
-  value: "30,000",
-  icon: "/metrics/ideas.png",
-};
+interface MetricsData {
+  schools: number;
+  teachers: number;
+  students: number;
+  maleTeachers: number;
+  femaleTeachers: number;
+  otherTeachers: number;
+  maleStudents: number;
+  femaleStudents: number;
+  otherStudents: number;
+  studentsEnrolled: number;
+  ideasSubmitted: number;
+  courseCompletion: number;
+  preSurvey: number;
+  postSurvey: number;
+}
 
 function StatCard({
   label,
@@ -65,6 +34,8 @@ function StatCard({
   icon,
   widthClass = "w-full",
 }: StatCardProps) {
+  const displayValue = typeof value === 'number' ? value.toLocaleString() : value;
+  
   return (
     <div className={`h-[112px] ${widthClass} rounded-xl bg-white`}>
       <div className="h-full w-full flex items-center justify-start px-4">
@@ -83,7 +54,7 @@ function StatCard({
               {label}
             </div>
             <div className="text-[16px] font-normal leading-6 text-black">
-              {value}
+              {displayValue}
             </div>
           </div>
         </div>
@@ -93,16 +64,127 @@ function StatCard({
 }
 
 const DistrictOverview: React.FC = () => {
+  const { selectedCourse } = useDistrictCourse();
+  const [metrics, setMetrics] = useState<MetricsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [districtName, setDistrictName] = useState<string>('GASA');
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const url = selectedCourse
+          ? `/api/districtadmin/metrics-data?courseId=${selectedCourse.id}`
+          : '/api/districtadmin/metrics-data';
+
+        console.log('Fetching metrics data:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch metrics: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          setMetrics(data.data);
+          // Set district name from metrics data
+          if (data.districtName) {
+            setDistrictName(data.districtName);
+          }
+        } else {
+          throw new Error(data.message || 'Failed to load metrics');
+        }
+      } catch (err) {
+        console.error('Error fetching metrics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load metrics');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [selectedCourse]);
+
+  if (loading) {
+    return (
+      <section className="w-full px-5 sm:px-6 md:px-8 lg:px-10 xl:px-[20px]">
+        <h2 className="text-3xl font-semibold">District Overview</h2>
+        <div className="flex items-center justify-center h-64 mt-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading metrics...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || !metrics) {
+    return (
+      <section className="w-full px-5 sm:px-6 md:px-8 lg:px-10 xl:px-[20px]">
+        <h2 className="text-3xl font-semibold">District Overview</h2>
+        <div className="flex items-center justify-center h-64 mt-8">
+          <div className="text-center max-w-md">
+            <p className="text-red-600 mb-4">{error || 'No data available'}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Create stat arrays from dynamic data
+  const ROW1: Stat[] = [
+    { label: "schools", value: metrics.schools, icon: "/metrics/school.png" },
+    { label: "Teachers", value: metrics.teachers, icon: "/metrics/teachers.png" },
+    { label: "Students", value: metrics.students, icon: "/metrics/students.png" },
+  ];
+
+  const ROW2: Stat[] = [
+    { label: "Male Teachers", value: metrics.maleTeachers, icon: "/metrics/maleteachers.png" },
+    { label: "Female Teachers", value: metrics.femaleTeachers, icon: "/metrics/femaleteachers.png" },
+    { label: "Other Teachers", value: metrics.otherTeachers, icon: "/metrics/otherteacher.png" },
+  ];
+
+  const ROW3: Stat[] = [
+    { label: "Male Students", value: metrics.maleStudents, icon: "/metrics/malestudents.png" },
+    { label: "Female Students", value: metrics.femaleStudents, icon: "/metrics/femalestudents.png" },
+    { label: "Other Students", value: metrics.otherStudents, icon: "/metrics/otherstudent.png" },
+  ];
+
+  const ROW4_RIGHT: Stat[] = [
+    { label: "Pre survey", value: metrics.preSurvey, icon: "/metrics/ideas.png" },
+    { label: "Course completion", value: metrics.courseCompletion, icon: "/metrics/ideas.png" },
+    { label: "Post survey", value: metrics.postSurvey, icon: "/metrics/ideas.png" },
+  ];
+
+  const IDEA_SUBMITTED: Stat = {
+    label: "Idea Submitted",
+    value: metrics.ideasSubmitted,
+    icon: "/metrics/ideas.png",
+  };
+
   return (
     <section className="w-full px-5 sm:px-6 md:px-8 lg:px-10 xl:px-[20px]">
-      <h2 className="text-3xl font-semibold">
-        District Overview
-      </h2>
+      <div className="mb-4">
+        <h2 className="text-3xl font-semibold">
+          District Overview
+        </h2>
+      </div>
 
-      <div className="grid grid-cols-12 auto-rows-[112px] gap-4 items-start mt-18">
+      <div className="grid grid-cols-12 auto-rows-[112px] gap-4 items-start mt-8">
         {/* Map card */}
         <div className="col-span-12 lg:col-span-3 row-span-3 flex justify-center">
-          <div className="relative w-[269px] h-[362px] rounded-3xl bg-white  flex flex-col items-center justify-center pb-14">
+          <div className="relative w-[269px] h-[362px] rounded-3xl bg-white flex flex-col items-center justify-center pb-14">
             <div className="relative w-[85%] h-[85%]">
               <Image
                 src="/gasa.png"
@@ -115,9 +197,9 @@ const DistrictOverview: React.FC = () => {
             <button
               type="button"
               className="absolute bottom-3 left-1/2 -translate-x-1/2 h-10 w-[200px] rounded-lg
-                 bg-[var(--neutral-300)] text-[16px] font-medium text-[var(--neutral-1000)]"
+                 bg-[var(--neutral-300)] text-[16px] font-medium text-[var(--neutral-1000)] uppercase"
             >
-              GASA
+              {districtName}
             </button>
           </div>
         </div>

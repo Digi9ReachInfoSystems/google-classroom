@@ -2,29 +2,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
-	try {
-		const token = req.cookies.get('token')?.value;
-		
-		if (!token) {
-			return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
-		}
+  try {
+    // Check authentication
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      return NextResponse.json({ 
+        success: false,
+        message: 'Unauthorized' 
+      }, { status: 401 });
+    }
 
-		const payload = verifyAuthToken(token);
-		if (!payload) {
-			return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-		}
+    const payload = verifyAuthToken(token);
+    if (!payload) {
+      return NextResponse.json({ 
+        success: false,
+        message: 'Invalid token' 
+      }, { status: 401 });
+    }
 
-		// Return user info from JWT token (no MongoDB dependency)
-		return NextResponse.json({
-			user: {
-				email: payload.email,
-				role: payload.role,
-				userId: payload.userId
-			}
-		});
+    return NextResponse.json({
+      success: true,
+      user: {
+        email: payload.email,
+        role: payload.role,
+        name: payload.name || payload.email.split('@')[0]
+      }
+    });
 
-	} catch (error) {
-		console.error('Get user info error:', error);
-		return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-	}
+  } catch (error) {
+    console.error('Auth me API error:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
 }
