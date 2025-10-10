@@ -33,13 +33,13 @@ export async function GET(req: NextRequest) {
       metricsData = await getCourseMetrics(courseId);
     } else {
       // Get metrics for all courses in district
-      metricsData = await getDistrictMetrics(payload.district);
+      metricsData = await getDistrictMetrics((payload as any).district);
     }
 
     return NextResponse.json({
       success: true,
       data: metricsData,
-      districtName: payload.district || 'District',
+      districtName: (payload as any).district || 'District',
       courseId: courseId || 'all'
     });
 

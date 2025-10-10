@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth';
 import { createUserOAuthClient, getClassroomWithUserAuth } from '@/lib/user-oauth';
+import { connectToDatabase } from '@/lib/mongodb';
+import { BadgeModel } from '@/models/Badge';
+import { CertificateModel } from '@/models/Certificate';
 
 interface StudentData {
   id: string;
@@ -11,6 +14,8 @@ interface StudentData {
   totalAssignments: number;
   completedAssignments: number;
   averageGrade?: number;
+  badges: number;
+  certificates: number;
 }
 
 export async function GET(req: NextRequest) {
@@ -52,6 +57,9 @@ export async function GET(req: NextRequest) {
 
     try {
       console.log('Fetching leaderboard data for course:', courseId);
+
+      // Connect to database for badges and certificates
+      await connectToDatabase();
 
       // Fetch students enrolled in the course
       const studentsResponse = await classroom.courses.students.list({
@@ -126,6 +134,18 @@ export async function GET(req: NextRequest) {
           ? Math.round(totalGrade / gradedAssignments) 
           : undefined;
 
+        // Get badge count for this student
+        const badgeCount = await BadgeModel.countDocuments({
+          courseId,
+          studentEmail: student.profile.emailAddress
+        });
+
+        // Get certificate count for this student
+        const certificateCount = await CertificateModel.countDocuments({
+          courseId,
+          studentEmail: student.profile.emailAddress
+        });
+
         studentData.push({
           id: student.profile.id || '',
           name: student.profile.name?.fullName || 
@@ -136,7 +156,9 @@ export async function GET(req: NextRequest) {
           completionPercentage,
           totalAssignments,
           completedAssignments,
-          averageGrade
+          averageGrade,
+          badges: badgeCount,
+          certificates: certificateCount
         });
       }
 

@@ -155,8 +155,14 @@ export default function Submitteddata() {
                 </td>
                 <td className="py-3 px-6 text-sm whitespace-nowrap">
                   {r.fileUrl ? (
-                    <a className="text-[#2E7CF6] hover:underline whitespace-nowrap inline-block" href={r.fileUrl} target="_blank" rel="noreferrer">
-                      Explore Idea
+                    <a 
+                      className="text-[#10B981] hover:underline whitespace-nowrap inline-block font-medium" 
+                      href={r.fileUrl.replace('/viewform', '/edit#responses')} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      title="View responses in Google Forms"
+                    >
+                      View Response
                     </a>
                   ) : (
                     <span className="text-neutral-400">-</span>

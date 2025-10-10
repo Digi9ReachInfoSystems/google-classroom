@@ -64,8 +64,8 @@ export async function GET(req: NextRequest) {
 			email: userInfo.email || '',
 			role: role,
 			userId: userInfo.email || '',
-			accessToken: tokens.access_token,
-			refreshToken: tokens.refresh_token
+			accessToken: tokens.access_token || undefined,
+			refreshToken: tokens.refresh_token || undefined
 		});
 		console.log('JWT token created');
 

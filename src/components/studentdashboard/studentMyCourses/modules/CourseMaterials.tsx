@@ -215,10 +215,11 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
                 )
               }
 
-              // Link (check if it's a YouTube link)
+              // Link (check if it's a YouTube link or Google Form)
               if (item.link) {
                 const youtubeEmbedUrl = getYouTubeEmbedUrl(item.link.url)
                 
+                // Check if it's a YouTube video
                 if (youtubeEmbedUrl) {
                   return (
                     <div key={index} className="space-y-3">
@@ -236,6 +237,42 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
                   )
                 }
 
+                // Check if it's a Google Form
+                if (item.link.url && (item.link.url.includes('docs.google.com/forms') || item.link.url.includes('forms.gle'))) {
+                  console.log('Rendering Google Form from link:', item.link);
+                  // Convert form URL to embedded version
+                  let formEmbedUrl = item.link.url;
+                  if (formEmbedUrl.includes('/viewform')) {
+                    formEmbedUrl = formEmbedUrl.replace('/viewform', '/viewform?embedded=true');
+                    // Remove any existing query params after viewform and replace with embedded
+                    formEmbedUrl = formEmbedUrl.split('?')[0] + '?embedded=true';
+                  } else if (!formEmbedUrl.includes('embedded=true')) {
+                    formEmbedUrl += (formEmbedUrl.includes('?') ? '&' : '?') + 'embedded=true';
+                  }
+                  console.log('Form embed URL:', formEmbedUrl);
+
+                  return (
+                    <div key={index} className="space-y-3">
+                      <h3 className="text-lg font-semibold">Assignment</h3>
+                      <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg bg-white" style={{ height: '650px', minHeight: '650px' }}>
+                        <iframe
+                          src={formEmbedUrl}
+                          title={item.link.title || 'Assignment'}
+                          className="w-full h-full border-0"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                        >
+                          Loading form...
+                        </iframe>
+                      </div>
+                      {item.link.title && (
+                        <p className="text-sm text-muted-foreground">{item.link.title}</p>
+                      )}
+                    </div>
+                  )
+                }
+
+                // Regular link
                 return (
                   <a
                     key={index}
@@ -279,24 +316,36 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
                 )
               }
 
-              // Form
+              // Google Form
               if (item.form) {
+                console.log('Rendering form:', item.form);
+                // Convert form URL to embedded version
+                let formEmbedUrl = item.form.formUrl;
+                if (formEmbedUrl.includes('/viewform')) {
+                  formEmbedUrl = formEmbedUrl.replace('/viewform', '/viewform?embedded=true');
+                } else if (!formEmbedUrl.includes('embedded=true')) {
+                  formEmbedUrl += (formEmbedUrl.includes('?') ? '&' : '?') + 'embedded=true';
+                }
+                console.log('Form embed URL:', formEmbedUrl);
+
                 return (
-                  <a
-                    key={index}
-                    href={item.form.formUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 border-2 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all group"
-                  >
-                    <FileText className="h-6 w-6 text-green-500 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium group-hover:text-green-600 transition-colors truncate">
-                        {item.form.title || 'Form'}
-                      </p>
+                  <div key={index} className="space-y-3">
+                    <h3 className="text-lg font-semibold">Google Form</h3>
+                    <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg bg-white" style={{ height: '650px', minHeight: '650px' }}>
+                      <iframe
+                        src={formEmbedUrl}
+                        title={item.form.title || 'Google Form'}
+                        className="w-full h-full border-0"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                      >
+                        Loading form...
+                      </iframe>
                     </div>
-                    <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  </a>
+                    {item.form.title && (
+                      <p className="text-sm text-muted-foreground">{item.form.title}</p>
+                    )}
+                  </div>
                 )
               }
 

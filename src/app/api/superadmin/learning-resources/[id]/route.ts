@@ -6,7 +6,7 @@ import { LearningResourceModel } from '@/models/LearningResource';
 // GET - Fetch a single learning resource
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = req.cookies.get('token')?.value;
@@ -21,7 +21,8 @@ export async function GET(
 
     await connectToDatabase();
 
-    const resource = await LearningResourceModel.findById(params.id).lean();
+    const { id } = await params;
+    const resource = await LearningResourceModel.findById(id).lean();
 
     if (!resource) {
       return NextResponse.json({
@@ -55,7 +56,7 @@ export async function GET(
 // PUT - Update a learning resource
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = req.cookies.get('token')?.value;
@@ -90,8 +91,9 @@ export async function PUT(
       }, { status: 400 });
     }
 
+    const { id } = await params;
     const updatedResource = await LearningResourceModel.findByIdAndUpdate(
-      params.id,
+      id,
       {
         details,
         type,
@@ -133,7 +135,7 @@ export async function PUT(
 // DELETE - Delete a learning resource
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = req.cookies.get('token')?.value;
@@ -148,7 +150,8 @@ export async function DELETE(
 
     await connectToDatabase();
 
-    const deletedResource = await LearningResourceModel.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const deletedResource = await LearningResourceModel.findByIdAndDelete(id);
 
     if (!deletedResource) {
       return NextResponse.json({

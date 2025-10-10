@@ -18,11 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSuperAdminCourse } from "@/components/superadmin/context/SuperAdminCourseContext";
 
-const AGES = ["10–12", "13–15", "16–18"] as const;
-const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
-const GENDERS = ["Male", "Female", "Other"] as const;
-const DISABILITY = ["None", "Hearing", "Vision", "Learning", "Mobility"] as const;
+/* -------------------- filter option values (will be fetched from API) -------------------- */
+const DEFAULT_AGES = ["All", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
+const DEFAULT_GRADES = ["All", "Grade I", "Grade II", "Grade III", "Grade IV", "Grade V", "Grade VI", "Grade VII", "Grade VIII", "Grade IX", "Grade X"];
+const DEFAULT_GENDERS = ["All", "Male", "Female", "Other"];
+const DEFAULT_DISABILITY = ["All", "None", "Visual Impairment", "Hearing Impairment", "Physical Disability", "Learning Disability", "Other"];
 const CORAL = "#FF928A"; // Coral color for main segments
 const PURPLE = "#8979FF"; // Purple color for secondary segments  
 const CYAN = "#3CC3DF"; // Cyan color for tertiary segments
@@ -147,19 +149,153 @@ function PieBlock({
 }
 
 export default function Reports() {
-  const [age, setAge] = React.useState<string | undefined>();
-  const [grade, setGrade] = React.useState<string | undefined>();
-  const [gender, setGender] = React.useState<string | undefined>();
-  const [disability, setDisability] = React.useState<string | undefined>();
+  const { selectedCourse } = useSuperAdminCourse();
+  const [age, setAge] = React.useState<string>('All');
+  const [grade, setGrade] = React.useState<string>('All');
+  const [gender, setGender] = React.useState<string>('All');
+  const [disability, setDisability] = React.useState<string>('All');
+  const [loading, setLoading] = React.useState(false);
 
-  const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts({ age, grade, gender, disability })
-  );
+  const [charts, setCharts] = React.useState<ChartSet>({
+    pre: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+    course: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+    idea: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+    post: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+  });
+
+  // Dynamic filter options from API
+  const [filterOptions, setFilterOptions] = React.useState({
+    ages: DEFAULT_AGES,
+    grades: DEFAULT_GRADES,
+    genders: DEFAULT_GENDERS,
+    disabilities: DEFAULT_DISABILITY
+  });
+
+  // Fetch filter options on mount
+  React.useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/filter-options');
+        const data = await response.json();
+        
+        if (data.success && data.filters) {
+          setFilterOptions({
+            ages: ['All', ...(data.filters.age || [])],
+            grades: ['All', ...(data.filters.grade || [])],
+            genders: ['All', ...(data.filters.gender || [])],
+            disabilities: ['All', ...(data.filters.disability || [])]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
+
+  // Fetch analytics data (unfiltered for charts)
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (!selectedCourse?.id) {
+        setCharts({
+          pre: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+          course: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+          idea: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+          post: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+        });
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ courseId: selectedCourse.id });
+        const response = await fetch(`/api/superadmin/reports/analytics?${params}`, {
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+        if (data.success && data.analytics) {
+          const analytics = data.analytics;
+          setCharts({
+            pre: [
+              { key: "submit", value: analytics.preSurvey.completed, fill: PURPLE },
+              { key: "pending", value: analytics.preSurvey.pending + analytics.preSurvey.notStarted, fill: CORAL },
+            ],
+            course: [
+              { key: "submit", value: analytics.course.completed, fill: PURPLE },
+              { key: "pending", value: analytics.course.inProgress + analytics.course.notStarted, fill: CORAL },
+            ],
+            idea: [
+              { key: "submit", value: analytics.ideas.submitted, fill: PURPLE },
+              { key: "pending", value: analytics.ideas.pending + analytics.ideas.notStarted, fill: CORAL },
+            ],
+            post: [
+              { key: "submit", value: analytics.postSurvey.completed, fill: PURPLE },
+              { key: "pending", value: analytics.postSurvey.pending + analytics.postSurvey.notStarted, fill: CORAL },
+            ],
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [selectedCourse]); // Charts only depend on selectedCourse
 
   const isLg = useMedia("(min-width: 1024px)");
 
-  const onGenerate = () => {
-    setCharts(makeCharts({ age, grade, gender, disability }));
+  const onGenerate = async () => {
+    if (!selectedCourse?.id) {
+      alert('Please select a course first');
+      return;
+    }
+
+    // Build filter params
+    const params: any = { courseId: selectedCourse.id };
+    if (age && age !== 'All') params.age = age;
+    if (grade && grade !== 'All') params.grade = grade;
+    if (gender && gender !== 'All') params.gender = gender;
+    if (disability && disability !== 'All') params.disability = disability;
+
+    try {
+      const response = await fetch('/api/superadmin/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          courseId: selectedCourse.id, 
+          filters: { 
+            age: age !== 'All' ? age : undefined,
+            grade: grade !== 'All' ? grade : undefined,
+            gender: gender !== 'All' ? gender : undefined,
+            disability: disability !== 'All' ? disability : undefined
+          } 
+        })
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `report_${selectedCourse.name}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const error = await response.json();
+        console.error('Failed to generate report:', error);
+        alert('Failed to generate report');
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Error generating report');
+    }
   };
 
   return (
@@ -185,7 +321,7 @@ export default function Reports() {
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {AGES.map((r) => (
+                    {filterOptions.ages.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -202,7 +338,7 @@ export default function Reports() {
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {GRADES.map((r) => (
+                    {filterOptions.grades.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -219,7 +355,7 @@ export default function Reports() {
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {GENDERS.map((r) => (
+                    {filterOptions.genders.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -236,7 +372,7 @@ export default function Reports() {
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {DISABILITY.map((r) => (
+                    {filterOptions.disabilities.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}

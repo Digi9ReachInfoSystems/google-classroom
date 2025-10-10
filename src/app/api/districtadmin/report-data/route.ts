@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       reportData = await getCourseReportData(courseId);
     } else {
       // Get report data for all courses in district
-      reportData = await getDistrictReportData(payload.district);
+      reportData = await getDistrictReportData((payload as any).district);
     }
 
     return NextResponse.json({

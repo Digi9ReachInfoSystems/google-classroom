@@ -17,12 +17,15 @@ type FilterContextType = {
   setGender: (gender?: string) => void;
   setDisability: (disability?: string) => void;
   clearFilters: () => void;
+  refreshTrigger: number;
+  triggerRefresh: () => void;
 };
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
 export function FilterProvider({ children }: { children: React.ReactNode }) {
   const [filters, setFiltersState] = useState<FilterState>({});
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   const setFilters = (newFilters: FilterState) => {
     setFiltersState(newFilters);
@@ -48,6 +51,10 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
     setFiltersState({});
   };
 
+  const triggerRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <FilterContext.Provider
       value={{
@@ -58,6 +65,8 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
         setGender,
         setDisability,
         clearFilters,
+        refreshTrigger,
+        triggerRefresh,
       }}
     >
       {children}

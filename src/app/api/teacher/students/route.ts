@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth';
 import { createUserOAuthClient, getClassroomWithUserAuth } from '@/lib/user-oauth';
+import { connectToDatabase } from '@/lib/mongodb';
+import { CertificateModel } from '@/models/Certificate';
 
 export async function GET(req: NextRequest) {
   try {
@@ -90,18 +92,29 @@ export async function GET(req: NextRequest) {
       const courseWork = courseWorkResponse.data.courseWork || [];
       console.log(`Found ${courseWork.length} coursework items`);
 
+      // Connect to database for certificates and stage completions
+      await connectToDatabase();
+
       // Calculate student progress data
       const studentData = [];
 
       for (const student of students) {
         if (!student.profile?.emailAddress) continue;
 
+        const studentEmail = student.profile.emailAddress;
+
         let completedAssignments = 0;
         let totalAssignments = 0;
         let preSurveyCompleted = false;
         let ideaSubmissionCompleted = false;
         let postSurveyCompleted = false;
-        let certificateEarned = false;
+        
+        // Check if student has earned a certificate (from database)
+        const certificateExists = await CertificateModel.findOne({
+          courseId,
+          studentEmail
+        });
+        const certificateEarned = !!certificateExists;
 
         // Check each assignment for this student
         for (const work of courseWork) {
@@ -133,12 +146,10 @@ export async function GET(req: NextRequest) {
                 ideaSubmissionCompleted = true;
               } else if (title.includes('post-survey') || title.includes('post survey')) {
                 postSurveyCompleted = true;
-              } else if (title.includes('certificate') || title.includes('final')) {
-                certificateEarned = true;
               }
             }
           } catch (error) {
-            console.warn(`Error fetching submission for student ${student.profile.emailAddress} in assignment ${work.id}:`, error);
+            console.warn(`Error fetching submission for student ${studentEmail} in assignment ${work.id}:`, error);
           }
         }
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { DashboardHeader } from "@/components/studentdashboard/navbar/Header"
 import { CourseProvider } from "@/components/studentdashboard/context/CourseContext"
+import { NotificationProvider } from "@/components/studentdashboard/context/NotificationContext"
 import { Poppins } from "next/font/google"
 
 const poppins = Poppins({
@@ -15,10 +16,12 @@ export default function StudentDashboardLayout({
 }) {
   return (
     <CourseProvider>
-      <div className={`${poppins.className} min-h-screen bg-white`}>
-        <DashboardHeader />
-        <main className="px-6 py-6">{children}</main>
-      </div>
+      <NotificationProvider>
+        <div className={`${poppins.className} min-h-screen bg-white`}>
+          <DashboardHeader />
+          <main className="px-6 py-6">{children}</main>
+        </div>
+      </NotificationProvider>
     </CourseProvider>
   )
 }

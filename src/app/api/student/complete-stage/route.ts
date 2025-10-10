@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { StageCompletionModel } from '@/models/StageCompletion';
+import { BadgeModel, BadgeType } from '@/models/Badge';
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,6 +51,46 @@ export async function POST(req: NextRequest) {
     );
 
     console.log(`${stageId} marked as complete successfully`);
+
+    // Award badge for this stage
+    const badgeTypeMap: { [key: string]: BadgeType } = {
+      'pre-survey': 'pre-survey',
+      'ideas': 'ideas',
+      'post-survey': 'post-survey'
+    };
+
+    const badgeType = badgeTypeMap[stageId];
+    if (badgeType) {
+      const badgeTitles = {
+        'pre-survey': 'Pre-Survey Champion',
+        'ideas': 'Idea Innovator',
+        'post-survey': 'Post-Survey Champion'
+      };
+
+      try {
+        await BadgeModel.findOneAndUpdate(
+          {
+            courseId,
+            studentEmail,
+            badgeIdentifier: stageId
+          },
+          {
+            courseId,
+            studentEmail,
+            badgeType,
+            badgeIdentifier: stageId,
+            title: badgeTitles[badgeType],
+            description: `Awarded for completing ${badgeTitles[badgeType]}`,
+            awardedAt: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        console.log(`Badge awarded for ${stageId}`);
+      } catch (badgeError) {
+        // Log error but don't fail the request
+        console.error('Error awarding badge:', badgeError);
+      }
+    }
 
     return NextResponse.json({
       success: true,

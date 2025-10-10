@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     // Connect to database
     await connectToDatabase();
 
-    const userDistrict = payload.district;
+    const userDistrict = (payload as any).district;
     if (!userDistrict) {
       return NextResponse.json({ message: 'District not found for user' }, { status: 400 });
     }

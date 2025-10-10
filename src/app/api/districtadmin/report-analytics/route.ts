@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       analytics = await getCourseReportAnalytics(courseId, { age, grade, gender, disability });
     } else {
       // Get analytics for all courses in district
-      analytics = await getDistrictReportAnalytics(payload.district, { age, grade, gender, disability });
+      analytics = await getDistrictReportAnalytics((payload as any).district, { age, grade, gender, disability });
     }
 
     return NextResponse.json({
@@ -67,7 +67,7 @@ async function getCourseReportAnalytics(courseId: string, filters: any) {
   });
 
   // Apply filters to students using real custom attributes
-  let studentQuery: any = {
+      const studentQuery: any = {
     email: { $in: studentEmails },
     role: 'student'
   };
@@ -186,7 +186,7 @@ async function getCourseReportAnalytics(courseId: string, filters: any) {
 
 async function getDistrictReportAnalytics(district: string | undefined, filters: any) {
   // Get all students in district with filters using real custom attributes
-  let studentQuery: any = { role: 'student' };
+      const studentQuery: any = { role: 'student' };
   if (district) studentQuery.district = district;
   if (filters.gender) studentQuery.gender = filters.gender;
   if (filters.grade) studentQuery.grade = filters.grade;

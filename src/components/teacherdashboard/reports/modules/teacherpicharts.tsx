@@ -20,11 +20,11 @@ import {
 } from "@/components/ui/select";
 import { useFilters } from "./FilterContext";
 
-/* -------------------- filter option values -------------------- */
-const AGES = ["10–12", "13–15", "16–18"] as const;
-const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
-const GENDERS = ["Male", "Female", "Other"] as const;
-const DISABILITY = ["None", "Hearing", "Vision", "Learning", "Mobility"] as const;
+/* -------------------- filter option values (will be fetched from API) -------------------- */
+const DEFAULT_AGES = ["All", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
+const DEFAULT_GRADES = ["All", "Grade I", "Grade II", "Grade III", "Grade IV", "Grade V", "Grade VI", "Grade VII", "Grade VIII", "Grade IX", "Grade X"];
+const DEFAULT_GENDERS = ["All", "Male", "Female", "Other"];
+const DEFAULT_DISABILITY = ["All", "None", "Visual Impairment", "Hearing Impairment", "Physical Disability", "Learning Disability", "Other"];
 
 /* ---------------------------- Color rules ---------------------------- */
 /** Purple for Submit/Submitted ideas/Not started */
@@ -117,21 +117,48 @@ function PieBlock({
 
 /* --------------------------------- Page --------------------------------- */
 export default function TeacherPiCharts() {
-  const { filters, setAge, setGrade, setGender, setDisability } = useFilters();
+  const { filters, setAge, setGrade, setGender, setDisability, triggerRefresh } = useFilters();
   const { selectedCourse } = useTeacherCourse();
   
-  // Helper function to filter out zero values
-  const filterNonZero = (data: any[]) => {
-    return data.filter(item => item.value > 0);
-  };
   const [charts, setCharts] = React.useState<ChartSet>({
     pre: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
-    course: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }, { key: "reviewed", value: 0, fill: LIGHT_BLUE }],
-    idea: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }, { key: "reviewed", value: 0, fill: LIGHT_BLUE }],
+    course: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
+    idea: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
     post: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
   });
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  
+  // Dynamic filter options from API
+  const [filterOptions, setFilterOptions] = React.useState({
+    ages: DEFAULT_AGES,
+    grades: DEFAULT_GRADES,
+    genders: DEFAULT_GENDERS,
+    disabilities: DEFAULT_DISABILITY
+  });
+
+  // Fetch filter options on mount
+  React.useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/filter-options');
+        const data = await response.json();
+        
+        if (data.success && data.filters) {
+          setFilterOptions({
+            ages: ['All', ...(data.filters.age || [])],
+            grades: ['All', ...(data.filters.grade || [])],
+            genders: ['All', ...(data.filters.gender || [])],
+            disabilities: ['All', ...(data.filters.disability || [])]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
 
   // Fetch real analytics data
   React.useEffect(() => {
@@ -152,13 +179,9 @@ export default function TeacherPiCharts() {
       setError(null);
 
       try {
-        // Build query parameters
+        // Fetch analytics without filters for pie charts (show all students)
         const params = new URLSearchParams({
           courseId: selectedCourse.id,
-          ...(filters.age && { age: filters.age }),
-          ...(filters.grade && { grade: filters.grade }),
-          ...(filters.gender && { gender: filters.gender }),
-          ...(filters.disability && { disability: filters.disability }),
         });
 
         const response = await fetch(`/api/teacher/reports/analytics?${params}`);
@@ -172,31 +195,23 @@ export default function TeacherPiCharts() {
         if (data.success && data.analytics) {
           const analytics = data.analytics;
           
-          // Calculate percentages that add up to 100%
-          const preTotal = analytics.preSurvey.submit + analytics.preSurvey.pending;
-          const courseTotal = analytics.courseProgress.submit + analytics.courseProgress.pending + analytics.courseProgress.reviewed;
-          const ideaTotal = analytics.ideaSubmission.submit + analytics.ideaSubmission.pending + analytics.ideaSubmission.reviewed;
-          const postTotal = analytics.postSurvey.submit + analytics.postSurvey.pending;
-          
           setCharts({
-            pre: filterNonZero([
-              { key: "submit", value: preTotal > 0 ? Math.round((analytics.preSurvey.submit / preTotal) * 100) : 0, fill: PURPLE },
-              { key: "pending", value: preTotal > 0 ? Math.round((analytics.preSurvey.pending / preTotal) * 100) : 0, fill: SALMON },
-            ]),
-            course: filterNonZero([
-              { key: "submit", value: courseTotal > 0 ? Math.round((analytics.courseProgress.submit / courseTotal) * 100) : 0, fill: PURPLE },
-              { key: "pending", value: courseTotal > 0 ? Math.round((analytics.courseProgress.pending / courseTotal) * 100) : 0, fill: SALMON },
-              { key: "reviewed", value: courseTotal > 0 ? Math.round((analytics.courseProgress.reviewed / courseTotal) * 100) : 0, fill: LIGHT_BLUE },
-            ]),
-            idea: filterNonZero([
-              { key: "submit", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.submit / ideaTotal) * 100) : 0, fill: PURPLE },
-              { key: "pending", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.pending / ideaTotal) * 100) : 0, fill: SALMON },
-              { key: "reviewed", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.reviewed / ideaTotal) * 100) : 0, fill: LIGHT_BLUE },
-            ]),
-            post: filterNonZero([
-              { key: "submit", value: postTotal > 0 ? Math.round((analytics.postSurvey.submit / postTotal) * 100) : 0, fill: PURPLE },
-              { key: "pending", value: postTotal > 0 ? Math.round((analytics.postSurvey.pending / postTotal) * 100) : 0, fill: SALMON },
-            ]),
+            pre: [
+              { key: "submit", value: analytics.preSurvey.completed, fill: PURPLE },
+              { key: "pending", value: analytics.preSurvey.pending + analytics.preSurvey.notStarted, fill: SALMON },
+            ],
+            course: [
+              { key: "submit", value: analytics.course.completed, fill: PURPLE },
+              { key: "pending", value: analytics.course.inProgress + analytics.course.notStarted, fill: SALMON },
+            ],
+            idea: [
+              { key: "submit", value: analytics.ideas.submitted, fill: PURPLE },
+              { key: "pending", value: analytics.ideas.pending + analytics.ideas.notStarted, fill: SALMON },
+            ],
+            post: [
+              { key: "submit", value: analytics.postSurvey.completed, fill: PURPLE },
+              { key: "pending", value: analytics.postSurvey.pending + analytics.postSurvey.notStarted, fill: SALMON },
+            ],
           });
         } else {
           console.error('Analytics API error:', data);
@@ -211,77 +226,71 @@ export default function TeacherPiCharts() {
     };
 
     fetchAnalytics();
-  }, [selectedCourse, filters]);
+  }, [selectedCourse]); // Removed filters from dependency - charts don't change with filters
 
   const isLg = useMedia("(min-width: 1024px)");
 
-  const onGenerate = () => {
-    // Trigger a refresh of the analytics data
-    const fetchAnalytics = async () => {
-      if (!selectedCourse) return;
+  const onGenerate = async () => {
+    // Generate and download filtered report
+    if (!selectedCourse) {
+      alert('Please select a course first');
+      return;
+    }
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
 
-      try {
-        const params = new URLSearchParams({
+    try {
+      const response = await fetch('/api/teacher/reports/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           courseId: selectedCourse.id,
-          ...(filters.age && { age: filters.age }),
-          ...(filters.grade && { grade: filters.grade }),
-          ...(filters.gender && { gender: filters.gender }),
-          ...(filters.disability && { disability: filters.disability }),
-        });
+          filters: {
+            age: filters.age !== 'All' ? filters.age : undefined,
+            grade: filters.grade !== 'All' ? filters.grade : undefined,
+            gender: filters.gender !== 'All' ? filters.gender : undefined,
+            disability: filters.disability !== 'All' ? filters.disability : undefined,
+          }
+        }),
+      });
 
-        const response = await fetch(`/api/teacher/reports/analytics?${params}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-
-        if (data.success && data.analytics) {
-          const analytics = data.analytics;
-          
-          // Calculate percentages that add up to 100%
-          const preTotal = analytics.preSurvey.submit + analytics.preSurvey.pending;
-          const courseTotal = analytics.courseProgress.submit + analytics.courseProgress.pending + analytics.courseProgress.reviewed;
-          const ideaTotal = analytics.ideaSubmission.submit + analytics.ideaSubmission.pending + analytics.ideaSubmission.reviewed;
-          const postTotal = analytics.postSurvey.submit + analytics.postSurvey.pending;
-          
-          setCharts({
-            pre: filterNonZero([
-              { key: "submit", value: preTotal > 0 ? Math.round((analytics.preSurvey.submit / preTotal) * 100) : 0, fill: PURPLE },
-              { key: "pending", value: preTotal > 0 ? Math.round((analytics.preSurvey.pending / preTotal) * 100) : 0, fill: SALMON },
-            ]),
-            course: filterNonZero([
-              { key: "submit", value: courseTotal > 0 ? Math.round((analytics.courseProgress.submit / courseTotal) * 100) : 0, fill: PURPLE },
-              { key: "pending", value: courseTotal > 0 ? Math.round((analytics.courseProgress.pending / courseTotal) * 100) : 0, fill: SALMON },
-              { key: "reviewed", value: courseTotal > 0 ? Math.round((analytics.courseProgress.reviewed / courseTotal) * 100) : 0, fill: LIGHT_BLUE },
-            ]),
-            idea: filterNonZero([
-              { key: "submit", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.submit / ideaTotal) * 100) : 0, fill: PURPLE },
-              { key: "pending", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.pending / ideaTotal) * 100) : 0, fill: SALMON },
-              { key: "reviewed", value: ideaTotal > 0 ? Math.round((analytics.ideaSubmission.reviewed / ideaTotal) * 100) : 0, fill: LIGHT_BLUE },
-            ]),
-            post: filterNonZero([
-              { key: "submit", value: postTotal > 0 ? Math.round((analytics.postSurvey.submit / postTotal) * 100) : 0, fill: PURPLE },
-              { key: "pending", value: postTotal > 0 ? Math.round((analytics.postSurvey.pending / postTotal) * 100) : 0, fill: SALMON },
-            ]),
-          });
-        } else {
-          console.error('Analytics API error:', data);
-          setError(data.error || 'Failed to fetch analytics data');
-        }
-      } catch (err) {
-        console.error('Error fetching analytics:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch analytics data');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to generate report');
       }
-    };
 
-    fetchAnalytics();
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Create filename based on filters
+      const filterParts = [];
+      if (filters.age && filters.age !== 'All') filterParts.push(`Age-${filters.age}`);
+      if (filters.grade && filters.grade !== 'All') filterParts.push(`Grade-${filters.grade}`);
+      if (filters.gender && filters.gender !== 'All') filterParts.push(filters.gender);
+      if (filters.disability && filters.disability !== 'All') filterParts.push(filters.disability);
+      
+      const filterSuffix = filterParts.length > 0 ? `_${filterParts.join('_')}` : '';
+      a.download = `Report_${selectedCourse.name.replace(/[^a-zA-Z0-9]/g, '-')}${filterSuffix}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // Trigger refresh of reports table
+      triggerRefresh();
+      
+      alert('Report generated successfully!');
+    } catch (err) {
+      console.error('Error generating report:', err);
+      alert('Failed to generate report');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!selectedCourse) {
@@ -376,7 +385,7 @@ export default function TeacherPiCharts() {
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {AGES.map((r) => (
+                    {filterOptions.ages.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -393,7 +402,7 @@ export default function TeacherPiCharts() {
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {GRADES.map((r) => (
+                    {filterOptions.grades.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -410,7 +419,7 @@ export default function TeacherPiCharts() {
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {GENDERS.map((r) => (
+                    {filterOptions.genders.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -427,7 +436,7 @@ export default function TeacherPiCharts() {
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {DISABILITY.map((r) => (
+                    {filterOptions.disabilities.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}

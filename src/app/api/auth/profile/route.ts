@@ -85,13 +85,13 @@ export async function GET(req: NextRequest) {
 					
 					const userDefined = (peopleResponse.data as any).userDefined || [];
 					
-					// Create lookup for easy access
-					const allAttributes = {};
-					userDefined.forEach((field: any) => allAttributes[field.key] = field.value);
-					
-					// Extract TeacherProfile and StudentProfile
-					const teacherProfileRaw = allAttributes['TeacherProfile'];
-					const studentProfileRaw = allAttributes['StudentProfile'];
+				// Create lookup for easy access
+				const allAttributes: any = {};
+				userDefined.forEach((field: any) => allAttributes[field.key] = field.value);
+				
+				// Extract TeacherProfile and StudentProfile
+				const teacherProfileRaw = allAttributes['TeacherProfile'];
+				const studentProfileRaw = allAttributes['StudentProfile'];
 					
 					// Parse nested profile data
 					if (teacherProfileRaw) {
@@ -118,9 +118,9 @@ export async function GET(req: NextRequest) {
 						hasTeacherProfile: !!teacherProfile,
 						hasStudentProfile: !!studentProfile
 					};
-				} catch (peopleError) {
-					console.warn('Could not fetch from People API either:', peopleError.message);
-				}
+			} catch (peopleError: any) {
+				console.warn('Could not fetch from People API either:', peopleError?.message);
+			}
 			}
 
 			return NextResponse.json({

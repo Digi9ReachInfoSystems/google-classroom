@@ -22,10 +22,11 @@ import {
 import Pagination from "@/components/ui/pagination";
 import { useDistrictCourse } from "../../districtadmin/context/DistrictCourseContext";
 
-const AGES = ["10–12", "13–15", "16–18"] as const;
-const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
-const GENDERS = ["Male", "Female", "Other"] as const;
-const DISABILITY = ["None", "Hearing", "Vision", "Learning", "Mobility"] as const;
+/* -------------------- filter option values (will be fetched from API) -------------------- */
+const DEFAULT_AGES = ["All", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
+const DEFAULT_GRADES = ["All", "Grade I", "Grade II", "Grade III", "Grade IV", "Grade V", "Grade VI", "Grade VII", "Grade VIII", "Grade IX", "Grade X"];
+const DEFAULT_GENDERS = ["All", "Male", "Female", "Other"];
+const DEFAULT_DISABILITY = ["All", "None", "Visual Impairment", "Hearing Impairment", "Physical Disability", "Learning Disability", "Other"];
 const BLUE_100 = "var(--blue-800)";
 const ERROR_200 = "var(--pink-100)";
 const BLUE_700 = "var(--purple-100)";
@@ -57,7 +58,7 @@ function makeCharts(filters: {
     (filters.age ?? "-") +
     (filters.grade ?? "-") +
     (filters.gender ?? "-") +
-    (filters.disability ?? "-") +
+    (filters.disability ?? "-");
 
   const base = hashStr(key || "default");
   const mk3 = (s: number) => {
@@ -193,10 +194,10 @@ function PieBlock({
 
 export default function PiCharts() {
   const { selectedCourse } = useDistrictCourse();
-  const [age, setAge] = React.useState<string | undefined>();
-  const [grade, setGrade] = React.useState<string | undefined>();
-  const [gender, setGender] = React.useState<string | undefined>();
-  const [disability, setDisability] = React.useState<string | undefined>();
+  const [age, setAge] = React.useState<string>('All');
+  const [grade, setGrade] = React.useState<string>('All');
+  const [gender, setGender] = React.useState<string>('All');
+  const [disability, setDisability] = React.useState<string>('All');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -210,6 +211,37 @@ export default function PiCharts() {
   const [reportData, setReportData] = React.useState<any[]>([]);
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
+  
+  // Dynamic filter options from API
+  const [filterOptions, setFilterOptions] = React.useState({
+    ages: DEFAULT_AGES,
+    grades: DEFAULT_GRADES,
+    genders: DEFAULT_GENDERS,
+    disabilities: DEFAULT_DISABILITY
+  });
+
+  // Fetch filter options on mount
+  React.useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/filter-options');
+        const data = await response.json();
+        
+        if (data.success && data.filters) {
+          setFilterOptions({
+            ages: ['All', ...(data.filters.age || [])],
+            grades: ['All', ...(data.filters.grade || [])],
+            genders: ['All', ...(data.filters.gender || [])],
+            disabilities: ['All', ...(data.filters.disability || [])]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
 
   const isLg = useMedia("(min-width: 1024px)");
 
@@ -302,7 +334,7 @@ export default function PiCharts() {
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {AGES.map((r) => (
+                    {filterOptions.ages.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -319,7 +351,7 @@ export default function PiCharts() {
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {GRADES.map((r) => (
+                    {filterOptions.grades.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -336,7 +368,7 @@ export default function PiCharts() {
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {GENDERS.map((r) => (
+                    {filterOptions.genders.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -353,7 +385,7 @@ export default function PiCharts() {
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {DISABILITY.map((r) => (
+                    {filterOptions.disabilities.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}

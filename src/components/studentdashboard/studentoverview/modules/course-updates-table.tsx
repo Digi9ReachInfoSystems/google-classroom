@@ -123,9 +123,6 @@ export function CourseUpdatesTable() {
         <h2 className="text-lg font-semibold text-neutral-900">
           Course updates
         </h2>
-        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-          {selectedCourse.name}
-        </div>
       </div>
       <div className="overflow-x-auto">
         {/* Header table (not scrollable) */}

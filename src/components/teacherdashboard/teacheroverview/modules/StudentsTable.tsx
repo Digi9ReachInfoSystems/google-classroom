@@ -21,29 +21,38 @@ function LessonProgress({ value }: { value: number }) {
 
   return (
     <div className="relative w-full max-w-[11rem] min-w-[8rem]" style={{ height: KNOB }}>
-      {/* gray track (centered vertically) */}
-      <div
-        className="absolute left-0 right-0 rounded-full bg-[var(--neutral-300)]"
-        style={{ height: TRACK_H, top: "50%", transform: "translateY(-50%)" }}
-      />
-      {/* filled using primary brand color */}
-      {!isStart && (
+      {/* Container with padding for knob */}
+      <div className="absolute inset-0" style={{ paddingLeft: KNOB/2, paddingRight: KNOB/2 }}>
+        {/* gray track (centered vertically) */}
         <div
-          className="absolute left-0 rounded-full bg-[var(--primary)]"
-          style={{ height: TRACK_H, width: `${v}%`, top: "50%", transform: "translateY(-50%)" }}
+          className="absolute left-0 right-0 rounded-full bg-[var(--neutral-300)]"
+          style={{ height: TRACK_H, top: "50%", transform: "translateY(-50%)", marginLeft: KNOB/2, marginRight: KNOB/2 }}
         />
-      )}
+        {/* filled using primary brand color */}
+        {!isStart && (
+          <div
+            className="absolute left-0 rounded-full bg-[var(--primary)]"
+            style={{ height: TRACK_H, width: `${v}%`, top: "50%", transform: "translateY(-50%)", marginLeft: KNOB/2 }}
+          />
+        )}
+      </div>
       {/* knob / red start dot */}
       {isStart ? (
         <span
           className="absolute rounded-full bg-[var(--error-400)]"
-          style={{ width: 12, height: 12, left: 4, top: "50%", transform: "translateY(-50%)" }}
+          style={{ width: 12, height: 12, left: KNOB/2 - 6 + 4, top: "50%", transform: "translateY(-50%)" }}
           aria-hidden
         />
       ) : (
         <span
           className="absolute rounded-full bg-white border border-[var(--neutral-300)] shadow-sm"
-          style={{ width: KNOB, height: KNOB, left: `${v}%`, top: "50%", transform: "translate(-50%, -50%)" }}
+          style={{ 
+            width: KNOB, 
+            height: KNOB, 
+            left: `${v}%`,
+            top: "50%", 
+            transform: "translateY(-50%)" 
+          }}
           aria-hidden
         />
       )}

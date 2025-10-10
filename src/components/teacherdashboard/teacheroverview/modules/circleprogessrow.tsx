@@ -143,7 +143,7 @@ export default function CircleProgressRow() {
       />
       <KPICard 
         valueText={`${analytics.pendingAssignments}`} 
-        label="Pending Assignments" 
+        label="Pending Submissions" 
         percentArc={Math.min(100, Math.max(10, analytics.pendingAssignments * 10))} 
       />
     </div>

@@ -121,14 +121,27 @@ export default function Ideasubmitted({ rows, loading }: { rows: IdeaRow[]; load
                     </td>
                     <td className="py-3 px-6 text-sm whitespace-nowrap">
                       {r.file && r.file !== "-" ? (
-                        <a
-                          href={r.file}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[#2E7CF6] hover:underline whitespace-nowrap inline-block"
-                        >
-                          Explore Idea
-                        </a>
+                        r.status === "completed" ? (
+                          <a
+                            href={r.file.replace('/viewform', '/edit#responses')}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[#10B981] hover:underline whitespace-nowrap inline-block font-medium"
+                            title="View student's response in Google Forms"
+                          >
+                            View Response
+                          </a>
+                        ) : (
+                          <a
+                            href={r.file}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[#2E7CF6] hover:underline whitespace-nowrap inline-block"
+                            title="Open idea submission form"
+                          >
+                            View Form
+                          </a>
+                        )
                       ) : (
                         <span className="text-neutral-400">-</span>
                       )}

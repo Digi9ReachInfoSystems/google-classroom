@@ -3,6 +3,7 @@
 import { Send, Bell } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useCourse } from "@/components/studentdashboard/context/CourseContext"
+import { useNotifications } from "@/components/studentdashboard/context/NotificationContext"
 
 interface Announcement {
   id: string;
@@ -16,6 +17,7 @@ interface Announcement {
 
 export function Announcements() {
   const { selectedCourse } = useCourse();
+  const { markAnnouncementsAsRead } = useNotifications();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +44,11 @@ export function Announcements() {
         
         if (data.success) {
           setAnnouncements(data.announcements);
+          
+          // Mark announcements as read after fetching (using context)
+          if (data.announcements.length > 0) {
+            await markAnnouncementsAsRead(selectedCourse.id);
+          }
         } else {
           throw new Error(data.error || 'Failed to load announcements');
         }
@@ -84,8 +91,8 @@ export function Announcements() {
             ))}
           </div>
         ) : announcements.length > 0 ? (
-          <div className="p-6 space-y-6 max-h-[30rem] overflow-y-auto custom-scrollbar pr-3">
-            {announcements.map((announcement) => (
+          <div className="p-6 space-y-6 max-h-[20rem] overflow-y-auto scrollbar-hide">
+            {announcements.slice(0, 4).map((announcement) => (
               <div key={announcement.id} className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <div className="w-8 h-8 rounded-full border-2 border-neutral-200 flex items-center justify-center flex-shrink-0">

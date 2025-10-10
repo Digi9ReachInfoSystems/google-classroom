@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       progressData = await getCourseProgress(courseId, schoolName);
     } else {
       // Get progress for all courses in district
-      progressData = await getDistrictProgress(payload.district, schoolName);
+      progressData = await getDistrictProgress((payload as any).district, schoolName);
     }
 
     return NextResponse.json({

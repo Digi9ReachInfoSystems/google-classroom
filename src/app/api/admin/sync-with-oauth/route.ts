@@ -207,7 +207,7 @@ async function syncCoursesWithOAuth(classroom: any, syncId: string) {
     const allCourses: any[] = [];
 
     do {
-      const response = await classroom.courses.list({
+      const response: any = await classroom.courses.list({
         pageSize: 100,
         pageToken,
       });
@@ -270,7 +270,7 @@ async function syncUsersAndRostersWithOAuth(classroom: any, adminDirectory: any,
         const allStudents: any[] = [];
 
         do {
-          const studentsResponse = await classroom.courses.students.list({
+          const studentsResponse: any = await classroom.courses.students.list({
             courseId: course.courseId,
             pageSize: 100,
             pageToken
@@ -302,6 +302,7 @@ async function syncUsersAndRostersWithOAuth(classroom: any, adminDirectory: any,
                 grade: studentProfile.Grade || studentProfile.grade,
                 schoolName: studentProfile.SchoolName || studentProfile.schoolName || studentProfile.schoolname,
                 age: studentProfile.Age || studentProfile.age,
+                disability: studentProfile.Disability || studentProfile.disability,
                 customSchemas: customSchemas
               };
               
@@ -349,7 +350,7 @@ async function syncUsersAndRostersWithOAuth(classroom: any, adminDirectory: any,
         const allTeachers: any[] = [];
 
         do {
-          const teachersResponse = await classroom.courses.teachers.list({
+          const teachersResponse: any = await classroom.courses.teachers.list({
             courseId: course.courseId,
             pageSize: 100,
             pageToken
@@ -450,7 +451,7 @@ async function syncCourseworkAndSubmissionsWithOAuth(classroom: any, syncId: str
         const allCoursework: any[] = [];
 
         do {
-          const courseworkResponse = await classroom.courses.courseWork.list({
+          const courseworkResponse: any = await classroom.courses.courseWork.list({
             courseId: course.courseId,
             pageSize: 100,
             pageToken
@@ -491,7 +492,7 @@ async function syncCourseworkAndSubmissionsWithOAuth(classroom: any, syncId: str
             const allSubmissions: any[] = [];
 
             do {
-              const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
+              const submissionsResponse: any = await classroom.courses.courseWork.studentSubmissions.list({
                 courseId: course.courseId,
                 courseWorkId: work.id,
                 pageSize: 100,

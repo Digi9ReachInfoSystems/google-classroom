@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       students = await getCourseStudents(courseId, schoolName);
     } else {
       // Get all students in district
-      students = await getDistrictStudents(payload.district, schoolName);
+      students = await getDistrictStudents((payload as any).district, schoolName);
     }
 
     return NextResponse.json({

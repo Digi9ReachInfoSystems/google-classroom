@@ -16,8 +16,22 @@ export async function GET(req: NextRequest) {
     }
 
     const payload = verifyAuthToken(token);
-    if (!payload || payload.role !== 'district-admin') {
-      return NextResponse.json({ message: 'Access denied' }, { status: 403 });
+    console.log('District admin analytics - Token payload:', { 
+      email: payload?.email, 
+      role: payload?.role 
+    });
+    
+    if (!payload) {
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    
+    if (payload.role !== 'district-admin') {
+      console.log('Access denied - Expected district-admin, got:', payload.role);
+      return NextResponse.json({ 
+        message: 'Access denied',
+        expectedRole: 'district-admin',
+        actualRole: payload.role
+      }, { status: 403 });
     }
 
     // Connect to database
@@ -31,10 +45,10 @@ export async function GET(req: NextRequest) {
 
     if (courseId) {
       // Get analytics for specific course
-      analytics = await getCourseAnalytics(courseId, payload.district, schoolName);
+      analytics = await getCourseAnalytics(courseId, (payload as any).district, schoolName);
     } else {
       // Get analytics for all courses in district
-      analytics = await getDistrictAnalytics(payload.district, schoolName);
+      analytics = await getDistrictAnalytics((payload as any).district, schoolName);
     }
 
     return NextResponse.json({

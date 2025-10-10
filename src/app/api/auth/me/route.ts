@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       user: {
         email: payload.email,
         role: payload.role,
-        name: payload.name || payload.email.split('@')[0]
+        name: (payload as any).name || payload.email.split('@')[0]
       }
     });
 

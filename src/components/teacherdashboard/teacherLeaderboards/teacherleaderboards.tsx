@@ -50,11 +50,11 @@ export default function TeacherLeaderboardpage() {
         const data = await res.json();
 
         if (data.success && data.students) {
-          // Transform data to include legacy fields for compatibility
+          // Transform data with actual badge and certificate counts
           const transformedStudents = data.students.map((student: any) => ({
             ...student,
-            badges: 0, // Will be implemented later
-            certificates: 0, // Will be implemented later
+            badges: student.badges || 0,
+            certificates: student.certificates || 0,
             completion: student.completionPercentage
           }));
           setLeaderboardData(transformedStudents);
@@ -146,7 +146,9 @@ export default function TeacherLeaderboardpage() {
               districtRank={120}
               certificates={selectedStudentIndex !== null ? leaderboardData[selectedStudentIndex]?.certificates : (currentUser?.certificates || leaderboardData[0]?.certificates || 0)}
             />
-            <TeacherBadgesSection />
+            <TeacherBadgesSection 
+              studentEmail={selectedStudentIndex !== null ? leaderboardData[selectedStudentIndex]?.email : (currentUser?.email || leaderboardData[0]?.email || '')}
+            />
           </div>
 
           {/* Right Panel - Leaderboard Table */}

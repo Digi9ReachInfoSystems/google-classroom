@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      announcements: announcements.map(announcement => ({
+      announcements: announcements.map((announcement: any) => ({
         id: announcement._id.toString(),
         text: announcement.text,
         creationTime: announcement.creationTime.toISOString(),

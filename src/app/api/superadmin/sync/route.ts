@@ -118,6 +118,7 @@ export async function POST(req: NextRequest) {
           const grade = studentProfile.Grade || '';
           const schoolName = studentProfile.SchoolName || '';
           const age = studentProfile.Age || '';
+          const disability = studentProfile.Disability || '';
 
           await UserModel.findOneAndUpdate(
             { email: profile.emailAddress },
@@ -134,6 +135,7 @@ export async function POST(req: NextRequest) {
               grade,
               schoolName,
               age,
+              disability,
               customSchemas: customAttributes
             },
             { upsert: true, new: true }

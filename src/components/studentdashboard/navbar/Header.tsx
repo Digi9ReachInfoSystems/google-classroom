@@ -8,12 +8,14 @@ import { usePathname, useRouter } from "next/navigation"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useCourse } from "@/components/studentdashboard/context/CourseContext"
+import { useNotifications } from "@/components/studentdashboard/context/NotificationContext"
 
 export function DashboardHeader() {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
   const { selectedCourse, setSelectedCourse, courses, loadingCourses, error } = useCourse()
+  const { hasUnreadAnnouncements } = useNotifications()
 
   useEffect(() => {
     // Fetch user info
@@ -34,6 +36,10 @@ export function DashboardHeader() {
     } catch (error) {
       console.error('Logout failed:', error)
     }
+  }
+
+  const handleNotificationClick = () => {
+    router.push('/student/dashboard')
   }
 
   const tabs = [
@@ -121,12 +127,6 @@ return match ? match.value : "Overview"
                   >
                     <div className="flex flex-col items-start w-full">
                       <div className="font-medium text-sm">{course.name || 'Untitled Course'}</div>
-                      {course.section && (
-                        <div className="text-xs text-gray-500 mt-1">{course.section}</div>
-                      )}
-                      {course.room && (
-                        <div className="text-xs text-gray-400">Room: {course.room}</div>
-                      )}
                     </div>
                   </DropdownMenuItem>
                 ))
@@ -134,8 +134,17 @@ return match ? match.value : "Overview"
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="ghost" size="icon" className="text-neutral-600 hover:text-neutral-900">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-neutral-600 hover:text-neutral-900 relative"
+            onClick={handleNotificationClick}
+            title="View announcements"
+          >
             <Bell className="h-5 w-5" />
+            {hasUnreadAnnouncements && (
+              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+            )}
           </Button>
 
           <DropdownMenu>

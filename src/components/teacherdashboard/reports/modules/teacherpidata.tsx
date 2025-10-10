@@ -68,7 +68,7 @@ export default function TeacherPidata() {
   const [error, setError] = React.useState<string | null>(null);
   
   // Use shared filter context and course context
-  const { filters } = useFilters();
+  const { filters, refreshTrigger } = useFilters();
   const { selectedCourse } = useTeacherCourse();
 
   // Fetch report data from API
@@ -120,7 +120,7 @@ export default function TeacherPidata() {
     };
 
     fetchReports();
-  }, [selectedCourse, filters]);
+  }, [selectedCourse, refreshTrigger]); // Listen to refreshTrigger instead of filters
 
   // Helper function to get focal points based on filters
   const getFocalPoints = (filters: any) => {
