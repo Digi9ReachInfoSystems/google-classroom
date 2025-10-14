@@ -25,18 +25,37 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const courseId = searchParams.get('courseId');
+    const courseIdParam = searchParams.get('courseId');
     const schoolName = searchParams.get('schoolName');
     const district = searchParams.get('district');
 
-    if (!courseId) {
+    if (!courseIdParam) {
       return NextResponse.json({ 
         success: false, 
         message: 'Course ID is required' 
       }, { status: 400 });
     }
 
+    // TypeScript type assertion after null check
+    const courseId = courseIdParam as string;
+
     await connectToDatabase();
+
+    // Fetch user's district from database
+    let user = await UserModel.findOne({ email: payload.email }).select('district');
+    
+    // If user doesn't exist, create them
+    if (!user) {
+      user = await UserModel.create({
+        email: payload.email,
+        role: 'district-admin',
+        district: null // Will need to be set later
+      });
+      console.log('Created district admin user:', payload.email);
+    }
+    
+    const userDistrict = user.district || null;
+    console.log('District admin district:', userDistrict);
 
     // Create OAuth2 client
     const oauth2Client = new google.auth.OAuth2(
@@ -170,7 +189,7 @@ export async function GET(req: NextRequest) {
 
     // Build query for filtering students by district/school
     const studentQuery: any = { role: 'student' };
-    if ((payload as any).district) studentQuery.district = (payload as any).district;
+    if (userDistrict) studentQuery.district = userDistrict;
     if (schoolName && schoolName !== 'All') studentQuery.schoolName = schoolName;
     if (district && district !== 'All') studentQuery.district = district;
 
@@ -185,8 +204,8 @@ export async function GET(req: NextRequest) {
 
     // Fetch submissions for the idea assignment
     const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
-      courseId: courseId,
-      courseWorkId: ideaCoursework.id,
+      courseId: courseId!,
+      courseWorkId: ideaCoursework.id!,
       pageSize: 100
     });
 

@@ -214,7 +214,7 @@ export function CourseworkDisplay({ courseworkData, loading }: CourseworkDisplay
                     )}
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-6">
                     <span className={submissionStatus.color}>
                       {submissionStatus.text}
                     </span>

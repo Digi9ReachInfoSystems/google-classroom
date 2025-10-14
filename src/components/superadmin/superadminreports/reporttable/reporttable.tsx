@@ -86,7 +86,7 @@ export default function Reporttable() {
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[120px]">District</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[200px]">School</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[180px]">File name</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[220px]">Focal points</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[220px]">Report Metrics</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[160px]">Course name</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[90px]">Action</th>
               </tr>

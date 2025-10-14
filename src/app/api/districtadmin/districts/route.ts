@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     // Get unique districts from users
     const districts = await UserModel.distinct('district', {
-      district: { $exists: true, $ne: null, $ne: '' }
+      district: { $exists: true, $ne: null }
     });
 
     console.log(`Found ${districts.length} districts`);

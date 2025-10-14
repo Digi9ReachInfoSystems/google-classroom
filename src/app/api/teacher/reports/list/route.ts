@@ -44,10 +44,10 @@ export async function GET(req: NextRequest) {
         fileName: report.fileName,
         courseName: report.courseName,
         courseId: report.courseId,
-        generatedAt: report.generatedAt.toISOString().split('T')[0],
+        generatedAt: report.generatedAt ? new Date(report.generatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         fileSize: report.fileSize,
-        focalPoints: report.focalPoints,
-        filters: report.filters,
+        focalPoints: report.focalPoints || [],
+        filters: report.filters || { age: 'All', grade: 'All', gender: 'All', disability: 'All' },
         reportType: report.reportType,
         filePath: report.filePath
       })),

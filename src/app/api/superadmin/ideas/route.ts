@@ -25,16 +25,19 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const courseId = searchParams.get('courseId');
+    const courseIdParam = searchParams.get('courseId');
     const schoolName = searchParams.get('schoolName');
     const district = searchParams.get('district');
 
-    if (!courseId) {
+    if (!courseIdParam) {
       return NextResponse.json({ 
         success: false, 
         message: 'Course ID is required' 
       }, { status: 400 });
     }
+
+    // TypeScript type assertion after null check
+    const courseId = courseIdParam as string;
 
     await connectToDatabase();
 
@@ -184,8 +187,8 @@ export async function GET(req: NextRequest) {
 
     // Fetch submissions for the idea assignment
     const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
-      courseId: courseId,
-      courseWorkId: ideaCoursework.id,
+      courseId: courseId!,
+      courseWorkId: ideaCoursework.id!,
       pageSize: 100
     });
 

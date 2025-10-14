@@ -231,6 +231,10 @@ export default function TeacherPiCharts() {
   const isLg = useMedia("(min-width: 1024px)");
 
   const onGenerate = async () => {
+    console.log('Generate button clicked');
+    console.log('Selected course:', selectedCourse);
+    console.log('Current filters:', filters);
+    
     // Generate and download filtered report
     if (!selectedCourse) {
       alert('Please select a course first');
@@ -240,6 +244,7 @@ export default function TeacherPiCharts() {
     setLoading(true);
 
     try {
+      console.log('Sending request to generate report...');
       const response = await fetch('/api/teacher/reports/generate', {
         method: 'POST',
         headers: {
@@ -256,12 +261,18 @@ export default function TeacherPiCharts() {
         }),
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to generate report');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Error response:', errorData);
+        throw new Error(errorData.error || 'Failed to generate report');
       }
 
       // Create blob and download
       const blob = await response.blob();
+      console.log('Blob size:', blob.size);
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -276,18 +287,22 @@ export default function TeacherPiCharts() {
       const filterSuffix = filterParts.length > 0 ? `_${filterParts.join('_')}` : '';
       a.download = `Report_${selectedCourse.name.replace(/[^a-zA-Z0-9]/g, '-')}${filterSuffix}_${new Date().toISOString().split('T')[0]}.xlsx`;
       
+      console.log('Downloading file:', a.download);
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      // Trigger refresh of reports table
-      triggerRefresh();
+      // Trigger refresh of reports table after a small delay to ensure DB save completes
+      setTimeout(() => {
+        console.log('Triggering table refresh');
+        triggerRefresh();
+      }, 500);
       
       alert('Report generated successfully!');
     } catch (err) {
       console.error('Error generating report:', err);
-      alert('Failed to generate report');
+      alert(`Failed to generate report: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -451,9 +466,20 @@ export default function TeacherPiCharts() {
                 <Button
                   type="button"
                   onClick={onGenerate}
-                  className="h-8 rounded-full px-4 bg-[var(--warning-400)] hover:bg-[var(--warning-500)] text-white text-[12px]"
+                  disabled={loading || !selectedCourse}
+                  className="h-8 rounded-full px-4 bg-[var(--warning-400)] hover:bg-[var(--warning-500)] text-white text-[12px] disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                 >
-                  Generate
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </span>
+                  ) : (
+                    'Generate'
+                  )}
                 </Button>
               </div>
             </div>

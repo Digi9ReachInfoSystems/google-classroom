@@ -282,33 +282,78 @@ export default function PiCharts() {
     fetchReportData();
   }, [selectedCourse]);
 
-  const onGenerate = () => {
-    // Re-fetch with filters applied
-    const fetchFiltered = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams();
-        if (selectedCourse) params.set('courseId', selectedCourse.id);
-        if (age) params.set('age', age);
-        if (grade) params.set('grade', grade);
-        if (gender) params.set('gender', gender);
-        if (disability) params.set('disability', disability);
+  const onGenerate = async () => {
+    console.log('District admin generate button clicked');
+    console.log('Selected course:', selectedCourse);
+    console.log('Current filters:', { age, grade, gender, disability });
+    
+    // Re-fetch with filters applied to display in table
+    if (!selectedCourse) {
+      alert('Please select a course first');
+      return;
+    }
 
-        const response = await fetch(`/api/districtadmin/report-analytics?${params.toString()}`);
-        const data = await response.json();
+    setLoading(true);
 
-        if (data.success) {
-          setCharts(data.charts);
-          setReportData(data.reportData || []);
-        }
-      } catch (err) {
-        console.error('Error generating filtered report:', err);
-      } finally {
-        setLoading(false);
+    try {
+      const params = new URLSearchParams();
+      params.set('courseId', selectedCourse.id);
+      if (age && age !== 'All') params.set('age', age);
+      if (grade && grade !== 'All') params.set('grade', grade);
+      if (gender && gender !== 'All') params.set('gender', gender);
+      if (disability && disability !== 'All') params.set('disability', disability);
+
+      console.log('Fetching analytics with params:', params.toString());
+      const response = await fetch(`/api/districtadmin/reports/analytics?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analytics: ${response.status}`);
       }
-    };
 
-    fetchFiltered();
+      const data = await response.json();
+      console.log('Analytics response:', data);
+
+      if (data.success) {
+        // Update charts (unaffected by filters - shows overall stats)
+        if (data.analytics) {
+          const analytics = data.analytics;
+          setCharts({
+            pre: [
+              { key: "submit", value: analytics.preSurvey?.completed || 0, fill: BLUE_100 },
+              { key: "pending", value: analytics.preSurvey?.pending || 0, fill: ERROR_200 },
+              { key: "reviewed", value: analytics.preSurvey?.notStarted || 0, fill: BLUE_700 },
+            ],
+            course: [
+              { key: "submit", value: analytics.course?.completed || 0, fill: BLUE_700 },
+              { key: "pending", value: analytics.course?.inProgress || 0, fill: ERROR_200 },
+              { key: "reviewed", value: analytics.course?.notStarted || 0, fill: BLUE_100 },
+            ],
+            idea: [
+              { key: "submit", value: analytics.ideas?.submitted || 0, fill: BLUE_100 },
+              { key: "pending", value: analytics.ideas?.pending || 0, fill: ERROR_200 },
+              { key: "reviewed", value: analytics.ideas?.notStarted || 0, fill: BLUE_700 },
+            ],
+            post: [
+              { key: "submit", value: analytics.postSurvey?.completed || 0, fill: BLUE_100 },
+              { key: "pending", value: analytics.postSurvey?.pending || 0, fill: ERROR_200 },
+              { key: "reviewed", value: analytics.postSurvey?.notStarted || 0, fill: BLUE_700 },
+            ],
+          });
+        }
+        
+        // Update report data (filtered by demographics)
+        setReportData(data.reportData || []);
+        console.log('Report data updated:', data.reportData?.length || 0, 'students');
+      } else {
+        throw new Error(data.error || 'Failed to load analytics');
+      }
+    } catch (err) {
+      console.error('Error generating filtered report:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate report');
+      alert(`Failed to generate report: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -400,9 +445,20 @@ export default function PiCharts() {
                 <Button
                   type="button"
                   onClick={onGenerate}
-                  className="h-9 rounded-full px-5 bg-[var(--primary)] hover:bg-[var(--primary)] text-white text-[14px]"
+                  disabled={loading || !selectedCourse}
+                  className="h-9 rounded-full px-5 bg-[var(--primary)] hover:bg-[var(--primary)] text-white text-[14px] disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                 >
-                  Generate
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </span>
+                  ) : (
+                    'Generate'
+                  )}
                 </Button>
               </div>
             </div>
@@ -432,11 +488,12 @@ export default function PiCharts() {
               />
             </div>
 
-            {/* Data table (student) */}
-            <StudentDataTable
-              filters={{ age, grade, gender, disability }}
-              reportData={reportData}
-            />
+            {/* Data table (student report data) */}
+            {reportData.length > 0 && (
+              <StudentDataTable
+                reportData={reportData}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -445,54 +502,6 @@ export default function PiCharts() {
 }
 
 /* ----------------------- Student Data Table ----------------------- */
-type TableRow = {
-  no: number;
-  district: string;
-  school: string;
-  file: string;
-  focal: string[];
-  course: string;
-  range: string;
-  age?: string;
-  grade?: string;
-  gender?: string;
-  disability?: string;
-};
-
-function makeRows(): TableRow[] {
-  return Array.from({ length: 87 }).map((_, i) => ({
-    no: i + 1,
-    district: ["Gasa", "Punakha", "Haa"][i % 3],
-    school: "School Name",
-    file: [
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-    ][i % 10],
-    focal:
-      i % 4 === 1
-        ? ["Age"]
-        : i % 4 === 2
-        ? ["Gender", "Disability", "Grade"]
-        : i % 4 === 3
-        ? ["Gender", "Grade"]
-        : ["Age", "Gender", "Disability", "Grade"],
-    course: ["Biology", "Maths", "Physics"][i % 3],
-    range: "10 Jun – 12 Sep",
-    age: ["10–12", "13–15", "16–18"][i % 3],
-    grade: ["6", "7", "8", "9", "10", "11", "12"][i % 7],
-    gender: ["Male", "Female", "Other"][i % 3],
-    disability: ["None", "Hearing", "Vision", "Learning", "Mobility"][i % 5],
-  }));
-}
-
 function Chip({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full bg-[var(--primary)] text-white text-[11px] px-2.5 py-[5px] leading-none">
@@ -502,111 +511,181 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 function StudentDataTable({
-  filters,
   reportData,
 }: {
-  filters: {
-    age?: string;
-    grade?: string;
-    gender?: string;
-    disability?: string;
-  };
   reportData: any[];
 }) {
-  const filteredRows = React.useMemo(() => {
-    return reportData.filter((row) => {
-      if (filters.age && row.age !== filters.age) return false;
-      if (filters.grade && row.grade !== filters.grade) return false;
-      if (filters.gender && row.gender !== filters.gender) return false;
-      if (filters.disability && row.disability !== filters.disability) return false;
-      return true;
-    });
-  }, [reportData, filters]);
-
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = React.useState(1);
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [filters]);
+  }, [reportData]);
 
-  const totalItems = filteredRows.length;
+  const totalItems = reportData.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const start = (currentPage - 1) * itemsPerPage;
-  const rows = filteredRows.slice(start, start + itemsPerPage);
+  const rows = reportData.slice(start, start + itemsPerPage);
+  
+  // Function to export to Excel
+  const handleExportExcel = () => {
+    // Create CSV content
+    const headers = ['No', 'Student Name', 'Email', 'Age', 'Grade', 'Gender', 'Disability', 'School', 'Pre-Survey', 'Ideas', 'Post-Survey', 'Course Status'];
+    const csvRows = [headers.join(',')];
+    
+    reportData.forEach((row, index) => {
+      const csvRow = [
+        index + 1,
+        `"${row.studentName}"`,
+        row.email,
+        row.age,
+        row.grade,
+        row.gender,
+        row.disability,
+        `"${row.schoolName}"`,
+        row.preSurveyStatus,
+        row.ideaStatus,
+        row.postSurveyStatus,
+        row.courseStatus
+      ];
+      csvRows.push(csvRow.join(','));
+    });
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+/* ----------------------- Student Data Table ----------------------- */
+function StudentDataTable({
+  reportData,
+}: {
+  reportData: any[];
+}) {
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = React.useState(1);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [reportData]);
+
+  const totalItems = reportData.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const start = (currentPage - 1) * itemsPerPage;
+  const rows = reportData.slice(start, start + itemsPerPage);
+  
+  // Function to export to Excel
+  const handleExportExcel = () => {
+    // Create CSV content
+    const headers = ['No', 'Student Name', 'Email', 'Age', 'Grade', 'Gender', 'Disability', 'School', 'Pre-Survey', 'Ideas', 'Post-Survey', 'Course Status'];
+    const csvRows = [headers.join(',')];
+    
+    reportData.forEach((row, index) => {
+      const csvRow = [
+        index + 1,
+        `"${row.studentName}"`,
+        row.email,
+        row.age,
+        row.grade,
+        row.gender,
+        row.disability,
+        `"${row.schoolName}"`,
+        row.preSurveyStatus,
+        row.ideaStatus,
+        row.postSurveyStatus,
+        row.courseStatus
+      ];
+      csvRows.push(csvRow.join(','));
+    });
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
 
   return (
     <div className="mt-10">
-      <div className="bg-white rounded-lg border-neutral-200">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Student Report Data</h3>
+        {reportData.length > 0 && (
+          <Button
+            onClick={handleExportExcel}
+            className="h-9 rounded-full px-5 bg-[var(--success-500)] hover:bg-[var(--success-600)] text-white text-[14px]"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
+        )}
+      </div>
+      
+      <div className="bg-white rounded-lg border border-neutral-200">
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed rounded-t-lg overflow-hidden border-collapse border-b border-neutral-200">
-            <colgroup>
-              <col className="w-[56px]" />
-              <col className="w-[120px]" />
-              <col className="w-[200px]" />
-              <col className="w-[180px]" />
-              <col className="w-[220px]" />
-              <col className="w-[160px]" />
-              <col className="w-[170px]" />
-              <col className="w-[90px]" />
-            </colgroup>
+          <table className="w-full rounded-t-lg overflow-hidden border-collapse">
             <thead className="bg-[#F1F5F6]">
               <tr className="text-[12px] text-[var(--neutral-900)]">
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[56px]">No</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[120px]">District</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[200px]">School</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[180px]">File name</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[220px]">Focal points</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[160px]">Course name</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[170px]">Date Range</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[90px]">Action</th>
+                <th className="px-4 py-4 text-left font-normal">No</th>
+                <th className="px-4 py-4 text-left font-normal">Student Name</th>
+                <th className="px-4 py-4 text-left font-normal">Email</th>
+                <th className="px-4 py-4 text-left font-normal">Age</th>
+                <th className="px-4 py-4 text-left font-normal">Grade</th>
+                <th className="px-4 py-4 text-left font-normal">Gender</th>
+                <th className="px-4 py-4 text-left font-normal">Disability</th>
+                <th className="px-4 py-4 text-left font-normal">School</th>
+                <th className="px-4 py-4 text-left font-normal">Pre-Survey</th>
+                <th className="px-4 py-4 text-left font-normal">Ideas</th>
+                <th className="px-4 py-4 text-left font-normal">Post-Survey</th>
+                <th className="px-4 py-4 text-left font-normal">Course Status</th>
               </tr>
             </thead>
           </table>
         </div>
 
         <div className="max-h-[520px] overflow-y-auto rounded-b-lg custom-scrollbar">
-          <table className="w-full table-fixed">
-            <colgroup>
-              <col className="w-[56px]" />
-              <col className="w-[120px]" />
-              <col className="w-[200px]" />
-              <col className="w-[180px]" />
-              <col className="w-[220px]" />
-              <col className="w-[160px]" />
-              <col className="w-[170px]" />
-              <col className="w-[90px]" />
-            </colgroup>
+          <table className="w-full">
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.no} className="text-[12px]">
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)] text-[var(--neutral-1000)]">{r.no}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.district}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.school}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.file}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    <div className="flex flex-wrap gap-2">
-                      {r.focal.map((t: string) => (
-                        <Chip key={t}>{t}</Chip>
-                      ))}
-                    </div>
+              {rows.map((row, index) => (
+                <tr key={start + index} className="text-[12px] hover:bg-gray-50">
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)] text-[var(--neutral-1000)]">{start + index + 1}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.studentName}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.email}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.age}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.grade}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.gender}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.disability}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.schoolName}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">
+                    <Chip>{row.preSurveyStatus}</Chip>
                   </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.course}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.range}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    <button
-                      type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--neutral-300)] hover:bg-[var(--neutral-100)]"
-                      aria-label={`Download row ${r.no}`}
-                    >
-                      <Download className="h-4 w-4 text-[var(--neutral-800)]" />
-                    </button>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">
+                    <Chip>{row.ideaStatus}</Chip>
+                  </td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">
+                    <Chip>{row.postSurveyStatus}</Chip>
+                  </td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">
+                    <Chip>{row.courseStatus}</Chip>
                   </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-[var(--neutral-700)] border-t border-[var(--neutral-200)]">No data.</td>
+                  <td colSpan={12} className="px-5 py-10 text-center text-[var(--neutral-700)] border-t border-[var(--neutral-200)]">
+                    No data. Click "Generate" to load report data with selected filters.
+                  </td>
                 </tr>
               )}
             </tbody>

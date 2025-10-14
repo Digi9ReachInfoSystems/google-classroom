@@ -59,6 +59,18 @@ export async function POST(req: NextRequest) {
     if (!courseId) {
       return NextResponse.json({ message: 'Course ID is required' }, { status: 400 });
     }
+    
+    // Determine focal points based on applied filters
+    const selectedFocalPoints: string[] = [];
+    if (filters?.age && filters.age !== 'All') selectedFocalPoints.push('Age');
+    if (filters?.gender && filters.gender !== 'All') selectedFocalPoints.push('Gender');
+    if (filters?.grade && filters.grade !== 'All') selectedFocalPoints.push('Grade');
+    if (filters?.disability && filters.disability !== 'All') selectedFocalPoints.push('Disability');
+    
+    // If no filters selected, include all demographic categories
+    if (selectedFocalPoints.length === 0) {
+      selectedFocalPoints.push('Age', 'Gender', 'Grade', 'Disability');
+    }
 
     // Initialize Google Classroom API with user's OAuth credentials
     const oauth2Client = createUserOAuthClient({
@@ -238,7 +250,7 @@ export async function POST(req: NextRequest) {
         reportType: 'student-progress',
         filePath: `/reports/${courseId}/${Date.now()}-student-report.xlsx`,
         fileSize: excelBuffer.length,
-        focalPoints: ['Age', 'Gender', 'Disability', 'Grade'],
+        focalPoints: selectedFocalPoints,
         filters: filters,
         generatedAt: new Date()
       });

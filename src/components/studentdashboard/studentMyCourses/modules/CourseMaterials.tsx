@@ -26,27 +26,59 @@ interface CourseMaterialsProps {
   selectedMaterialId?: string | null
   onAllComplete: () => void
   submitting: boolean
+  onVideoSelect?: (videoId: string, videoData: any) => void
+  onQuizSelect?: (quizId: string, quizData: any) => void
 }
 
-export default function CourseMaterials({ courseId, studentEmail, selectedMaterialId, onAllComplete, submitting }: CourseMaterialsProps) {
+export default function CourseMaterials({ courseId, studentEmail, selectedMaterialId, onAllComplete, submitting, onVideoSelect, onQuizSelect }: CourseMaterialsProps) {
+  console.log('CourseMaterials props:', { onVideoSelect: !!onVideoSelect, onQuizSelect: !!onQuizSelect })
+  
   const [materials, setMaterials] = useState<CourseMaterial[]>([])
   const [selectedMaterial, setSelectedMaterial] = useState<CourseMaterial | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set()) // Don't expand any sections by default
+  const [hierarchicalData, setHierarchicalData] = useState<any>(null)
 
   useEffect(() => {
     fetchCourseMaterials()
+    fetchHierarchicalData()
   }, [courseId])
 
   // Update selected material when selectedMaterialId changes
   useEffect(() => {
-    if (selectedMaterialId && materials.length > 0) {
-      const material = materials.find(m => m.id === selectedMaterialId)
-      if (material) {
-        setSelectedMaterial(material)
+    if (selectedMaterialId) {
+      // First try to find in hierarchical data
+      if (hierarchicalData) {
+        const foundMaterial = findMaterialInHierarchy(hierarchicalData, selectedMaterialId)
+        if (foundMaterial) {
+          setSelectedMaterial(foundMaterial)
+          return
+        }
+      }
+      
+      // Fallback to materials array
+      if (materials.length > 0) {
+        const material = materials.find(m => m.id === selectedMaterialId)
+        if (material) {
+          setSelectedMaterial(material)
+        }
       }
     }
-  }, [selectedMaterialId, materials])
+  }, [selectedMaterialId, materials, hierarchicalData])
+
+  // Helper function to find material in hierarchical structure
+  const findMaterialInHierarchy = (data: any, materialId: string): any => {
+    if (!data || !data.learningModules) return null
+    
+    // Direct assignment lookup (no topics anymore)
+    for (const assignment of data.learningModules.children) {
+      if (assignment.id === materialId) {
+        return assignment
+      }
+    }
+    return null
+  }
 
   const fetchCourseMaterials = async () => {
     try {
@@ -74,6 +106,19 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
       setError('Failed to load course materials')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchHierarchicalData = async () => {
+    try {
+      const response = await fetch(`/api/student/coursework-hierarchical?courseId=${courseId}`)
+      const data = await response.json()
+
+      if (data.success) {
+        setHierarchicalData(data.hierarchicalData)
+      }
+    } catch (err) {
+      console.error('Error fetching hierarchical data:', err)
     }
   }
 
@@ -145,6 +190,18 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
     }
   }
 
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId)
+      } else {
+        newSet.add(sectionId)
+      }
+      return newSet
+    })
+  }
+
   const renderSelectedMaterialContent = () => {
     if (!selectedMaterial) {
       return (
@@ -155,6 +212,25 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
     }
 
     const isCompleted = selectedMaterial.submission?.state === 'TURNED_IN'
+
+    // Use hierarchical data if available, otherwise fallback to materials
+    let videos: any[] = []
+    let assignments: any[] = []
+
+    if (selectedMaterial.children) {
+      // Use hierarchical structure - videos first, then resources, then quizzes at the end
+      videos = selectedMaterial.children.videos || []
+      assignments = [...(selectedMaterial.children.resources || []), ...(selectedMaterial.children.quizzes || [])]
+    } else if (selectedMaterial.materials && selectedMaterial.materials.length > 0) {
+      // Fallback to original materials structure
+      selectedMaterial.materials.forEach((item: any) => {
+        if (item.youtubeVideo || (item.link && getYouTubeEmbedUrl(item.link.url)) || item.driveFile?.driveFile?.videoMediaMetadata) {
+          videos.push(item)
+        } else {
+          assignments.push(item)
+        }
+      })
+    }
 
     return (
       <div className="space-y-6">
@@ -193,168 +269,13 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
           </div>
         </div>
 
-        {/* Material Content */}
-        {selectedMaterial.materials && selectedMaterial.materials.length > 0 ? (
-          <div className="space-y-4">
-            {selectedMaterial.materials.map((item: any, index: number) => {
-              // YouTube Video
-              if (item.youtubeVideo) {
-                return (
-                  <div key={index} className="space-y-3">
-                    <div className="aspect-video w-full rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
-                      <iframe
-                        src={`https://www.youtube.com/embed/${item.youtubeVideo.id}`}
-                        title={item.youtubeVideo.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full"
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">{item.youtubeVideo.title}</p>
-                  </div>
-                )
-              }
+        {/* Content will be shown only when individual items are selected from sidebar */}
 
-              // Link (check if it's a YouTube link or Google Form)
-              if (item.link) {
-                const youtubeEmbedUrl = getYouTubeEmbedUrl(item.link.url)
-                
-                // Check if it's a YouTube video
-                if (youtubeEmbedUrl) {
-                  return (
-                    <div key={index} className="space-y-3">
-                      <div className="aspect-video w-full rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
-                        <iframe
-                          src={youtubeEmbedUrl}
-                          title={item.link.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="w-full h-full"
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">{item.link.title}</p>
-                    </div>
-                  )
-                }
-
-                // Check if it's a Google Form
-                if (item.link.url && (item.link.url.includes('docs.google.com/forms') || item.link.url.includes('forms.gle'))) {
-                  console.log('Rendering Google Form from link:', item.link);
-                  // Convert form URL to embedded version
-                  let formEmbedUrl = item.link.url;
-                  if (formEmbedUrl.includes('/viewform')) {
-                    formEmbedUrl = formEmbedUrl.replace('/viewform', '/viewform?embedded=true');
-                    // Remove any existing query params after viewform and replace with embedded
-                    formEmbedUrl = formEmbedUrl.split('?')[0] + '?embedded=true';
-                  } else if (!formEmbedUrl.includes('embedded=true')) {
-                    formEmbedUrl += (formEmbedUrl.includes('?') ? '&' : '?') + 'embedded=true';
-                  }
-                  console.log('Form embed URL:', formEmbedUrl);
-
-                  return (
-                    <div key={index} className="space-y-3">
-                      <h3 className="text-lg font-semibold">Assignment</h3>
-                      <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg bg-white" style={{ height: '650px', minHeight: '650px' }}>
-                        <iframe
-                          src={formEmbedUrl}
-                          title={item.link.title || 'Assignment'}
-                          className="w-full h-full border-0"
-                          style={{ border: 0 }}
-                          loading="lazy"
-                        >
-                          Loading form...
-                        </iframe>
-                      </div>
-                      {item.link.title && (
-                        <p className="text-sm text-muted-foreground">{item.link.title}</p>
-                      )}
-                    </div>
-                  )
-                }
-
-                // Regular link
-                return (
-                  <a
-                    key={index}
-                    href={item.link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 border-2 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all group"
-                  >
-                    <LinkIcon className="h-6 w-6 text-blue-500 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium group-hover:text-blue-600 transition-colors truncate">
-                        {item.link.title || 'Link'}
-                      </p>
-                      {item.link.url && (
-                        <p className="text-sm text-muted-foreground truncate">{item.link.url}</p>
-                      )}
-                    </div>
-                    <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  </a>
-                )
-              }
-
-              // Drive File
-              if (item.driveFile) {
-                return (
-                  <a
-                    key={index}
-                    href={item.driveFile.alternateLink || item.driveFile.driveFile?.alternateLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 border-2 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all group"
-                  >
-                    <FileText className="h-6 w-6 text-blue-500 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium group-hover:text-blue-600 transition-colors truncate">
-                        {item.driveFile.title || item.driveFile.driveFile?.title || 'File'}
-                      </p>
-                    </div>
-                    <Download className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  </a>
-                )
-              }
-
-              // Google Form
-              if (item.form) {
-                console.log('Rendering form:', item.form);
-                // Convert form URL to embedded version
-                let formEmbedUrl = item.form.formUrl;
-                if (formEmbedUrl.includes('/viewform')) {
-                  formEmbedUrl = formEmbedUrl.replace('/viewform', '/viewform?embedded=true');
-                } else if (!formEmbedUrl.includes('embedded=true')) {
-                  formEmbedUrl += (formEmbedUrl.includes('?') ? '&' : '?') + 'embedded=true';
-                }
-                console.log('Form embed URL:', formEmbedUrl);
-
-                return (
-                  <div key={index} className="space-y-3">
-                    <h3 className="text-lg font-semibold">Google Form</h3>
-                    <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg bg-white" style={{ height: '650px', minHeight: '650px' }}>
-                      <iframe
-                        src={formEmbedUrl}
-                        title={item.form.title || 'Google Form'}
-                        className="w-full h-full border-0"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                      >
-                        Loading form...
-                      </iframe>
-                    </div>
-                    {item.form.title && (
-                      <p className="text-sm text-muted-foreground">{item.form.title}</p>
-                    )}
-                  </div>
-                )
-              }
-
-              return null
-            })}
-          </div>
-        ) : (
+        {/* No materials message */}
+        {!selectedMaterial && (
           <div className="text-center py-12 text-muted-foreground bg-muted rounded-lg">
-            {selectedMaterial.description || 'No additional materials'}
+            <p className="text-lg font-medium mb-2">Select a material from the sidebar</p>
+            <p className="text-sm">Click on videos or quizzes in the left sidebar to view their content here.</p>
           </div>
         )}
       </div>
@@ -394,7 +315,7 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
   return (
     <div className="space-y-6">
       {/* Main Content Area */}
-      <Card className="min-h-[500px]">
+      <Card className="min-h-[100px]">
         <CardContent className="p-6">
           {renderSelectedMaterialContent()}
         </CardContent>

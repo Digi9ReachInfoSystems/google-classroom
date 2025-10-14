@@ -74,6 +74,8 @@ export default function TeacherPidata() {
   // Fetch report data from API
   React.useEffect(() => {
     const fetchReports = async () => {
+      console.log('TeacherPidata: Fetching reports, refreshTrigger:', refreshTrigger);
+      
       if (!selectedCourse) {
         setGeneratedReports([]);
         setLoading(false);
@@ -91,6 +93,7 @@ export default function TeacherPidata() {
         }
         
         const data = await response.json();
+        console.log('Reports fetched:', data.reports?.length || 0, 'reports');
         
         if (data.success && data.reports) {
           // Transform API data to table format
@@ -241,7 +244,7 @@ export default function TeacherPidata() {
               <tr className="text-[12px] text-[var(--neutral-900)]">
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[56px]">No</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[200px]">File name</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[280px]">Focal points</th>
+                <th className="px-4 md:px-5 py-4 text-left font-normal w-[280px]">Report Metrics</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[160px]">Course name</th>
                 <th className="px-4 md:px-5 py-4 text-left font-normal w-[90px]">Action</th>
               </tr>

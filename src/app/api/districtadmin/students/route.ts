@@ -22,6 +22,22 @@ export async function GET(req: NextRequest) {
     // Connect to database
     await connectToDatabase();
 
+    // Fetch user's district from database
+    let user = await UserModel.findOne({ email: payload.email }).select('district');
+    
+    // If user doesn't exist, create them
+    if (!user) {
+      user = await UserModel.create({
+        email: payload.email,
+        role: 'district-admin',
+        district: null // Will need to be set later
+      });
+      console.log('Created district admin user:', payload.email);
+    }
+    
+    const userDistrict = user.district || null;
+    console.log('District admin district:', userDistrict);
+
     const { searchParams } = new URL(req.url);
     const courseId = searchParams.get('courseId');
     const schoolName = searchParams.get('schoolName');
@@ -33,7 +49,7 @@ export async function GET(req: NextRequest) {
       students = await getCourseStudents(courseId, schoolName);
     } else {
       // Get all students in district
-      students = await getDistrictStudents((payload as any).district, schoolName);
+      students = await getDistrictStudents(userDistrict, schoolName);
     }
 
     return NextResponse.json({

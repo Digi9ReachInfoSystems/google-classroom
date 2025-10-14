@@ -26,15 +26,18 @@ export async function GET(req: NextRequest) {
 
     // Get filters from query parameters
     const { searchParams } = new URL(req.url);
-    const courseId = searchParams.get('courseId');
+    const courseIdParam = searchParams.get('courseId');
     const ageFilter = searchParams.get('age');
     const gradeFilter = searchParams.get('grade');
     const genderFilter = searchParams.get('gender');
     const disabilityFilter = searchParams.get('disability');
 
-    if (!courseId) {
+    if (!courseIdParam) {
       return NextResponse.json({ message: 'Course ID is required' }, { status: 400 });
     }
+
+    // TypeScript type assertion after null check
+    const courseId = courseIdParam as string;
 
     await connectToDatabase();
 
@@ -84,7 +87,7 @@ export async function GET(req: NextRequest) {
 
       const courseWork = courseWorkResponse.data.courseWork || [];
 
-      // Calculate analytics
+      // Calculate analytics and build detailed report data
       let preSurveyCompleted = 0;
       let preSurveyPending = 0;
       let ideaSubmitted = 0;
@@ -93,11 +96,23 @@ export async function GET(req: NextRequest) {
       let postSurveyPending = 0;
       let courseCompleted = 0;
       let courseInProgress = 0;
+      
+      // Detailed report data for table and Excel export
+      const reportData = [];
 
       for (const student of matchingStudents) {
         if (!student.profile?.emailAddress) continue;
 
         let studentCompletedAll = true;
+        let studentPreSurvey = 'Not Started';
+        let studentIdea = 'Not Started';
+        let studentPostSurvey = 'Not Started';
+        let studentCourse = 'Not Started';
+
+        // Get student details from database
+        const studentDetails = await UserModel.findOne({ 
+          email: student.profile.emailAddress 
+        }).select('givenName familyName fullName age grade gender disability schoolName').lean();
 
         // Check each assignment for this student
         for (const work of courseWork) {
@@ -105,14 +120,14 @@ export async function GET(req: NextRequest) {
 
           try {
             const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
-              courseId: courseId,
-              courseWorkId: work.id,
-              userId: student.profile.id
+              courseId: courseId!,
+              courseWorkId: work.id!,
+              userId: student.profile!.id
             });
 
             const submissions = submissionsResponse.data.studentSubmissions || [];
-            const studentSubmission = submissions.find(sub => 
-              sub.userId === student.profile.id
+            const studentSubmission = submissions.find((sub: any) => 
+              sub.userId === student.profile?.id
             );
 
             const isCompleted = studentSubmission && 
@@ -123,22 +138,34 @@ export async function GET(req: NextRequest) {
             if (title.includes('pre-survey') || title.includes('pre survey')) {
               if (isCompleted) {
                 preSurveyCompleted++;
-              } else {
+                studentPreSurvey = 'Completed';
+              } else if (studentSubmission) {
                 preSurveyPending++;
+                studentPreSurvey = 'In Progress';
+                studentCompletedAll = false;
+              } else {
                 studentCompletedAll = false;
               }
             } else if (title.includes('idea') || title.includes('ideas')) {
               if (isCompleted) {
                 ideaSubmitted++;
-              } else {
+                studentIdea = 'Submitted';
+              } else if (studentSubmission) {
                 ideaPending++;
+                studentIdea = 'In Progress';
+                studentCompletedAll = false;
+              } else {
                 studentCompletedAll = false;
               }
             } else if (title.includes('post-survey') || title.includes('post survey')) {
               if (isCompleted) {
                 postSurveyCompleted++;
-              } else {
+                studentPostSurvey = 'Completed';
+              } else if (studentSubmission) {
                 postSurveyPending++;
+                studentPostSurvey = 'In Progress';
+                studentCompletedAll = false;
+              } else {
                 studentCompletedAll = false;
               }
             } else {
@@ -155,9 +182,32 @@ export async function GET(req: NextRequest) {
 
         if (studentCompletedAll) {
           courseCompleted++;
+          studentCourse = 'Completed';
         } else {
           courseInProgress++;
+          studentCourse = 'In Progress';
         }
+
+        // Add to report data
+        const studentName = studentDetails?.fullName || 
+                           (studentDetails?.givenName && studentDetails?.familyName ? 
+                             `${studentDetails.givenName} ${studentDetails.familyName}` : null) ||
+                           student.profile.name?.fullName || 
+                           'Unknown';
+
+        reportData.push({
+          studentName,
+          email: student.profile.emailAddress || 'N/A',
+          age: (studentDetails && studentDetails.age) ? studentDetails.age : 'N/A',
+          grade: (studentDetails && studentDetails.grade) ? studentDetails.grade : 'N/A',
+          gender: (studentDetails && studentDetails.gender) ? studentDetails.gender : 'N/A',
+          disability: (studentDetails && studentDetails.disability) ? studentDetails.disability : 'N/A',
+          schoolName: (studentDetails && studentDetails.schoolName) ? studentDetails.schoolName : 'N/A',
+          preSurveyStatus: studentPreSurvey,
+          ideaStatus: studentIdea,
+          postSurveyStatus: studentPostSurvey,
+          courseStatus: studentCourse
+        });
       }
 
       const analytics = {
@@ -189,6 +239,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         success: true,
         analytics,
+        reportData, // Detailed student data for table and Excel export
         filters: {
           age: ageFilter || 'All',
           grade: gradeFilter || 'All',

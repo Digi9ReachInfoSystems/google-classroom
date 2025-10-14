@@ -38,6 +38,18 @@ export async function POST(request: NextRequest) {
     if (!courseId) {
       return NextResponse.json({ success: false, message: 'Course ID is required' }, { status: 400 });
     }
+    
+    // Determine focal points based on applied filters
+    const selectedFocalPoints: string[] = [];
+    if (filters?.age && filters.age !== 'All') selectedFocalPoints.push('Age');
+    if (filters?.gender && filters.gender !== 'All') selectedFocalPoints.push('Gender');
+    if (filters?.grade && filters.grade !== 'All') selectedFocalPoints.push('Grade');
+    if (filters?.disability && filters.disability !== 'All') selectedFocalPoints.push('Disability');
+    
+    // If no filters selected, include all demographic categories
+    if (selectedFocalPoints.length === 0) {
+      selectedFocalPoints.push('Age', 'Gender', 'Grade', 'Disability');
+    }
 
     // Get course info
     const course = await CourseModel.findOne({ courseId });
@@ -220,7 +232,7 @@ export async function POST(request: NextRequest) {
       reportType: 'comprehensive',
       filePath: `/reports/${fileName}`,
       fileSize: excelBuffer.length,
-      focalPoints: ['Pre-Survey', 'Course Progress', 'Idea Submission', 'Post-Survey'],
+      focalPoints: selectedFocalPoints,
       filters: filters || {},
       generatedAt: new Date()
     });

@@ -26,6 +26,20 @@ export default function StageContent({
   loading
 }: StageContentProps) {
   const [submitting, setSubmitting] = useState(false)
+  const [selectedVideo, setSelectedVideo] = useState<any>(null)
+  const [selectedQuiz, setSelectedQuiz] = useState<any>(null)
+
+  const handleVideoSelect = (videoId: string, videoData: any) => {
+    console.log('Video selected:', videoId, videoData)
+    setSelectedVideo({ id: videoId, data: videoData })
+    setSelectedQuiz(null) // Clear quiz selection
+  }
+
+  const handleQuizSelect = (quizId: string, quizData: any) => {
+    console.log('Quiz selected:', quizId, quizData)
+    setSelectedQuiz({ id: quizId, data: quizData })
+    setSelectedVideo(null) // Clear video selection
+  }
 
   if (loading || !stageProgress) {
     return (
@@ -144,7 +158,7 @@ export default function StageContent({
             <p className="text-muted-foreground">
               You have successfully completed this stage.
             </p>
-            {stageInfo.type === "form" && stageInfo.formUrl && (
+            {/* {stageInfo.type === "form" && stageInfo.formUrl && (
               <div className="mt-6">
                 <Button
                   variant="outline"
@@ -153,7 +167,7 @@ export default function StageContent({
                   View Form Again
                 </Button>
               </div>
-            )}
+            )} */}
           </div>
         ) : stageInfo.type === "form" ? (
           <div className="space-y-4">
@@ -206,7 +220,74 @@ export default function StageContent({
             selectedMaterialId={selectedMaterialId}
             onAllComplete={handleMarkComplete}
             submitting={submitting}
+            onVideoSelect={handleVideoSelect}
+            onQuizSelect={handleQuizSelect}
           />
+        )}
+
+        {/* Selected Video/Quiz Content */}
+        {(selectedVideo || selectedQuiz) && (
+          <div className="mt-6 p-4 border rounded-lg bg-gray-50">
+            <h3 className="text-lg font-semibold mb-4">
+              {selectedVideo ? 'Selected Video' : 'Selected Quiz'}
+            </h3>
+            {selectedVideo && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">Video ID: {selectedVideo.id}</p>
+                <p className="text-sm text-gray-600">Title: {selectedVideo.data?.youtubeVideo?.title || selectedVideo.data?.link?.title || 'Video'}</p>
+                <div className="aspect-video w-full rounded-lg overflow-hidden border">
+                  {selectedVideo.data?.youtubeVideo ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${selectedVideo.data.youtubeVideo.id}`}
+                      title={selectedVideo.data.youtubeVideo.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  ) : selectedVideo.data?.link ? (
+                    <iframe
+                      src={selectedVideo.data.link.url}
+                      title={selectedVideo.data.link.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      Video content not available
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {selectedQuiz && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">Quiz ID: {selectedQuiz.id}</p>
+                <p className="text-sm text-gray-600">Title: {selectedQuiz.data?.form?.title || selectedQuiz.data?.link?.title || 'Quiz'}</p>
+                <div className="w-full rounded-lg overflow-hidden border bg-white" style={{ height: '400px' }}>
+                  {selectedQuiz.data?.form ? (
+                    <iframe
+                      src={selectedQuiz.data.form.formUrl}
+                      title={selectedQuiz.data.form.title}
+                      className="w-full h-full border-0"
+                      loading="lazy"
+                    />
+                  ) : selectedQuiz.data?.link ? (
+                    <iframe
+                      src={selectedQuiz.data.link.url}
+                      title={selectedQuiz.data.link.title}
+                      className="w-full h-full border-0"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      Quiz content not available
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
