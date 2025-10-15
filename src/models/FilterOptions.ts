@@ -25,11 +25,6 @@ export const FilterOptionsModel = models.FilterOptions || model<IFilterOptions>(
 // Default filter options
 export const DEFAULT_FILTER_OPTIONS = {
   age: [
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
     '10',
     '11',
     '12',
@@ -38,32 +33,35 @@ export const DEFAULT_FILTER_OPTIONS = {
     '15',
     '16',
     '17',
-    '18'
+    '18',
+    '19',
+    '20',
+    '21',
+    '22'
   ],
   grade: [
-    'Grade I',
-    'Grade II',
-    'Grade III',
-    'Grade IV',
-    'Grade V',
-    'Grade VI',
-    'Grade VII',
-    'Grade VIII',
-    'Grade IX',
-    'Grade X'
+    'I',
+    'II',
+    'III',
+    'IV',
+    'V',
+    'VI',
+    'VII',
+    'VIII',
+    'IX',
+    'X',
+    'XI',
+    'XII'
   ],
   gender: [
     'Male',
-    'Female',
-    'Other'
+    'Female'
   ],
   disability: [
     'None',
-    'Visual Impairment',
-    'Hearing Impairment',
-    'Physical Disability',
-    'Learning Disability',
-    'Other'
+    'Mild',
+    'Moderate',
+    'Severe'
   ]
 };
 

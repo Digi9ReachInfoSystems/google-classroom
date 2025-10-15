@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
         // Get student details from database
         const studentDetails = await UserModel.findOne({ 
           email: student.profile.emailAddress 
-        }).select('givenName familyName fullName age grade gender disability schoolName').lean();
+        }).select('givenName familyName fullName age grade gender disability schoolName').lean() as any;
 
         // Check each assignment for this student
         for (const work of courseWork) {
@@ -120,9 +120,9 @@ export async function GET(req: NextRequest) {
 
           try {
             const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
-              courseId: courseId!,
-              courseWorkId: work.id!,
-              userId: student.profile!.id
+              courseId: courseId as string,
+              courseWorkId: work.id as string,
+              userId: student.profile!.id as string
             });
 
             const submissions = submissionsResponse.data.studentSubmissions || [];

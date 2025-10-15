@@ -217,10 +217,10 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
     let videos: any[] = []
     let assignments: any[] = []
 
-    if (selectedMaterial.children) {
+    if ((selectedMaterial as any).children) {
       // Use hierarchical structure - videos first, then resources, then quizzes at the end
-      videos = selectedMaterial.children.videos || []
-      assignments = [...(selectedMaterial.children.resources || []), ...(selectedMaterial.children.quizzes || [])]
+      videos = (selectedMaterial as any).children.videos || []
+      assignments = [...((selectedMaterial as any).children.resources || []), ...((selectedMaterial as any).children.quizzes || [])]
     } else if (selectedMaterial.materials && selectedMaterial.materials.length > 0) {
       // Fallback to original materials structure
       selectedMaterial.materials.forEach((item: any) => {

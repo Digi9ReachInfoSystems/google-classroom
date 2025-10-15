@@ -21,10 +21,10 @@ import {
 import { useSuperAdminCourse } from "@/components/superadmin/context/SuperAdminCourseContext";
 
 /* -------------------- filter option values (will be fetched from API) -------------------- */
-const DEFAULT_AGES = ["All", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
-const DEFAULT_GRADES = ["All", "Grade I", "Grade II", "Grade III", "Grade IV", "Grade V", "Grade VI", "Grade VII", "Grade VIII", "Grade IX", "Grade X"];
-const DEFAULT_GENDERS = ["All", "Male", "Female", "Other"];
-const DEFAULT_DISABILITY = ["All", "None", "Visual Impairment", "Hearing Impairment", "Physical Disability", "Learning Disability", "Other"];
+const DEFAULT_AGES = ["All", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"];
+const DEFAULT_GRADES = ["All", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+const DEFAULT_GENDERS = ["All", "Male", "Female"];
+const DEFAULT_DISABILITY = ["All", "None", "Mild", "Moderate", "Severe"];
 const CORAL = "#FF928A"; // Coral color for main segments
 const PURPLE = "#8979FF"; // Purple color for secondary segments  
 const CYAN = "#3CC3DF"; // Cyan color for tertiary segments
@@ -32,7 +32,6 @@ const CYAN = "#3CC3DF"; // Cyan color for tertiary segments
 const baseConfig: ChartConfig = {
   submit:   { label: "Submit",   color: CORAL },
   pending:  { label: "Pending",  color: PURPLE },
-  reviewed: { label: "Reviewed", color: CYAN },
 };
 
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
@@ -61,7 +60,6 @@ function makeCharts(filters: {
     ],
     /* Student course status */
     course: [
-      { key: "reviewed", value: 40, fill: CORAL },  // Not started
       { key: "pending",  value: 20, fill: PURPLE },   // In progress
       { key: "submit",   value: 40, fill: CYAN },    // Completed
     ],
@@ -69,7 +67,6 @@ function makeCharts(filters: {
     idea: [
       { key: "submit",   value: 80, fill: CORAL },     // Submitted ideas
       { key: "pending",  value: 2.75, fill: PURPLE },    // In draft ideas
-      { key: "reviewed", value: 18.15, fill: CYAN },    // Not started idea submission
     ],
     /* Post survey status */
     post: [
@@ -400,22 +397,22 @@ export default function Reports() {
               <PieBlock
                 title="Pre survey status"
                 data={charts.pre}
-                legendLabels={["Submit", "Pending"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Student course status"
                 data={charts.course}
-                legendLabels={["Not started", "In progress", "Completed"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Idea Submission status"
                 data={charts.idea}
-                legendLabels={["Submitted ideas", "In draft ideas", "Not started idea submission"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Post survey status"
                 data={charts.post}
-                legendLabels={["Submit", "pending"]}
+                legendLabels={["Completed", "Pending"]}
               />
             </div>
           </CardContent>

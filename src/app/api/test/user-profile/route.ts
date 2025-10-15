@@ -88,11 +88,11 @@ export async function GET(req: NextRequest) {
 				};
 				console.log('Additional profile info fetched from People API');
 				console.log('User defined fields found:', (peopleResponse.data as any).userDefined?.length || 0);
-			} catch (peopleError) {
-				console.log('People API not available or failed:', peopleError.message);
-				additionalInfo = {
-					people_api_available: false,
-					people_api_error: peopleError.message
+                  } catch (peopleError: any) {
+                          console.log('People API not available or failed:', peopleError.message);
+                          additionalInfo = {
+                                  people_api_available: false,
+                                  people_api_error: peopleError.message
 				};
 			}
 

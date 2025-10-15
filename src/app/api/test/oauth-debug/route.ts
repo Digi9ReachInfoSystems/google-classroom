@@ -97,13 +97,13 @@ export async function GET(req: NextRequest) {
 		let tokenInfo = null;
 		try {
 			const tokenResponse = await oauth2Client.getTokenInfo(oauth2Client.credentials.access_token!);
-			tokenInfo = {
-				audience: tokenResponse.audience,
-				scope: tokenResponse.scope,
-				expiry_date: tokenResponse.expiry_date,
-				issued_to: tokenResponse.issued_to,
+                        tokenInfo = {
+                                audience: (tokenResponse as any).audience,
+                                scope: (tokenResponse as any).scope,
+                                expiry_date: tokenResponse.expiry_date,
+                                issued_to: (tokenResponse as any).issued_to,
 				user_id: tokenResponse.user_id,
-				verified_email: tokenResponse.verified_email,
+				verified_email: (tokenResponse as any).verified_email,
 				access_type: tokenResponse.access_type
 			};
 		} catch (error: any) {

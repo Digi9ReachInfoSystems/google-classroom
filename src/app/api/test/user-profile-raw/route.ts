@@ -42,8 +42,8 @@ export async function GET(req: NextRequest) {
 				personFields: 'names,emailAddresses,photos,organizations,phoneNumbers,addresses,birthdays,ageRanges,biographies,coverPhotos,locales,metadata,userDefined,relations,interests,skills,braggingRights,occupations'
 			});
 			peopleData = peopleResponse.data;
-		} catch (peopleError) {
-			peopleData = { error: peopleError.message };
+          } catch (peopleError: any) {
+                  peopleData = { error: peopleError.message };
 		}
 
 		// Return all raw data

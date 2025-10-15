@@ -60,9 +60,9 @@ export async function GET(req: NextRequest) {
 					primaryEmail: userData.primaryEmail,
 					name: userData.name,
 					organizations: userData.organizations,
-					department: userData.department,
-					title: userData.title,
-					location: userData.location
+                                  department: (userData as any).department,
+                                  title: (userData as any).title,
+					location: (userData as any).location
 				},
 				custom_schemas: {
 					available_schemas: Object.keys(customSchemas),

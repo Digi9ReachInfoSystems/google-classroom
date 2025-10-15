@@ -95,40 +95,40 @@ export async function GET(req: NextRequest) {
       studentProfile: studentProfile ? {
         raw: studentProfile,
         extracted: {
-          Gender: studentProfile.Gender || studentProfile.gender || null,
-          District: studentProfile.District || studentProfile.district || null,
-          Grade: studentProfile.Grade || studentProfile.grade || null,
-          SchoolName: studentProfile.SchoolName || studentProfile.schoolName || studentProfile.schoolname || null,
-          Age: studentProfile.Age || studentProfile.age || null,
+          Gender: (studentProfile as any).Gender || (studentProfile as any).gender || null,
+          District: (studentProfile as any).District || (studentProfile as any).district || null,
+          Grade: (studentProfile as any).Grade || (studentProfile as any).grade || null,
+          SchoolName: (studentProfile as any).SchoolName || (studentProfile as any).schoolName || (studentProfile as any).schoolname || null,
+          Age: (studentProfile as any).Age || (studentProfile as any).age || null,
         }
       } : null,
 
       teacherProfile: teacherProfile ? {
         raw: teacherProfile,
         extracted: {
-          SchoolName: teacherProfile.SchoolName || teacherProfile.schoolName || teacherProfile.schoolname || null,
-          District: teacherProfile.District || teacherProfile.district || null,
-          Gender: teacherProfile.Gender || teacherProfile.gender || null,
+          SchoolName: (teacherProfile as any).SchoolName || (teacherProfile as any).schoolName || (teacherProfile as any).schoolname || null,
+          District: (teacherProfile as any).District || (teacherProfile as any).district || null,
+          Gender: (teacherProfile as any).Gender || (teacherProfile as any).gender || null,
         }
       } : null,
 
       whatWillBeStoredInMongoDB: studentProfile ? {
         role: 'student',
-        gender: studentProfile.Gender || studentProfile.gender,
-        district: studentProfile.District || studentProfile.district,
-        grade: studentProfile.Grade || studentProfile.grade,
-        schoolName: studentProfile.SchoolName || studentProfile.schoolName || studentProfile.schoolname,
-        age: studentProfile.Age || studentProfile.age,
+        gender: (studentProfile as any).Gender || (studentProfile as any).gender,
+        district: (studentProfile as any).District || (studentProfile as any).district,
+        grade: (studentProfile as any).Grade || (studentProfile as any).grade,
+        schoolName: (studentProfile as any).SchoolName || (studentProfile as any).schoolName || (studentProfile as any).schoolname,
+        age: (studentProfile as any).Age || (studentProfile as any).age,
       } : teacherProfile ? {
         role: 'teacher',
-        schoolName: teacherProfile.SchoolName || teacherProfile.schoolName || teacherProfile.schoolname,
-        district: teacherProfile.District || teacherProfile.district,
-        gender: teacherProfile.Gender || teacherProfile.gender,
+        schoolName: (teacherProfile as any).SchoolName || (teacherProfile as any).schoolName || (teacherProfile as any).schoolname,
+        district: (teacherProfile as any).District || (teacherProfile as any).district,
+        gender: (teacherProfile as any).Gender || (teacherProfile as any).gender,
       } : {
         message: 'No custom profile found for this user'
       },
 
-      recommendations: []
+      recommendations: [] as string[]
     };
 
     // Add recommendations based on what we found
@@ -137,31 +137,31 @@ export async function GET(req: NextRequest) {
     }
 
     if (studentProfile) {
-      if (!studentProfile.Gender && !studentProfile.gender) {
+      if (!(studentProfile as any).Gender && !(studentProfile as any).gender) {
         result.recommendations.push('⚠️ StudentProfile.Gender is missing');
       }
-      if (!studentProfile.District && !studentProfile.district) {
+      if (!(studentProfile as any).District && !(studentProfile as any).district) {
         result.recommendations.push('⚠️ StudentProfile.District is missing');
       }
-      if (!studentProfile.Grade && !studentProfile.grade) {
+      if (!(studentProfile as any).Grade && !(studentProfile as any).grade) {
         result.recommendations.push('⚠️ StudentProfile.Grade is missing');
       }
-      if (!studentProfile.SchoolName && !studentProfile.schoolName && !studentProfile.schoolname) {
+      if (!(studentProfile as any).SchoolName && !(studentProfile as any).schoolName && !(studentProfile as any).schoolname) {
         result.recommendations.push('⚠️ StudentProfile.SchoolName is missing');
       }
-      if (!studentProfile.Age && !studentProfile.age) {
+      if (!(studentProfile as any).Age && !(studentProfile as any).age) {
         result.recommendations.push('⚠️ StudentProfile.Age is missing');
       }
     }
 
     if (teacherProfile) {
-      if (!teacherProfile.SchoolName && !teacherProfile.schoolName && !teacherProfile.schoolname) {
+      if (!(teacherProfile as any).SchoolName && !(teacherProfile as any).schoolName && !(teacherProfile as any).schoolname) {
         result.recommendations.push('⚠️ TeacherProfile.SchoolName is missing');
       }
-      if (!teacherProfile.District && !teacherProfile.district) {
+      if (!(teacherProfile as any).District && !(teacherProfile as any).district) {
         result.recommendations.push('⚠️ TeacherProfile.District is missing');
       }
-      if (!teacherProfile.Gender && !teacherProfile.gender) {
+      if (!(teacherProfile as any).Gender && !(teacherProfile as any).gender) {
         result.recommendations.push('⚠️ TeacherProfile.Gender is missing');
       }
     }
@@ -254,16 +254,16 @@ export async function POST(req: NextRequest) {
           hasStudentProfile: !!studentProfile,
           hasTeacherProfile: !!teacherProfile,
           studentProfile: studentProfile ? {
-            Gender: studentProfile.Gender || studentProfile.gender,
-            District: studentProfile.District || studentProfile.district,
-            Grade: studentProfile.Grade || studentProfile.grade,
-            SchoolName: studentProfile.SchoolName || studentProfile.schoolName || studentProfile.schoolname,
-            Age: studentProfile.Age || studentProfile.age,
+            Gender: (studentProfile as any).Gender || (studentProfile as any).gender,
+            District: (studentProfile as any).District || (studentProfile as any).district,
+            Grade: (studentProfile as any).Grade || (studentProfile as any).grade,
+            SchoolName: (studentProfile as any).SchoolName || (studentProfile as any).schoolName || (studentProfile as any).schoolname,
+            Age: (studentProfile as any).Age || (studentProfile as any).age,
           } : null,
           teacherProfile: teacherProfile ? {
-            SchoolName: teacherProfile.SchoolName || teacherProfile.schoolName || teacherProfile.schoolname,
-            District: teacherProfile.District || teacherProfile.district,
-            Gender: teacherProfile.Gender || teacherProfile.gender,
+            SchoolName: (teacherProfile as any).SchoolName || (teacherProfile as any).schoolName || (teacherProfile as any).schoolname,
+            District: (teacherProfile as any).District || (teacherProfile as any).district,
+            Gender: (teacherProfile as any).Gender || (teacherProfile as any).gender,
           } : null
         });
       } catch (error: any) {

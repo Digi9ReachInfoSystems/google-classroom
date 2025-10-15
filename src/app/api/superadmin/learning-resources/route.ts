@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       details,
       type,
       link: link || '',
-      createdBy: payload.name || payload.email,
+      createdBy: (payload as any).name || payload.email,
       createdByEmail: payload.email,
     });
 

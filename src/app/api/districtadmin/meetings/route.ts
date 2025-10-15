@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       meetings: meetings.map(meeting => ({
-        meetingId: meeting._id.toString(),
+        meetingId: (meeting._id as any).toString(),
         meetLink: meeting.meetLink,
         courseId: meeting.courseId,
         courseName: meeting.courseName,

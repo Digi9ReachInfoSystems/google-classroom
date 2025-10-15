@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
             alternateLink: course.alternateLink || '',
             teacherGroupEmail: course.teacherGroupEmail || '',
             courseGroupEmail: course.courseGroupEmail || '',
-            guardianEnabled: course.guardianEnabled || false,
+            guardianEnabled: course.guardiansEnabled || false,
             calendarId: course.calendarId || '',
             teacherFolder: course.teacherFolder?.id || '',
             courseMaterialSets: course.courseMaterialSets || []

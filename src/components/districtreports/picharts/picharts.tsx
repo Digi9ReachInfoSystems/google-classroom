@@ -23,10 +23,10 @@ import Pagination from "@/components/ui/pagination";
 import { useDistrictCourse } from "../../districtadmin/context/DistrictCourseContext";
 
 /* -------------------- filter option values (will be fetched from API) -------------------- */
-const DEFAULT_AGES = ["All", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
-const DEFAULT_GRADES = ["All", "Grade I", "Grade II", "Grade III", "Grade IV", "Grade V", "Grade VI", "Grade VII", "Grade VIII", "Grade IX", "Grade X"];
-const DEFAULT_GENDERS = ["All", "Male", "Female", "Other"];
-const DEFAULT_DISABILITY = ["All", "None", "Visual Impairment", "Hearing Impairment", "Physical Disability", "Learning Disability", "Other"];
+const DEFAULT_AGES = ["All", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"];
+const DEFAULT_GRADES = ["All", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+const DEFAULT_GENDERS = ["All", "Male", "Female"];
+const DEFAULT_DISABILITY = ["All", "None", "Mild", "Moderate", "Severe"];
 const BLUE_100 = "var(--blue-800)";
 const ERROR_200 = "var(--pink-100)";
 const BLUE_700 = "var(--purple-100)";
@@ -34,7 +34,6 @@ const BLUE_700 = "var(--purple-100)";
 const baseConfig: ChartConfig = {
   submit:   { label: "Submit",   color: BLUE_100 },
   pending:  { label: "Pending",  color: ERROR_200 },
-  reviewed: { label: "Reviewed", color: BLUE_700 },
 };
 
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
@@ -78,25 +77,21 @@ function makeCharts(filters: {
     pre: [
       { key: "submit",   value: p1, fill: BLUE_100 },
       { key: "pending",  value: p2, fill: ERROR_200 },
-      { key: "reviewed", value: p3, fill: BLUE_700 },
     ],
     /* Student course: Completed / In progress / Not started */
     course: [
       { key: "submit",   value: q1, fill: BLUE_700 },  // Completed
       { key: "pending",  value: q2, fill: ERROR_200 }, // In progress
-      { key: "reviewed", value: q3, fill: BLUE_100 },  // Not started
     ],
     /* Idea submission */
     idea: [
       { key: "submit",   value: r1, fill: BLUE_100 },  // Submitted ideas
       { key: "pending",  value: r2, fill: ERROR_200 }, // In draft ideas
-      { key: "reviewed", value: r3, fill: BLUE_700 },  // Not started ideas
     ],
     /* Post survey */
     post: [
       { key: "submit",   value: s1, fill: BLUE_100 },
       { key: "pending",  value: s2, fill: ERROR_200 },
-      { key: "reviewed", value: s3, fill: BLUE_700 },
     ],
   };
 }
@@ -203,8 +198,8 @@ export default function PiCharts() {
 
   const [charts, setCharts] = React.useState<ChartSet>({
     pre: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
-    course: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }, { key: "reviewed", value: 0, fill: BLUE_700 }],
-    idea: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }, { key: "reviewed", value: 0, fill: BLUE_700 }],
+    course: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
+    idea: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
     post: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
   });
 
@@ -321,22 +316,18 @@ export default function PiCharts() {
             pre: [
               { key: "submit", value: analytics.preSurvey?.completed || 0, fill: BLUE_100 },
               { key: "pending", value: analytics.preSurvey?.pending || 0, fill: ERROR_200 },
-              { key: "reviewed", value: analytics.preSurvey?.notStarted || 0, fill: BLUE_700 },
             ],
             course: [
               { key: "submit", value: analytics.course?.completed || 0, fill: BLUE_700 },
               { key: "pending", value: analytics.course?.inProgress || 0, fill: ERROR_200 },
-              { key: "reviewed", value: analytics.course?.notStarted || 0, fill: BLUE_100 },
             ],
             idea: [
               { key: "submit", value: analytics.ideas?.submitted || 0, fill: BLUE_100 },
               { key: "pending", value: analytics.ideas?.pending || 0, fill: ERROR_200 },
-              { key: "reviewed", value: analytics.ideas?.notStarted || 0, fill: BLUE_700 },
             ],
             post: [
               { key: "submit", value: analytics.postSurvey?.completed || 0, fill: BLUE_100 },
               { key: "pending", value: analytics.postSurvey?.pending || 0, fill: ERROR_200 },
-              { key: "reviewed", value: analytics.postSurvey?.notStarted || 0, fill: BLUE_700 },
             ],
           });
         }
@@ -469,22 +460,22 @@ export default function PiCharts() {
               <PieBlock
                 title="Pre survey status"
                 data={charts.pre}
-                legendLabels={["Submit", "Pending", "Reviewed"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Student course status"
                 data={charts.course}
-                legendLabels={["Completed", "In progress", "Not started"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Idea Submission status"
                 data={charts.idea}
-                legendLabels={["Submitted ideas", "In draft ideas", "Not started idea submission"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Post survey status"
                 data={charts.post}
-                legendLabels={["Submit", "Pending", "Reviewed"]}
+                legendLabels={["Completed", "Pending"]}
               />
             </div>
 
@@ -510,60 +501,6 @@ function Chip({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StudentDataTable({
-  reportData,
-}: {
-  reportData: any[];
-}) {
-  const itemsPerPage = 10;
-  const [currentPage, setCurrentPage] = React.useState(1);
-
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [reportData]);
-
-  const totalItems = reportData.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  const start = (currentPage - 1) * itemsPerPage;
-  const rows = reportData.slice(start, start + itemsPerPage);
-  
-  // Function to export to Excel
-  const handleExportExcel = () => {
-    // Create CSV content
-    const headers = ['No', 'Student Name', 'Email', 'Age', 'Grade', 'Gender', 'Disability', 'School', 'Pre-Survey', 'Ideas', 'Post-Survey', 'Course Status'];
-    const csvRows = [headers.join(',')];
-    
-    reportData.forEach((row, index) => {
-      const csvRow = [
-        index + 1,
-        `"${row.studentName}"`,
-        row.email,
-        row.age,
-        row.grade,
-        row.gender,
-        row.disability,
-        `"${row.schoolName}"`,
-        row.preSurveyStatus,
-        row.ideaStatus,
-        row.postSurveyStatus,
-        row.courseStatus
-      ];
-      csvRows.push(csvRow.join(','));
-    });
-    
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `student-report-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  };
-
-/* ----------------------- Student Data Table ----------------------- */
 function StudentDataTable({
   reportData,
 }: {

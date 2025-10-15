@@ -21,10 +21,10 @@ import {
 import { useFilters } from "./FilterContext";
 
 /* -------------------- filter option values (will be fetched from API) -------------------- */
-const DEFAULT_AGES = ["All", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
-const DEFAULT_GRADES = ["All", "Grade I", "Grade II", "Grade III", "Grade IV", "Grade V", "Grade VI", "Grade VII", "Grade VIII", "Grade IX", "Grade X"];
-const DEFAULT_GENDERS = ["All", "Male", "Female", "Other"];
-const DEFAULT_DISABILITY = ["All", "None", "Visual Impairment", "Hearing Impairment", "Physical Disability", "Learning Disability", "Other"];
+const DEFAULT_AGES = ["All", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"];
+const DEFAULT_GRADES = ["All", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+const DEFAULT_GENDERS = ["All", "Male", "Female"];
+const DEFAULT_DISABILITY = ["All", "None", "Mild", "Moderate", "Severe"];
 
 /* ---------------------------- Color rules ---------------------------- */
 /** Purple for Submit/Submitted ideas/Not started */
@@ -38,7 +38,6 @@ const LIGHT_BLUE = "#60A5FA";
 const baseConfig: ChartConfig = {
   submit:   { label: "Submit",   color: PURPLE },
   pending:  { label: "Pending",  color: SALMON },
-  reviewed: { label: "Reviewed", color: LIGHT_BLUE },
 };
 
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
@@ -490,22 +489,22 @@ export default function TeacherPiCharts() {
               <PieBlock
                 title="Pre survey status"
                 data={charts.pre}
-                legendLabels={["Submit", "Pending"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Student course status"
                 data={charts.course}
-                legendLabels={["Not started", "In progress", "Completed"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Idea Submission status"
                 data={charts.idea}
-                legendLabels={["Submitted ideas", "In draft ideas", "Not started idea submission"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Post survey status"
                 data={charts.post}
-                legendLabels={["Submit", "pending"]}
+                legendLabels={["Completed", "Pending"]}
               />
             </div>
           </CardContent>

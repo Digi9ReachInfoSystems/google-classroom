@@ -43,7 +43,11 @@ export default function Assessment() {
             </div>
           </div>
           <div className="order-2 lg:order-2">
-            <ProgressSidebar />
+            <ProgressSidebar 
+              stageProgress={{}}
+              selectedStage=""
+              onStageSelect={() => {}}
+            />
           </div>
         </div>
       </div>

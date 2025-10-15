@@ -580,7 +580,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                                       ? "text-green-600 font-medium" 
                                       : isLocked
                                         ? "text-gray-400"
-                                        : assignment.submission?.state === 'TURNED_IN' 
+                                        : (assignment as any).submission?.state === 'TURNED_IN' 
                                           ? "text-green-600 font-medium" 
                                           : "text-gray-800 font-medium"
                                   } ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}
@@ -594,7 +594,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                                   {assignment.title} {isCompleted && '✓'} {isLocked && '🔒'}
                                 </span>
                                 <span className="text-xs text-gray-500">
-                                  ({assignment.children.videos.length + assignment.children.quizzes.length + assignment.children.resources.length})
+                                  ({(assignment as any).children?.videos?.length || 0 + (assignment as any).children?.quizzes?.length || 0 + (assignment as any).children?.resources?.length || 0})
                                 </span>
                               </button>
                             </div>
@@ -603,7 +603,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                           {expandedAssignments.has(assignment.id) && (
                             <div className="ml-6 space-y-1 pl-3 border-l border-gray-100">
                               {/* Videos */}
-                              {assignment.children.videos.map((video, idx) => {
+                              {(assignment as any).children?.videos?.map((video: any, idx: number) => {
                                 const videoId = `video-${assignment.id}-${idx}`;
                                 const isCompleted = isVideoCompleted(videoId);
                                 
@@ -659,7 +659,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                               })}
                               
                               {/* Resources */}
-                              {assignment.children.resources.map((resource, idx) => {
+                              {(assignment as any).children?.resources?.map((resource: any, idx: number) => {
                                 // Get the title from various possible sources
                                 const getResourceTitle = (resource: any) => {
                                   if (resource.youtubeVideo?.title) return resource.youtubeVideo.title;
@@ -732,7 +732,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                               })}
                               
                               {/* Quizzes (at the end) */}
-                              {assignment.children.quizzes.map((quiz, idx) => {
+                              {(assignment as any).children?.quizzes?.map((quiz: any, idx: number) => {
                                 // Get the title from various possible sources
                                 const getQuizTitle = (quiz: any) => {
                                   if (quiz.form?.title) return quiz.form.title;

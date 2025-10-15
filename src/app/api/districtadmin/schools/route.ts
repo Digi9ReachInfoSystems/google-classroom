@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     // Get unique school names from users in the district
     const schoolNames = await UserModel.distinct('schoolName', {
-      schoolName: { $exists: true, $ne: null, $ne: '' }
+      schoolName: { $exists: true, $nin: [null, ''] }
     });
 
     const schools = schoolNames.map((name, index) => ({

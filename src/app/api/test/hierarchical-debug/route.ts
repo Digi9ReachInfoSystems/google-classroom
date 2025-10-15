@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
         }
         // Pattern 2: Look for common topic indicators
         else if (title.match(/^(Introduction|Overview|Basics|Fundamentals|Advanced|Conclusion)/i)) {
-          topicName = title.match(/^(Introduction|Overview|Basics|Fundamentals|Advanced|Conclusion)/i)[0];
+          topicName = title.match(/^(Introduction|Overview|Basics|Fundamentals|Advanced|Conclusion)/i)?.[0] || 'Unknown Topic';
         }
         // Pattern 3: Group by first few words if they seem like topics
         else {

@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
 
 		// Step 3: Try to update user with test custom schema values (if schemas exist)
 		let updateResult = null;
-		if (schemasResult.success && schemasResult.custom_schemas.length > 0) {
+          if (schemasResult.success && schemasResult.custom_schemas && schemasResult.custom_schemas.length > 0) {
 			try {
 				console.log('Attempting to update user with custom schema values...');
 				

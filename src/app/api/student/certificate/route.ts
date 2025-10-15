@@ -206,7 +206,7 @@ export async function GET(req: NextRequest) {
       
       // Fallback to JWT payload if Classroom profile not available
       if (studentName === 'Student') {
-        studentName = payload.name || payload.given_name || payload.email || 'Student';
+        studentName = (payload as any).name || (payload as any).given_name || payload.email || 'Student';
       }
       
       console.log('Certificate will be issued to:', studentName);

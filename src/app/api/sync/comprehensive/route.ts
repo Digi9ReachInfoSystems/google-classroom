@@ -55,6 +55,11 @@ export async function POST(req: NextRequest) {
     let totalRecordsSynced = 0;
     let totalRecordsFailed = 0;
 
+    // Initialize result variables
+    let coursesResult = { processed: 0, synced: 0, failed: 0 };
+    let usersResult = { processed: 0, synced: 0, failed: 0 };
+    let courseworkResult = { processed: 0, synced: 0, failed: 0 };
+
     try {
       // Update sync status
       await SyncLogModel.findOneAndUpdate(
@@ -66,7 +71,7 @@ export async function POST(req: NextRequest) {
       if (syncType === 'courses' || syncType === 'full') {
         // 1. Sync Courses
         console.log('Syncing courses...');
-        const coursesResult = await syncCourses(classroom, syncId);
+        coursesResult = await syncCourses(classroom, syncId);
         totalRecordsProcessed += coursesResult.processed;
         totalRecordsSynced += coursesResult.synced;
         totalRecordsFailed += coursesResult.failed;
@@ -75,7 +80,7 @@ export async function POST(req: NextRequest) {
       if (syncType === 'users' || syncType === 'full') {
         // 2. Sync Users and Roster Memberships
         console.log('Syncing users and roster memberships...');
-        const usersResult = await syncUsersAndRosters(classroom, syncId);
+        usersResult = await syncUsersAndRosters(classroom, syncId);
         totalRecordsProcessed += usersResult.processed;
         totalRecordsSynced += usersResult.synced;
         totalRecordsFailed += usersResult.failed;
@@ -84,7 +89,7 @@ export async function POST(req: NextRequest) {
       if (syncType === 'submissions' || syncType === 'full') {
         // 3. Sync Coursework and Submissions
         console.log('Syncing coursework and submissions...');
-        const courseworkResult = await syncCourseworkAndSubmissions(classroom, syncId);
+        courseworkResult = await syncCourseworkAndSubmissions(classroom, syncId);
         totalRecordsProcessed += courseworkResult.processed;
         totalRecordsSynced += courseworkResult.synced;
         totalRecordsFailed += courseworkResult.failed;

@@ -61,10 +61,11 @@ export async function POST(req: NextRequest) {
 
     const badgeType = badgeTypeMap[stageId];
     if (badgeType) {
-      const badgeTitles = {
+      const badgeTitles: { [key in BadgeType]: string } = {
         'pre-survey': 'Pre-Survey Champion',
         'ideas': 'Idea Innovator',
-        'post-survey': 'Post-Survey Champion'
+        'post-survey': 'Post-Survey Champion',
+        'learning-module': 'Learning Module Master'
       };
 
       try {

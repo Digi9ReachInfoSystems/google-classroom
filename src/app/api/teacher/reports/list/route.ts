@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       reports: reports.map(report => ({
-        id: report._id.toString(),
+        id: (report._id as any).toString(),
         fileName: report.fileName,
         courseName: report.courseName,
         courseId: report.courseId,

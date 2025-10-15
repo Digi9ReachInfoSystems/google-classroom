@@ -22,7 +22,7 @@ export async function GET(
     await connectToDatabase();
 
     const { id } = await params;
-    const resource = await LearningResourceModel.findById(id).lean();
+    const resource = await LearningResourceModel.findById(id).lean() as any;
 
     if (!resource) {
       return NextResponse.json({

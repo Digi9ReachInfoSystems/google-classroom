@@ -146,14 +146,14 @@ export async function POST(req: NextRequest) {
           try {
             // Get student's submission for this assignment
             const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
-              courseId: courseId,
-              courseWorkId: work.id,
-              userId: student.profile.id
+              courseId: courseId as string,
+              courseWorkId: work.id as string,
+              userId: student.profile.id as string
             });
 
             const submissions = submissionsResponse.data.studentSubmissions || [];
             const studentSubmission = submissions.find(sub => 
-              sub.userId === student.profile.id
+              sub.userId === student.profile?.id
             );
 
             if (studentSubmission) {

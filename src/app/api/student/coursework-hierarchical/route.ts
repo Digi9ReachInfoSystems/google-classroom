@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
             draftGrade: submission.draftGrade,
             creationTime: submission.creationTime,
             updateTime: submission.updateTime,
-            submitted: submission.submitted,
+            submitted: (submission as any).submitted,
             late: submission.late,
             alternateLink: submission.alternateLink
           } : (isCompletedLocally ? {
@@ -204,9 +204,9 @@ function organizeIntoHierarchy(coursework: any[]) {
 
 // Function to organize assignment content (videos first, then quizzes at the end)
 function organizeAssignmentContent(materials: any[]) {
-  const videos = [];
-  const quizzes = [];
-  const resources = [];
+  const videos: any[] = [];
+  const quizzes: any[] = [];
+  const resources: any[] = [];
 
   materials.forEach(material => {
     // Check for videos

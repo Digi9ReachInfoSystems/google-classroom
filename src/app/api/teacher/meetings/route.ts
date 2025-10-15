@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     // In a real implementation, you would fetch from database
     // For now, we'll return mock data or empty array
-    const meetings = [
+    const meetings: any[] = [
       // Example meeting data - in real app this would come from database
       // {
       //   meetingId: 'abc123def4',

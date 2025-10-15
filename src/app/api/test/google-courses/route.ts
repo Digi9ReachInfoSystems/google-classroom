@@ -33,7 +33,7 @@ export async function GET() {
       pageCount++;
       console.log(`Fetching page ${pageCount}...`);
 
-      const response = await classroom.courses.list({
+      const response: any = await classroom.courses.list({
         pageSize: 100,
         pageToken,
         // courseStates: ['ACTIVE'], // Uncomment to fetch only active courses

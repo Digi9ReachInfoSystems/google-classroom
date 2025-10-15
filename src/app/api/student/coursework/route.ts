@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
 						draftGrade: submission.draftGrade,
 						creationTime: submission.creationTime,
 						updateTime: submission.updateTime,
-						submitted: submission.submitted,
+                                                submitted: (submission as any).submitted,
 						late: submission.late,
 						alternateLink: submission.alternateLink
 					} : (isCompletedLocally ? {
