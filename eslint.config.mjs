@@ -30,6 +30,12 @@ const eslintConfig = [
       "react-hooks/exhaustive-deps": "off",
       // Disable unescaped entities warnings
       "react/no-unescaped-entities": "off",
+      // Disable prefer-const warnings
+      "prefer-const": "off",
+      // Disable no-assign-module-variable warnings
+      "@next/next/no-assign-module-variable": "off",
+      // Disable no-img-element warnings
+      "@next/next/no-img-element": "off",
     },
   },
 ];

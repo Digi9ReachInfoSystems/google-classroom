@@ -1,5 +1,5 @@
 "use client";
-import { Bell, ChevronDown } from "lucide-react";
+import { Bell, ChevronDown, RefreshCw, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,13 +8,18 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
+import { useState } from "react";
+import { useSuperAdminCourse } from "@/components/superadmin/context/SuperAdminCourseContext";
 
 export function Superadminheader() {
   const router = useRouter();
   const pathname = usePathname() ?? "/superadmin/overview";
+  const [syncing, setSyncing] = useState(false);
+  const { selectedCourse, setSelectedCourse, courses } = useSuperAdminCourse();
 
   const tabs = [
     { label: "Overview", value: "overview", href: "/superadmin/overview" },
@@ -30,15 +35,53 @@ export function Superadminheader() {
       value: "learningresource",
       href: "/superadmin/learningresource",
     },
-    {
-      label: "Course Management",
-      value: "coursemanagement",
-      href: "/superadmin/coursemanagement",
-    },
+    // {
+    //   label: "Course Management",
+    //   value: "coursemanagement",
+    //   href: "/superadmin/coursemanagement",
+    // },
   ] as const;
 
   const seg = pathname.split("/")[2] || "overview";
   const currentTab = tabs.some((t) => t.value === seg) ? seg : "overview";
+
+  const handleSync = async () => {
+    try {
+      setSyncing(true);
+      
+      const response = await fetch('/api/superadmin/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Sync successful:', data);
+        const stats = data.stats || {};
+        alert(`Sync completed!\nCourses: ${stats.courses || 0}\nStudents: ${stats.students || 0}\nCoursework: ${stats.coursework || 0}\nSubmissions: ${stats.submissions || 0}`);
+        // Reload the page to show updated data
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        console.error('Sync request failed:', response.status, errorData);
+        alert(`Sync failed: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Sync failed:', error);
+      alert('Sync failed. Please try again.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleLogout = () => {
+    // Clear the authentication cookie
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // Redirect to login page
+    router.push('/login');
+  };
 
   return (
     <header className="bg-white border-neutral-200 px-8 py-5">
@@ -89,16 +132,37 @@ export function Superadminheader() {
                 variant="ghost"
                 className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white"
               >
-                Select courses
+                {selectedCourse ? selectedCourse.name : 'Select courses'}
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Course 1</DropdownMenuItem>
-              <DropdownMenuItem>Course 2</DropdownMenuItem>
-              <DropdownMenuItem>Course 3</DropdownMenuItem>
+            <DropdownMenuContent className="max-h-[400px] overflow-y-auto">
+              {courses.length > 0 ? (
+                courses.map((course) => (
+                  <DropdownMenuItem
+                    key={course.id}
+                    onClick={() => setSelectedCourse(course)}
+                    className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
+                  >
+                    {course.name}
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>No courses available</DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-neutral-600 hover:text-neutral-900"
+            onClick={handleSync}
+            disabled={syncing}
+            title="Sync latest data"
+          >
+            <RefreshCw className={`h-5 w-5 ${syncing ? 'animate-spin' : ''}`} />
+          </Button>
 
           <Button
             variant="ghost"
@@ -108,12 +172,25 @@ export function Superadminheader() {
             <Bell className="h-5 w-5" />
           </Button>
 
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="Monish" />
-            <AvatarFallback className="bg-neutral-200 text-neutral-700">
-              M
-            </AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="h-8 w-8 cursor-pointer">
+                <AvatarImage src="/placeholder-avatar.jpg" alt="Super Admin" />
+                <AvatarFallback className="bg-neutral-200 text-neutral-700">
+                  SA
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="rounded-xl overflow-hidden">
+              <DropdownMenuItem 
+                className="data-[highlighted]:bg-red-500 data-[highlighted]:text-white focus:bg-red-500 focus:text-white"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

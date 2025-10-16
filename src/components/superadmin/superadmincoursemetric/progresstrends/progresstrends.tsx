@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend, Rectangle } from "recharts"
 import {
   Card,
@@ -13,14 +14,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-
-
-
-// --- data ---
-const chartData = [
-  { name: "Course completion", value: 40 },
-  { name: "Idea submission", value: 80 },
-]
+import { useSuperAdminCourse } from "@/components/superadmin/context/SuperAdminCourseContext"
 
 // --- chart config (kept for ChartContainer) ---
 const chartConfig = {
@@ -75,6 +69,44 @@ function LegendBlack() {
 }
 
 export default function ProgressTrends() {
+  const { selectedCourse } = useSuperAdminCourse();
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!selectedCourse?.id) {
+        setChartData([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/superadmin/course-metrics?courseId=${selectedCourse.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success && data.metrics.progressTrends) {
+          const trends = data.metrics.progressTrends;
+          setChartData([
+            { name: "Course completion", value: trends.courseCompletion },
+            { name: "Idea submission", value: trends.ideaSubmission },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching progress trends:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [selectedCourse]);
+
   return (
     <Card className="rounded-2xl border-0 shadow-none mt-[40px]">
       <CardHeader>
@@ -82,45 +114,51 @@ export default function ProgressTrends() {
       </CardHeader>
 
       <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart
-            data={chartData}
-            barCategoryGap="20%"
-            margin={{ top: 10, right: 20, bottom: 40, left: 40 }}
-          >
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+        {chartData.length > 0 ? (
+          <ChartContainer config={chartConfig}>
+            <BarChart
+              data={chartData}
+              barCategoryGap="20%"
+              margin={{ top: 10, right: 20, bottom: 40, left: 40 }}
+            >
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
 
-            {/* Y-axis: fixed ticks + domain to 100 */}
-            <YAxis
-              axisLine={false}
+              {/* Y-axis: fixed ticks + domain to 100 */}
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                allowDecimals={false}
+                domain={[0, 100]}
+                ticks={[0, 20, 40, 60, 80, 100]}
+              />
+
+              {/* X-axis */}
+              <XAxis
+               dataKey="name"
+              axisLine={{ stroke: "#00001A4D", strokeWidth: 2 }} // dark & thick
               tickLine={false}
-              allowDecimals={false}
-              domain={[0, 100]}
-              ticks={[0, 20, 40, 60, 80, 100]}
-            />
+               />
 
-            {/* X-axis */}
-            <XAxis
-             dataKey="name"
-            axisLine={{ stroke: "#00001A4D", strokeWidth: 2 }} // dark & thick
-            tickLine={false}
-             />
+              <ChartTooltip  cursor={<BarWidthCursor />} content={<ChartTooltipContent />} />
 
-            <ChartTooltip  cursor={<BarWidthCursor />} content={<ChartTooltipContent />} />
+              {/* Custom legend with black label */}
+              <Legend content={<LegendBlack />} />
 
-            {/* Custom legend with black label */}
-            <Legend content={<LegendBlack />} />
-
-            {/* Bars */}
-            <Bar
-              dataKey="value"
-              fill="var(--purple-100)"
-              barSize={135}
-              radius={[67.5, 67.5, 67.5, 67.5]}
-              name="Course completion vs Idea submission"
-            />
-          </BarChart>
-        </ChartContainer>
+              {/* Bars */}
+              <Bar
+                dataKey="value"
+                fill="var(--purple-100)"
+                barSize={135}
+                radius={[67.5, 67.5, 67.5, 67.5]}
+                name="Course completion vs Idea submission"
+              />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            {loading ? "Loading chart data..." : "Select a course to view progress trends"}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

@@ -2,8 +2,6 @@
 
 import React from "react";
 import { PieChart, Pie, LabelList } from "recharts";
-import { format } from "date-fns";
-import type { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -20,19 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { useFilters } from "./FilterContext";
 
-/* -------------------- filter option values -------------------- */
-const AGES = ["10–12", "13–15", "16–18"] as const;
-const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
-const GENDERS = ["Male", "Female", "Other"] as const;
-const DISABILITY = ["None", "Hearing", "Vision", "Learning", "Mobility"] as const;
+/* -------------------- filter option values (will be fetched from API) -------------------- */
+const DEFAULT_AGES = ["All", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"];
+const DEFAULT_GRADES = ["All", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+const DEFAULT_GENDERS = ["All", "Male", "Female"];
+const DEFAULT_DISABILITY = ["All", "None", "Mild", "Moderate", "Severe"];
 
 /* ---------------------------- Color rules ---------------------------- */
 /** Purple for Submit/Submitted ideas/Not started */
@@ -46,65 +38,12 @@ const LIGHT_BLUE = "#60A5FA";
 const baseConfig: ChartConfig = {
   submit:   { label: "Submit",   color: PURPLE },
   pending:  { label: "Pending",  color: SALMON },
-  reviewed: { label: "Reviewed", color: LIGHT_BLUE },
 };
 
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
 type ChartSet = { pre: Slice[]; course: Slice[]; idea: Slice[]; post: Slice[] };
 
-/* --- deterministic “fake” data generator so selections change the pies --- */
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-const clamp = (n: number, lo: number, hi: number) =>
-  Math.max(lo, Math.min(hi, n));
-
-function makeCharts(filters: {
-  dateRange?: DateRange;
-  age?: string;
-  grade?: string;
-  gender?: string;
-  disability?: string;
-}): ChartSet {
-  // Base data
-  let baseData = {
-    pre: [
-      { key: "submit",   value: 58.62, fill: PURPLE },
-      { key: "pending",  value: 24.61, fill: SALMON },
-    ],
-    course: [
-      { key: "submit",   value: 40, fill: PURPLE },
-      { key: "pending",  value: 20, fill: SALMON },
-      { key: "reviewed", value: 40, fill: LIGHT_BLUE },
-    ],
-    idea: [
-      { key: "submit",   value: 80, fill: PURPLE },
-      { key: "pending",  value: 2.75, fill: SALMON },
-      { key: "reviewed", value: 18.15, fill: LIGHT_BLUE },
-    ],
-    post: [
-      { key: "submit",   value: 97.69, fill: PURPLE },
-      { key: "pending",  value: 13.64, fill: SALMON },
-    ],
-  };
-
-  // Apply filter variations based on selections
-  if (filters.age || filters.grade || filters.gender || filters.disability) {
-    const variation = hashStr(JSON.stringify(filters)) % 100;
-    const multiplier = 0.8 + (variation / 100) * 0.4; // 0.8 to 1.2 range
-    
-    baseData = {
-      pre: baseData.pre.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
-      course: baseData.course.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
-      idea: baseData.idea.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
-      post: baseData.post.map(item => ({ ...item, value: Math.round(item.value * multiplier * 100) / 100 })),
-    };
-  }
-
-  return baseData;
-}
+import { useTeacherCourse } from "../../context/TeacherCourseContext";
 
 /* ----------------------------- Legend ----------------------------- */
 function Legend({ items }: { items: { color: string; label: string }[] }) {
@@ -177,22 +116,265 @@ function PieBlock({
 
 /* --------------------------------- Page --------------------------------- */
 export default function TeacherPiCharts() {
-  const { filters, setAge, setGrade, setGender, setDisability } = useFilters();
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
+  const { filters, setAge, setGrade, setGender, setDisability, triggerRefresh } = useFilters();
+  const { selectedCourse } = useTeacherCourse();
+  
+  const [charts, setCharts] = React.useState<ChartSet>({
+    pre: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
+    course: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
+    idea: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
+    post: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: SALMON }],
+  });
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  
+  // Dynamic filter options from API
+  const [filterOptions, setFilterOptions] = React.useState({
+    ages: DEFAULT_AGES,
+    grades: DEFAULT_GRADES,
+    genders: DEFAULT_GENDERS,
+    disabilities: DEFAULT_DISABILITY
+  });
 
-  const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts({ ...filters, dateRange })
-  );
+  // Fetch filter options on mount
+  React.useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/filter-options');
+        const data = await response.json();
+        
+        if (data.success && data.filters) {
+          setFilterOptions({
+            ages: ['All', ...(data.filters.age || [])],
+            grades: ['All', ...(data.filters.grade || [])],
+            genders: ['All', ...(data.filters.gender || [])],
+            disabilities: ['All', ...(data.filters.disability || [])]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
+
+  // Fetch real analytics data
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (!selectedCourse) {
+        console.log('No course selected, setting empty charts');
+        setCharts({
+          pre: [],
+          course: [],
+          idea: [],
+          post: [],
+        });
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Fetch analytics without filters for pie charts (show all students)
+        const params = new URLSearchParams({
+          courseId: selectedCourse.id,
+        });
+
+        const response = await fetch(`/api/teacher/reports/analytics?${params}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+
+        if (data.success && data.analytics) {
+          const analytics = data.analytics;
+          
+          setCharts({
+            pre: [
+              { key: "submit", value: analytics.preSurvey.completed, fill: PURPLE },
+              { key: "pending", value: analytics.preSurvey.pending + analytics.preSurvey.notStarted, fill: SALMON },
+            ],
+            course: [
+              { key: "submit", value: analytics.course.completed, fill: PURPLE },
+              { key: "pending", value: analytics.course.inProgress + analytics.course.notStarted, fill: SALMON },
+            ],
+            idea: [
+              { key: "submit", value: analytics.ideas.submitted, fill: PURPLE },
+              { key: "pending", value: analytics.ideas.pending + analytics.ideas.notStarted, fill: SALMON },
+            ],
+            post: [
+              { key: "submit", value: analytics.postSurvey.completed, fill: PURPLE },
+              { key: "pending", value: analytics.postSurvey.pending + analytics.postSurvey.notStarted, fill: SALMON },
+            ],
+          });
+        } else {
+          console.error('Analytics API error:', data);
+          setError(data.error || 'Failed to fetch analytics data');
+        }
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch analytics data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [selectedCourse]); // Removed filters from dependency - charts don't change with filters
 
   const isLg = useMedia("(min-width: 1024px)");
-  const dateLabel =
-    dateRange?.from && dateRange?.to
-      ? `${format(dateRange.from, "dd MMM")} – ${format(dateRange.to, "dd MMM yyyy")}`
-      : "Select date range";
 
-  const onGenerate = () => {
-    setCharts(makeCharts({ ...filters, dateRange }));
+  const onGenerate = async () => {
+    console.log('Generate button clicked');
+    console.log('Selected course:', selectedCourse);
+    console.log('Current filters:', filters);
+    
+    // Generate and download filtered report
+    if (!selectedCourse) {
+      alert('Please select a course first');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      console.log('Sending request to generate report...');
+      const response = await fetch('/api/teacher/reports/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseId: selectedCourse.id,
+          filters: {
+            age: filters.age !== 'All' ? filters.age : undefined,
+            grade: filters.grade !== 'All' ? filters.grade : undefined,
+            gender: filters.gender !== 'All' ? filters.gender : undefined,
+            disability: filters.disability !== 'All' ? filters.disability : undefined,
+          }
+        }),
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Error response:', errorData);
+        throw new Error(errorData.error || 'Failed to generate report');
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      console.log('Blob size:', blob.size);
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Create filename based on filters
+      const filterParts = [];
+      if (filters.age && filters.age !== 'All') filterParts.push(`Age-${filters.age}`);
+      if (filters.grade && filters.grade !== 'All') filterParts.push(`Grade-${filters.grade}`);
+      if (filters.gender && filters.gender !== 'All') filterParts.push(filters.gender);
+      if (filters.disability && filters.disability !== 'All') filterParts.push(filters.disability);
+      
+      const filterSuffix = filterParts.length > 0 ? `_${filterParts.join('_')}` : '';
+      a.download = `Report_${selectedCourse.name.replace(/[^a-zA-Z0-9]/g, '-')}${filterSuffix}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      console.log('Downloading file:', a.download);
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // Trigger refresh of reports table after a small delay to ensure DB save completes
+      setTimeout(() => {
+        console.log('Triggering table refresh');
+        triggerRefresh();
+      }, 500);
+      
+      alert('Report generated successfully!');
+    } catch (err) {
+      console.error('Error generating report:', err);
+      alert(`Failed to generate report: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (!selectedCourse) {
+    return (
+      <section className="w-full px-4 py-4">
+        <div className="space-y-3">
+          <div>
+            <h1 className="text-3xl font-semibold">
+              Reports & Exports
+            </h1>
+            <p className="text-[12px] text-[var(--neutral-700)]">
+              Let's see the current statistics performance
+            </p>
+          </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-600 text-sm">Please select a course to view analytics.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (loading) {
+    return (
+      <section className="w-full px-4 py-4">
+        <div className="space-y-3">
+          <div>
+            <h1 className="text-3xl font-semibold">
+              Reports & Exports
+            </h1>
+            <p className="text-[12px] text-[var(--neutral-700)]">
+              Let's see the current statistics performance
+            </p>
+          </div>
+          <div className="bg-white border-none shadow-none rounded-lg p-6">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-gray-600">Loading analytics...</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="w-full px-4 py-4">
+        <div className="space-y-3">
+          <div>
+            <h1 className="text-3xl font-semibold">
+              Reports & Exports
+            </h1>
+            <p className="text-[12px] text-[var(--neutral-700)]">
+              Let's see the current statistics performance
+            </p>
+          </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-600 text-sm">Error loading analytics: {error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="w-full px-4 py-4">
@@ -212,36 +394,12 @@ export default function TeacherPiCharts() {
               <div className="text-[16px] font-medium text-[var(--neutral-900)]">Data Analytics</div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-8 rounded-full px-4 text-[12px] w-[170px] justify-start font-normal">
-                      {dateLabel}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="end"
-                    side="bottom"
-                    sideOffset={8}
-                    collisionPadding={12}
-                    className="p-2 w-auto rounded-xl border bg-white shadow-xl"
-                  >
-                    <Calendar
-                      mode="range"
-                      numberOfMonths={isLg ? 2 : 1}
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      initialFocus
-                      className="w-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-
                 <Select value={filters.age} onValueChange={setAge}>
                   <SelectTrigger className="h-8 px-3 rounded-full w-[140px] text-[12px]">
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {AGES.map((r) => (
+                    {filterOptions.ages.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -258,7 +416,7 @@ export default function TeacherPiCharts() {
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {GRADES.map((r) => (
+                    {filterOptions.grades.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -275,7 +433,7 @@ export default function TeacherPiCharts() {
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {GENDERS.map((r) => (
+                    {filterOptions.genders.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -292,7 +450,7 @@ export default function TeacherPiCharts() {
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {DISABILITY.map((r) => (
+                    {filterOptions.disabilities.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -307,9 +465,20 @@ export default function TeacherPiCharts() {
                 <Button
                   type="button"
                   onClick={onGenerate}
-                  className="h-8 rounded-full px-4 bg-[var(--warning-400)] hover:bg-[var(--warning-500)] text-white text-[12px]"
+                  disabled={loading || !selectedCourse}
+                  className="h-8 rounded-full px-4 bg-[var(--warning-400)] hover:bg-[var(--warning-500)] text-white text-[12px] disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                 >
-                  Generate
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </span>
+                  ) : (
+                    'Generate'
+                  )}
                 </Button>
               </div>
             </div>
@@ -320,22 +489,22 @@ export default function TeacherPiCharts() {
               <PieBlock
                 title="Pre survey status"
                 data={charts.pre}
-                legendLabels={["Submit", "Pending"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Student course status"
                 data={charts.course}
-                legendLabels={["Not started", "In progress", "Completed"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Idea Submission status"
                 data={charts.idea}
-                legendLabels={["Submitted ideas", "In draft ideas", "Not started idea submission"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Post survey status"
                 data={charts.post}
-                legendLabels={["Submit", "pending"]}
+                legendLabels={["Completed", "Pending"]}
               />
             </div>
           </CardContent>

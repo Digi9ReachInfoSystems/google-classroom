@@ -1,10 +1,10 @@
-// components/ideas/IdeasKPI.tsx
 "use client";
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import { useDistrictCourse } from "../../districtadmin/context/DistrictCourseContext";
 
 /* ---------- 72px ring ---------- */
 function RingProgress({
-  size = 72,               // <- 72px
+  size = 72,
   stroke = 6,
   percent = 0,
   text,
@@ -34,100 +34,86 @@ function RingProgress({
   );
 }
 
-/* ---------- KPI card (112 x 320) ---------- */
+/* ---------- KPI card (112 x 280) ---------- */
 function KPI({ valueText, label, percentArc }: { valueText: string; label: string; percentArc: number }) {
   return (
-    <div className="h-[112px] w-[320px] rounded-xl bg-white border border-[var(--neutral-100)] px-5">
-      <div className="h-full w-full flex items-center gap-4">
-        <RingProgress percent={percentArc} text={valueText} />
-        <p className="text-[14px] leading-5 text-[var(--neutral-1000)]">{label}</p>
-      </div>
+    <div className="h-[112px] w-[280px] bg-white px-5 py-4 flex items-center gap-4">
+      <RingProgress percent={percentArc} text={valueText} size={72} />
+      <p className="text-[14px] leading-5 text-[var(--neutral-1000)] whitespace-nowrap">{label}</p>
     </div>
   );
 }
 
-/* ---------- custom pill dropdown (options hover = --warning-400) ---------- */
-function CustomSelect({
-  label,
-  options,
-  width = 150, // tweak if you want a different width
-}: {
-  label: string;
-  options: string[];
-  width?: number;
-}) {
-  const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState<string | null>(null);
-  const ref = React.useRef<HTMLDivElement>(null);
+const IdeasKPI: React.FC = () => {
+  const { selectedCourse } = useDistrictCourse();
+  const [schools, setSchools] = useState<string[]>([]);
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('All');
+  const [selectedSchool, setSelectedSchool] = useState<string>('All');
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [totalIdeasSubmitted, setTotalIdeasSubmitted] = useState(0);
+  const [submittedPercentage, setSubmittedPercentage] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  React.useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+  // Fetch schools
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const schoolsRes = await fetch('/api/districtadmin/schools');
+        if (schoolsRes.ok) {
+          const schoolsData = await schoolsRes.json();
+          if (schoolsData.success) {
+            setSchools(['All', ...schoolsData.schools.map((s: any) => s.name)]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching schools:', error);
+        setSchools(['All']);
+      }
     };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+
+    fetchSchools();
   }, []);
 
-  return (
-    <div className="relative" ref={ref} style={{ width }}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="
-          h-9 w-full px-3 rounded-full border border-[var(--neutral-300)] bg-white
-          text-[12px] text-[var(--neutral-900)] transition
-          hover:bg-[var(--primary)] hover:text-white
-          focus:outline-none focus:ring-2 focus:ring-[var(--primary)]
-          flex items-center justify-center text-center
-          bg-[right_0.6rem_center] bg-no-repeat
-        "
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7l5 5 5-5' stroke='%23606060' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
-          paddingRight: "1.75rem", // room for chevron
-        }}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        {value ?? label}
-      </button>
+  // Fetch ideas data when filters change
+  useEffect(() => {
+    if (selectedCourse?.id) {
+      fetchIdeasData();
+    }
+  }, [selectedCourse, selectedDistrict, selectedSchool]);
 
-      {open && (
-        <ul
-          role="listbox"
-          className="
-            absolute right-0 z-10 mt-2 rounded-xl bg-white
-            border border-[var(--neutral-300)] shadow-sm overflow-hidden
-            text-center
-          "
-          style={{ width }}
-        >
-          {options.map((opt) => (
-            <li
-              key={opt}
-              role="option"
-              aria-selected={value === opt}
-              onClick={() => {
-                setValue(opt);
-                setOpen(false);
-              }}
-              className="
-                cursor-pointer px-3 py-2 text-[12px] text-[var(--neutral-900)]
-                hover:bg-[var(--primary)] hover:text-white
-              "
-            >
-              {opt}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+  const fetchIdeasData = async () => {
+    if (!selectedCourse?.id) return;
 
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      params.set('courseId', selectedCourse.id);
+      if (selectedDistrict && selectedDistrict !== 'All') params.set('district', selectedDistrict);
+      if (selectedSchool && selectedSchool !== 'All') params.set('schoolName', selectedSchool);
 
-/* ---------- page section ---------- */
-const IdeasKPI: React.FC = () => {
+      const response = await fetch(`/api/districtadmin/ideas?${params.toString()}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setTotalStudents(data.totalStudents || 0);
+        setTotalIdeasSubmitted(data.totalIdeasSubmitted || 0);
+        setSubmittedPercentage(data.submittedPercentage || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching ideas data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!selectedCourse) {
+    return (
+      <div className="min-h-screen bg-white p-6 flex items-center justify-center">
+        <p className="text-muted-foreground">Please select a course to view ideas</p>
+      </div>
+    );
+  }
+
   return (
     <section className="w-full space-y-5 px-5">
       {/* Row 1: Title + dropdowns */}
@@ -135,21 +121,38 @@ const IdeasKPI: React.FC = () => {
         <h2 className="text-3xl font-semibold">Ideas</h2>
 
         <div className="flex items-center gap-3">
-          <CustomSelect label="Select School"  options={["All", "School A", "School B"]} />
-          <CustomSelect label="Select District" options={["All", "District 1", "District 2"]} />
-          <CustomSelect label="Select Idea status" options={["All", "Submitted", "Accepted"]} />
+          <select 
+            value={selectedDistrict}
+            onChange={(e) => setSelectedDistrict(e.target.value)}
+            className="h-9 rounded-full border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
+          >
+            <option value="All">All Districts</option>
+          </select>
+
+          <select 
+            value={selectedSchool}
+            onChange={(e) => setSelectedSchool(e.target.value)}
+            className="h-9 rounded-full border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
+          >
+            {schools.map((school) => (
+              <option key={school} value={school}>{school === 'All' ? 'All Schools' : school}</option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* Row 2: KPI area 70% on lg+ */}
-      <div className="flex gap-6">
-        <div className="w-full ">
-          <div className="flex flex-wrap gap-6">
-            <KPI valueText="105" percentArc={78} label="Total no of students" />
-            <KPI valueText="6"   percentArc={22} label="Total no of idea submitted" />
-          </div>
-        </div>
-        <div className="hidden lg:block flex-1" />
+      {/* Row 2: KPI cards */}
+      <div className="flex gap-6 mb-8">
+        <KPI 
+          valueText={loading ? "..." : totalStudents.toString()} 
+          label="Total no of students" 
+          percentArc={100} 
+        />
+        <KPI 
+          valueText={loading ? "..." : totalIdeasSubmitted.toString()} 
+          label="Total no of idea submitted" 
+          percentArc={submittedPercentage} 
+        />
       </div>
     </section>
   );

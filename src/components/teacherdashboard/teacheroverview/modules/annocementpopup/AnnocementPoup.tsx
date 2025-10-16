@@ -1,8 +1,9 @@
 "use client";
 import Image from "next/image";
 import React, { useState } from "react";
+import { useTeacherCourse } from "../../../context/TeacherCourseContext";
 
-type Audience = "All Students" | "Class A" | "Class B";
+type Audience = "All Students";
 
 export default function AnnouncementModal({
   open,
@@ -13,6 +14,7 @@ export default function AnnouncementModal({
   onClose: () => void;
   onPost: (text: string, audience: string) => void;
 }) {
+  const { selectedCourse } = useTeacherCourse();
   const [text, setText] = useState("");
   const [audience, setAudience] = useState<Audience>("All Students");
 
@@ -38,28 +40,20 @@ export default function AnnouncementModal({
           </button>
 
           <div className="mb-4">
-            <div className="inline-flex items-center gap-2 rounded-full ring-1 ring-[var(--neutral-200)] bg-white h-10 pl-4 pr-3">
-              <select
-                value={audience}
-                onChange={(e) => setAudience(e.target.value as Audience)}
-                className="appearance-none bg-transparent outline-none text-sm text-[var(--neutral-900)] pr-6"
-              >
-                <option>All Students</option>
-                <option>Class A</option>
-                <option>Class B</option>
-              </select>
-              <svg
-                className="h-4 w-4 text-[var(--neutral-700)] -ml-5 pointer-events-none"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </div>
+            {selectedCourse ? (
+              <div className="inline-flex items-center gap-2 rounded-full ring-1 ring-blue-200 bg-blue-50 h-10 px-4">
+                <span className="text-sm font-medium text-blue-900">
+                  Posting to: {selectedCourse.name}
+                  {selectedCourse.section && ` (${selectedCourse.section})`}
+                </span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-full ring-1 ring-red-200 bg-red-50 h-10 px-4">
+                <span className="text-sm font-medium text-red-900">
+                  No course selected
+                </span>
+              </div>
+            )}
           </div>
 
           <div className=" bg-white ">
@@ -86,7 +80,7 @@ export default function AnnouncementModal({
                 setText("");
                 onClose();
               }}
-              disabled={!text.trim()}
+              disabled={!text.trim() || !selectedCourse}
               className="h-10 px-6 rounded-full bg-[var(--primary)] text-white hover:brightness-95 disabled:opacity-50"
             >
               Post

@@ -63,8 +63,20 @@ export default function DashboardPage() {
 	async function syncCourses() {
 		setSyncing(true);
 		try {
-			const res = await fetch('/api/sync/courses', { method: 'POST' });
-			if (!res.ok) throw new Error('Sync failed');
+			// Use the comprehensive sync API for better data synchronization
+			const res = await fetch('/api/sync/comprehensive', { 
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ syncType: 'courses' })
+			});
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.message || 'Sync failed');
+			}
+			const data = await res.json();
+			console.log('Sync completed:', data);
 			await load();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : 'Sync failed');
@@ -110,6 +122,9 @@ export default function DashboardPage() {
 						<button onClick={syncCourses} disabled={syncing} className="px-3 py-2 rounded-md bg-gray-900 text-white text-sm hover:bg-gray-800">
 							{syncing ? 'Syncing…' : 'Sync classroom'}
 						</button>
+						<Link href="/dashboard/sync" className="px-3 py-2 rounded-md bg-purple-600 text-white text-sm hover:bg-purple-700">
+							Sync Users
+						</Link>
 						<Link href="/dashboard/create-course" className="px-3 py-2 rounded-md bg-green-600 text-white text-sm hover:bg-green-700">
 							Create Course
 						</Link>

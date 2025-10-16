@@ -1,38 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TeacherBadgesSection from "./modules/teacherBadgesSection";
 import TeacherUserProfile from "./modules/teacherUserProfile";
 import TeacherLeaderboardTable from "./modules/teacherLeaderboardTable";
-
+import { useTeacherCourse } from "@/components/teacherdashboard/context/TeacherCourseContext";
 
 interface Student {
   rank: number;
+  id: string;
   name: string;
+  email: string;
+  profilePicture?: string;
+  completionPercentage: number;
+  totalAssignments: number;
+  completedAssignments: number;
+  averageGrade?: number;
+  isCurrentUser?: boolean;
+  // Legacy fields for compatibility
   badges: number;
   certificates: number;
   completion: number;
-  isCurrentUser?: boolean;
 }
 
-const leaderboardData: Student[] = [
-  { rank: 1, name: "Alex Johnson", badges: 15, certificates: 4, completion: 98 },
-  { rank: 2, name: "Sarah Chen", badges: 14, certificates: 3, completion: 97 },
-  { rank: 3, name: "Michael Brown", badges: 13, certificates: 3, completion: 96 },
-  { rank: 4, name: "Emma Wilson", badges: 12, certificates: 3, completion: 95 },
-  { rank: 5, name: "Sneha M", badges: 12, certificates: 3, completion: 96 },
-  { rank: 6, name: "David Lee", badges: 11, certificates: 2, completion: 94 },
-  { rank: 7, name: "Lisa Garcia", badges: 10, certificates: 2, completion: 93 },
-  { rank: 8, name: "James Taylor", badges: 9, certificates: 2, completion: 92 },
-  { rank: 9, name: "Anna Martinez", badges: 8, certificates: 1, completion: 91 },
-  { rank: 10, name: "Chris Anderson", badges: 7, certificates: 1, completion: 90 },
-  
-];
-
 export default function TeacherLeaderboardpage() {
+  const { selectedCourse } = useTeacherCourse();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStudentIndex, setSelectedStudentIndex] = useState<number | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const currentUser = leaderboardData.find(student => student.isCurrentUser);
+
+  // Fetch leaderboard data when course changes
+  useEffect(() => {
+    const fetchLeaderboardData = async () => {
+      if (!selectedCourse) {
+        setLeaderboardData([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`/api/teacher/leaderboard?courseId=${selectedCourse.id}`);
+        const data = await res.json();
+
+        if (data.success && data.students) {
+          // Transform data with actual badge and certificate counts
+          const transformedStudents = data.students.map((student: any) => ({
+            ...student,
+            badges: student.badges || 0,
+            certificates: student.certificates || 0,
+            completion: student.completionPercentage
+          }));
+          setLeaderboardData(transformedStudents);
+        } else {
+          setError(data.error || 'Failed to fetch leaderboard data');
+          setLeaderboardData([]);
+        }
+      } catch (err) {
+        console.error('Error fetching leaderboard data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch leaderboard data');
+        setLeaderboardData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboardData();
+  }, [selectedCourse]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -42,10 +82,57 @@ export default function TeacherLeaderboardpage() {
     setSelectedStudentIndex(index);
   };
 
+  if (loading) {
+    return (
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Leaderboard</h1>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2 text-gray-600">Loading leaderboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Leaderboard</h1>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedCourse) {
+    return (
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Leaderboard</h1>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-600">Please select a course to view the leaderboard.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalPages = Math.ceil(leaderboardData.length / 12);
+
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground">Leaderboard</h1>
+        {selectedCourse && (
+          <p className="text-sm text-gray-600 mt-1">
+            {selectedCourse.name} • {leaderboardData.length} students
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col space-y-4 md:space-y-6">
@@ -57,9 +144,11 @@ export default function TeacherLeaderboardpage() {
               rank={(selectedStudentIndex !== null ? leaderboardData[selectedStudentIndex]?.rank : (currentUser?.rank || leaderboardData[0]?.rank || 1))}
               schoolRank={18}
               districtRank={120}
-              certificates={2}
+              certificates={selectedStudentIndex !== null ? leaderboardData[selectedStudentIndex]?.certificates : (currentUser?.certificates || leaderboardData[0]?.certificates || 0)}
             />
-            <TeacherBadgesSection />
+            <TeacherBadgesSection 
+              studentEmail={selectedStudentIndex !== null ? leaderboardData[selectedStudentIndex]?.email : (currentUser?.email || leaderboardData[0]?.email || '')}
+            />
           </div>
 
           {/* Right Panel - Leaderboard Table */}
@@ -67,7 +156,7 @@ export default function TeacherLeaderboardpage() {
             <TeacherLeaderboardTable 
               students={leaderboardData}
               currentPage={currentPage}
-              totalPages={3}
+              totalPages={totalPages}
               onPageChange={handlePageChange}
               onSelectStudent={handleSelectStudent}
             />

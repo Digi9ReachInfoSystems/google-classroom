@@ -2,8 +2,6 @@
 
 import React from "react";
 import { PieChart, Pie, LabelList } from "recharts";
-import { format } from "date-fns";
-import type { DateRange } from "react-day-picker";
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,18 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import Pagination from "@/components/ui/pagination";
+import { useDistrictCourse } from "../../districtadmin/context/DistrictCourseContext";
 
-const AGES = ["10–12", "13–15", "16–18"] as const;
-const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
-const GENDERS = ["Male", "Female", "Other"] as const;
-const DISABILITY = ["None", "Hearing", "Vision", "Learning", "Mobility"] as const;
+/* -------------------- filter option values (will be fetched from API) -------------------- */
+const DEFAULT_AGES = ["All", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"];
+const DEFAULT_GRADES = ["All", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+const DEFAULT_GENDERS = ["All", "Male", "Female"];
+const DEFAULT_DISABILITY = ["All", "None", "Mild", "Moderate", "Severe"];
+const DEFAULT_DISTRICTS = ["All", "Bumthang", "Chhukha", "Dagana", "Gasa", "Haa", "Lhuentse", "Mongar", "Paro", "Pemagatshel", "Punakha", "Samdrup Jongkhar", "Samtse", "Sarpang", "Thimphu", "Trashigang", "Trashiyangtse", "Trongsa", "Tsirang", "Wangdue Phodrang", "Zhemgang"];
 const BLUE_100 = "var(--blue-800)";
 const ERROR_200 = "var(--pink-100)";
 const BLUE_700 = "var(--purple-100)";
@@ -40,7 +35,6 @@ const BLUE_700 = "var(--purple-100)";
 const baseConfig: ChartConfig = {
   submit:   { label: "Submit",   color: BLUE_100 },
   pending:  { label: "Pending",  color: ERROR_200 },
-  reviewed: { label: "Reviewed", color: BLUE_700 },
 };
 
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
@@ -55,7 +49,6 @@ const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
 
 function makeCharts(filters: {
-  dateRange?: DateRange;
   age?: string;
   grade?: string;
   gender?: string;
@@ -65,9 +58,7 @@ function makeCharts(filters: {
     (filters.age ?? "-") +
     (filters.grade ?? "-") +
     (filters.gender ?? "-") +
-    (filters.disability ?? "-") +
-    (filters.dateRange?.from?.toDateString() ?? "-") +
-    (filters.dateRange?.to?.toDateString() ?? "-");
+    (filters.disability ?? "-");
 
   const base = hashStr(key || "default");
   const mk3 = (s: number) => {
@@ -87,25 +78,21 @@ function makeCharts(filters: {
     pre: [
       { key: "submit",   value: p1, fill: BLUE_100 },
       { key: "pending",  value: p2, fill: ERROR_200 },
-      { key: "reviewed", value: p3, fill: BLUE_700 },
     ],
     /* Student course: Completed / In progress / Not started */
     course: [
       { key: "submit",   value: q1, fill: BLUE_700 },  // Completed
       { key: "pending",  value: q2, fill: ERROR_200 }, // In progress
-      { key: "reviewed", value: q3, fill: BLUE_100 },  // Not started
     ],
     /* Idea submission */
     idea: [
       { key: "submit",   value: r1, fill: BLUE_100 },  // Submitted ideas
       { key: "pending",  value: r2, fill: ERROR_200 }, // In draft ideas
-      { key: "reviewed", value: r3, fill: BLUE_700 },  // Not started ideas
     ],
     /* Post survey */
     post: [
       { key: "submit",   value: s1, fill: BLUE_100 },
       { key: "pending",  value: s2, fill: ERROR_200 },
-      { key: "reviewed", value: s3, fill: BLUE_700 },
     ],
   };
 }
@@ -146,14 +133,36 @@ function PieBlock({
   data: Slice[];
   legendLabels: string[];
 }) {
-  const legend = data.map((d, i) => {
+  // Filter out zero values
+  const nonZeroData = data.filter(d => d.value > 0);
+  
+  // Create legend only for non-zero items
+  const legend = nonZeroData.map((d, i) => {
     const baseColor =
       (baseConfig as Record<string, { color: string }>)[d.key]?.color;
+    const originalIndex = data.findIndex(item => item.key === d.key);
     return {
-      color: d.fill ?? baseColor ?? "var(--neutral-300)", // ← safe fallback, no non-null assertion
-      label: legendLabels[i],
+      color: d.fill ?? baseColor ?? "var(--neutral-300)",
+      label: legendLabels[originalIndex] || legendLabels[i],
     };
   });
+
+  // If no data, show empty state
+  if (nonZeroData.length === 0) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(260px,380px)_auto] items-center gap-5">
+        <div className="flex flex-col items-center">
+          <div className="mx-auto aspect-square max-h-[260px] w-full flex items-center justify-center">
+            <p className="text-sm text-gray-400">No data available</p>
+          </div>
+          <p className="mt-2 text-[11px] text-[var(--neutral-700)] text-center">{title}</p>
+        </div>
+        <div className="justify-self-start sm:justify-self-auto">
+          <p className="text-sm text-gray-400">No data to display</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[minmax(260px,380px)_auto] items-center gap-5">
@@ -164,7 +173,7 @@ function PieBlock({
         >
           <PieChart>
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Pie data={data} dataKey="value" nameKey="key" stroke="transparent">
+            <Pie data={nonZeroData} dataKey="value" nameKey="key" stroke="transparent">
               <LabelList dataKey="value" className="fill-background" stroke="none" fontSize={12} />
             </Pie>
           </PieChart>
@@ -180,24 +189,167 @@ function PieBlock({
 }
 
 export default function PiCharts() {
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
-  const [age, setAge] = React.useState<string | undefined>();
-  const [grade, setGrade] = React.useState<string | undefined>();
-  const [gender, setGender] = React.useState<string | undefined>();
-  const [disability, setDisability] = React.useState<string | undefined>();
+  const { selectedCourse } = useDistrictCourse();
+  const [age, setAge] = React.useState<string>('All');
+  const [grade, setGrade] = React.useState<string>('All');
+  const [gender, setGender] = React.useState<string>('All');
+  const [disability, setDisability] = React.useState<string>('All');
+  const [district, setDistrict] = React.useState<string>('All');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts({ dateRange, age, grade, gender, disability })
-  );
+  const [charts, setCharts] = React.useState<ChartSet>({
+    pre: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
+    course: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
+    idea: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
+    post: [{ key: "submit", value: 0, fill: BLUE_100 }, { key: "pending", value: 0, fill: ERROR_200 }],
+  });
+
+  const [reportData, setReportData] = React.useState<any[]>([]);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 10;
+  
+  // Dynamic filter options from API
+  const [filterOptions, setFilterOptions] = React.useState({
+    ages: DEFAULT_AGES,
+    grades: DEFAULT_GRADES,
+    genders: DEFAULT_GENDERS,
+    disabilities: DEFAULT_DISABILITY,
+    districts: DEFAULT_DISTRICTS
+  });
+
+  // Fetch filter options on mount
+  React.useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/filter-options');
+        const data = await response.json();
+        
+        if (data.success && data.filters) {
+          setFilterOptions({
+            ages: ['All', ...(data.filters.age || [])],
+            grades: ['All', ...(data.filters.grade || [])],
+            genders: ['All', ...(data.filters.gender || [])],
+            disabilities: ['All', ...(data.filters.disability || [])],
+            districts: ['All', ...(data.filters.district || [])]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
 
   const isLg = useMedia("(min-width: 1024px)");
-  const dateLabel =
-    dateRange?.from && dateRange?.to
-      ? `${format(dateRange.from, "dd MMM")} – ${format(dateRange.to, "dd MMM yyyy")}`
-      : "Select date range";
 
-  const onGenerate = () => {
-    setCharts(makeCharts({ dateRange, age, grade, gender, disability }));
+  // Fetch report data when course changes
+  React.useEffect(() => {
+    const fetchReportData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const url = selectedCourse
+          ? `/api/districtadmin/report-analytics?courseId=${selectedCourse.id}`
+          : '/api/districtadmin/report-analytics';
+
+        console.log('Fetching report analytics:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch report data: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          setCharts(data.charts);
+          setReportData(data.reportData || []);
+        } else {
+          throw new Error(data.message || 'Failed to load report data');
+        }
+      } catch (err) {
+        console.error('Error fetching report data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load report data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReportData();
+  }, [selectedCourse]);
+
+  const onGenerate = async () => {
+    console.log('District admin generate button clicked');
+    console.log('Selected course:', selectedCourse);
+    console.log('Current filters:', { age, grade, gender, disability, district });
+    
+    // Re-fetch with filters applied to display in table
+    if (!selectedCourse) {
+      alert('Please select a course first');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const params = new URLSearchParams();
+      params.set('courseId', selectedCourse.id);
+      if (age && age !== 'All') params.set('age', age);
+      if (grade && grade !== 'All') params.set('grade', grade);
+      if (gender && gender !== 'All') params.set('gender', gender);
+      if (disability && disability !== 'All') params.set('disability', disability);
+      if (district && district !== 'All') params.set('district', district);
+
+      console.log('Fetching analytics with params:', params.toString());
+      const response = await fetch(`/api/districtadmin/reports/analytics?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analytics: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Analytics response:', data);
+
+      if (data.success) {
+        // Update charts (unaffected by filters - shows overall stats)
+        if (data.analytics) {
+          const analytics = data.analytics;
+          setCharts({
+            pre: [
+              { key: "submit", value: analytics.preSurvey?.completed || 0, fill: BLUE_100 },
+              { key: "pending", value: analytics.preSurvey?.pending || 0, fill: ERROR_200 },
+            ],
+            course: [
+              { key: "submit", value: analytics.course?.completed || 0, fill: BLUE_700 },
+              { key: "pending", value: analytics.course?.inProgress || 0, fill: ERROR_200 },
+            ],
+            idea: [
+              { key: "submit", value: analytics.ideas?.submitted || 0, fill: BLUE_100 },
+              { key: "pending", value: analytics.ideas?.pending || 0, fill: ERROR_200 },
+            ],
+            post: [
+              { key: "submit", value: analytics.postSurvey?.completed || 0, fill: BLUE_100 },
+              { key: "pending", value: analytics.postSurvey?.pending || 0, fill: ERROR_200 },
+            ],
+          });
+        }
+        
+        // Update report data (filtered by demographics)
+        setReportData(data.reportData || []);
+        console.log('Report data updated:', data.reportData?.length || 0, 'students');
+      } else {
+        throw new Error(data.error || 'Failed to load analytics');
+      }
+    } catch (err) {
+      console.error('Error generating filtered report:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate report');
+      alert(`Failed to generate report: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -218,36 +370,12 @@ export default function PiCharts() {
               <div className="text-[16px] font-medium text-[var(--neutral-900)]">Data Analytics</div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-9 rounded-full px-4 text-[14px] w-[170px] justify-start font-normal">
-                      {dateLabel}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="end"
-                    side="bottom"
-                    sideOffset={8}
-                    collisionPadding={12}
-                    className="p-2 w-auto rounded-xl border bg-white shadow-xl"
-                  >
-                    <Calendar
-                      mode="range"
-                      numberOfMonths={isLg ? 2 : 1}
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      initialFocus
-                      className="w-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-
                 <Select value={age} onValueChange={setAge}>
                   <SelectTrigger className="h-9 px-4 rounded-full w-[140px] text-[14px]">
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {AGES.map((r) => (
+                    {filterOptions.ages.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -264,7 +392,7 @@ export default function PiCharts() {
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {GRADES.map((r) => (
+                    {filterOptions.grades.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -281,7 +409,7 @@ export default function PiCharts() {
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {GENDERS.map((r) => (
+                    {filterOptions.genders.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -298,7 +426,24 @@ export default function PiCharts() {
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {DISABILITY.map((r) => (
+                    {filterOptions.disabilities.map((r) => (
+                      <SelectItem
+                        key={r}
+                        value={r}
+                        className="text-[14px] rounded-md data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white text-center flex justify-center"
+                      >
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={district} onValueChange={setDistrict}>
+                  <SelectTrigger className="h-9 px-4 rounded-full w-[180px] text-[14px]">
+                    <SelectValue placeholder="Select District" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl text-center">
+                    {filterOptions.districts.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -313,9 +458,20 @@ export default function PiCharts() {
                 <Button
                   type="button"
                   onClick={onGenerate}
-                  className="h-9 rounded-full px-5 bg-[var(--primary)] hover:bg-[var(--primary)] text-white text-[14px]"
+                  disabled={loading || !selectedCourse}
+                  className="h-9 rounded-full px-5 bg-[var(--primary)] hover:bg-[var(--primary)] text-white text-[14px] disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                 >
-                  Generate
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </span>
+                  ) : (
+                    'Generate'
+                  )}
                 </Button>
               </div>
             </div>
@@ -326,29 +482,31 @@ export default function PiCharts() {
               <PieBlock
                 title="Pre survey status"
                 data={charts.pre}
-                legendLabels={["Submit", "Pending", "Reviewed"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Student course status"
                 data={charts.course}
-                legendLabels={["Completed", "In progress", "Not started"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Idea Submission status"
                 data={charts.idea}
-                legendLabels={["Submitted ideas", "In draft ideas", "Not started idea submission"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Post survey status"
                 data={charts.post}
-                legendLabels={["Submit", "Pending", "Reviewed"]}
+                legendLabels={["Completed", "Pending"]}
               />
             </div>
 
-            {/* Data table (student) */}
-            <StudentDataTable
-              filters={{ dateRange, age, grade, gender, disability }}
-            />
+            {/* Data table (student report data) */}
+            {reportData.length > 0 && (
+              <StudentDataTable
+                reportData={reportData}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -357,54 +515,6 @@ export default function PiCharts() {
 }
 
 /* ----------------------- Student Data Table ----------------------- */
-type TableRow = {
-  no: number;
-  district: string;
-  school: string;
-  file: string;
-  focal: string[];
-  course: string;
-  range: string;
-  age?: string;
-  grade?: string;
-  gender?: string;
-  disability?: string;
-};
-
-function makeRows(): TableRow[] {
-  return Array.from({ length: 87 }).map((_, i) => ({
-    no: i + 1,
-    district: ["Gasa", "Punakha", "Haa"][i % 3],
-    school: "School Name",
-    file: [
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-      "Report Name",
-    ][i % 10],
-    focal:
-      i % 4 === 1
-        ? ["Age"]
-        : i % 4 === 2
-        ? ["Gender", "Disability", "Grade"]
-        : i % 4 === 3
-        ? ["Gender", "Grade"]
-        : ["Age", "Gender", "Disability", "Grade"],
-    course: ["Biology", "Maths", "Physics"][i % 3],
-    range: "10 Jun – 12 Sep",
-    age: ["10–12", "13–15", "16–18"][i % 3],
-    grade: ["6", "7", "8", "9", "10", "11", "12"][i % 7],
-    gender: ["Male", "Female", "Other"][i % 3],
-    disability: ["None", "Hearing", "Vision", "Learning", "Mobility"][i % 5],
-  }));
-}
-
 function Chip({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full bg-[var(--primary)] text-white text-[11px] px-2.5 py-[5px] leading-none">
@@ -414,112 +524,127 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 function StudentDataTable({
-  filters,
+  reportData,
 }: {
-  filters: {
-    dateRange?: DateRange;
-    age?: string;
-    grade?: string;
-    gender?: string;
-    disability?: string;
-  };
+  reportData: any[];
 }) {
-  const ALL_ROWS = React.useMemo(() => makeRows(), []);
-
-  const filteredRows = React.useMemo(() => {
-    return ALL_ROWS.filter((row) => {
-      if (filters.age && row.age !== filters.age) return false;
-      if (filters.grade && row.grade !== filters.grade) return false;
-      if (filters.gender && row.gender !== filters.gender) return false;
-      if (filters.disability && row.disability !== filters.disability) return false;
-      return true;
-    });
-  }, [ALL_ROWS, filters]);
-
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = React.useState(1);
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [filters]);
+  }, [reportData]);
 
-  const totalItems = filteredRows.length;
+  const totalItems = reportData.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const start = (currentPage - 1) * itemsPerPage;
-  const rows = filteredRows.slice(start, start + itemsPerPage);
+  const rows = reportData.slice(start, start + itemsPerPage);
+  
+  // Function to export to Excel
+  const handleExportExcel = () => {
+    // Create CSV content
+    const headers = ['No', 'Student Name', 'Email', 'Age', 'Grade', 'Gender', 'Disability', 'School', 'Pre-Survey', 'Ideas', 'Post-Survey', 'Course Status'];
+    const csvRows = [headers.join(',')];
+    
+    reportData.forEach((row, index) => {
+      const csvRow = [
+        index + 1,
+        `"${row.studentName}"`,
+        row.email,
+        row.age,
+        row.grade,
+        row.gender,
+        row.disability,
+        `"${row.schoolName}"`,
+        row.preSurveyStatus,
+        row.ideaStatus,
+        row.postSurveyStatus,
+        row.courseStatus
+      ];
+      csvRows.push(csvRow.join(','));
+    });
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
 
   return (
     <div className="mt-10">
-      <div className="bg-white rounded-lg border-neutral-200">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Student Report Data</h3>
+        {reportData.length > 0 && (
+          <Button
+            onClick={handleExportExcel}
+            className="h-9 rounded-full px-5 bg-[var(--success-500)] hover:bg-[var(--success-600)] text-white text-[14px]"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
+        )}
+      </div>
+      
+      <div className="bg-white rounded-lg border border-neutral-200">
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed rounded-t-lg overflow-hidden border-collapse border-b border-neutral-200">
-            <colgroup>
-              <col className="w-[56px]" />
-              <col className="w-[120px]" />
-              <col className="w-[200px]" />
-              <col className="w-[180px]" />
-              <col className="w-[220px]" />
-              <col className="w-[160px]" />
-              <col className="w-[170px]" />
-              <col className="w-[90px]" />
-            </colgroup>
+          <table className="w-full rounded-t-lg overflow-hidden border-collapse">
             <thead className="bg-[#F1F5F6]">
               <tr className="text-[12px] text-[var(--neutral-900)]">
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[56px]">No</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[120px]">District</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[200px]">School</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[180px]">File name</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[220px]">Focal points</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[160px]">Course name</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[170px]">Date Range</th>
-                <th className="px-4 md:px-5 py-4 text-left font-normal w-[90px]">Action</th>
+                <th className="px-4 py-4 text-left font-normal">No</th>
+                <th className="px-4 py-4 text-left font-normal">Student Name</th>
+                <th className="px-4 py-4 text-left font-normal">Email</th>
+                <th className="px-4 py-4 text-left font-normal">Age</th>
+                <th className="px-4 py-4 text-left font-normal">Grade</th>
+                <th className="px-4 py-4 text-left font-normal">Gender</th>
+                <th className="px-4 py-4 text-left font-normal">Disability</th>
+                <th className="px-4 py-4 text-left font-normal">School</th>
+                <th className="px-4 py-4 text-left font-normal">Pre-Survey</th>
+                <th className="px-4 py-4 text-left font-normal">Ideas</th>
+                <th className="px-4 py-4 text-left font-normal">Post-Survey</th>
+                <th className="px-4 py-4 text-left font-normal">Course Status</th>
               </tr>
             </thead>
           </table>
         </div>
 
         <div className="max-h-[520px] overflow-y-auto rounded-b-lg custom-scrollbar">
-          <table className="w-full table-fixed">
-            <colgroup>
-              <col className="w-[56px]" />
-              <col className="w-[120px]" />
-              <col className="w-[200px]" />
-              <col className="w-[180px]" />
-              <col className="w-[220px]" />
-              <col className="w-[160px]" />
-              <col className="w-[170px]" />
-              <col className="w-[90px]" />
-            </colgroup>
+          <table className="w-full">
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.no} className="text-[12px]">
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)] text-[var(--neutral-1000)]">{r.no}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.district}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.school}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.file}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    <div className="flex flex-wrap gap-2">
-                      {r.focal.map((t) => (
-                        <Chip key={t}>{t}</Chip>
-                      ))}
-                    </div>
+              {rows.map((row, index) => (
+                <tr key={start + index} className="text-[12px] hover:bg-gray-50">
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)] text-[var(--neutral-1000)]">{start + index + 1}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.studentName}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.email}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.age}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.grade}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.gender}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.disability}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">{row.schoolName}</td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">
+                    <Chip>{row.preSurveyStatus}</Chip>
                   </td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.course}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">{r.range}</td>
-                  <td className="px-4 md:px-5 py-4 border-t border-[var(--neutral-200)]">
-                    <button
-                      type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--neutral-300)] hover:bg-[var(--neutral-100)]"
-                      aria-label={`Download row ${r.no}`}
-                    >
-                      <Download className="h-4 w-4 text-[var(--neutral-800)]" />
-                    </button>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">
+                    <Chip>{row.ideaStatus}</Chip>
+                  </td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">
+                    <Chip>{row.postSurveyStatus}</Chip>
+                  </td>
+                  <td className="px-4 py-4 border-t border-[var(--neutral-200)]">
+                    <Chip>{row.courseStatus}</Chip>
                   </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-[var(--neutral-700)] border-t border-[var(--neutral-200)]">No data.</td>
+                  <td colSpan={12} className="px-5 py-10 text-center text-[var(--neutral-700)] border-t border-[var(--neutral-200)]">
+                    No data. Click "Generate" to load report data with selected filters.
+                  </td>
                 </tr>
               )}
             </tbody>
