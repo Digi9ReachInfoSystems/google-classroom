@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Lock, CheckCircle, Circle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { getPublicFormUrl } from "@/lib/form-utils"
 
 interface Stage {
   id: string
@@ -229,7 +230,7 @@ export default function FourStageProgress({ courseId, studentEmail }: FourStageP
                   <div className="space-y-4">
                     <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden">
                       <iframe
-                        src={currentStage.formUrl}
+                        src={getPublicFormUrl(currentStage.formUrl)}
                         width="100%"
                         height="100%"
                         frameBorder="0"

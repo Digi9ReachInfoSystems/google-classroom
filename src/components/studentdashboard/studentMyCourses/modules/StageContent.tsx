@@ -5,6 +5,7 @@ import { Lock, CheckCircle, Circle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import CourseMaterials from "./CourseMaterials"
+import { getPublicFormUrl } from "@/lib/form-utils"
 
 interface StageContentProps {
   courseId: string
@@ -175,7 +176,7 @@ export default function StageContent({
               <>
                 <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden border">
                   <iframe
-                    src={stageInfo.formUrl}
+                    src={getPublicFormUrl(stageInfo.formUrl)}
                     width="100%"
                     height="100%"
                     frameBorder="0"
@@ -267,7 +268,7 @@ export default function StageContent({
                 <div className="w-full rounded-lg overflow-hidden border bg-white" style={{ height: '400px' }}>
                   {selectedQuiz.data?.form ? (
                     <iframe
-                      src={selectedQuiz.data.form.formUrl}
+                      src={getPublicFormUrl(selectedQuiz.data.form.formUrl)}
                       title={selectedQuiz.data.form.title}
                       className="w-full h-full border-0"
                       loading="lazy"

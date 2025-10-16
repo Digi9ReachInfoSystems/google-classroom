@@ -6,6 +6,7 @@ import StageContent from "./modules/StageContent"
 import { Button } from "@/components/ui/button"
 import { BookOpen, AlertCircle } from "lucide-react"
 import { useCourse } from "@/components/studentdashboard/context/CourseContext"
+import { getPublicFormUrl } from "@/lib/form-utils"
 
 export default function ClassroomPage() {
   const { selectedCourse, loadingCourses, error } = useCourse()
@@ -481,7 +482,7 @@ export default function ClassroomPage() {
                     <div className="w-full rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg bg-white" style={{ height: '500px' }}>
                       {selectedQuiz.data?.form ? (
                         <iframe
-                          src={selectedQuiz.data.form.formUrl}
+                          src={getPublicFormUrl(selectedQuiz.data.form.formUrl)}
                           title={selectedQuiz.data.form.title}
                           className="w-full h-full border-0"
                           loading="lazy"

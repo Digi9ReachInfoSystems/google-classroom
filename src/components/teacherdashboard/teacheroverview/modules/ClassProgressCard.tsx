@@ -46,11 +46,11 @@ export default function TeacherclassProgressCard() {
           
           // Calculate progress percentages
           const totalStudents = students.length;
-          const preSurveyCount = students.filter(s => s.progress?.preSurveyCompleted).length;
-          const courseCompletedCount = students.filter(s => s.progress?.lessonProgress >= 80).length;
-          const ideaSubmissionCount = students.filter(s => s.progress?.ideaSubmissionCompleted).length;
-          const postSurveyCount = students.filter(s => s.progress?.postSurveyCompleted).length;
-          const certificateCount = students.filter(s => s.progress?.certificateEarned).length;
+          const preSurveyCount = students.filter((s: any) => s.progress?.preSurveyCompleted).length;
+          const courseCompletedCount = students.filter((s: any) => s.progress?.lessonProgress >= 80).length;
+          const ideaSubmissionCount = students.filter((s: any) => s.progress?.ideaSubmissionCompleted).length;
+          const postSurveyCount = students.filter((s: any) => s.progress?.postSurveyCompleted).length;
+          const certificateCount = students.filter((s: any) => s.progress?.certificateEarned).length;
 
           const progressData: ProgressData[] = [
             { stage: "Pre Survey", y2025: totalStudents > 0 ? Math.round((preSurveyCount / totalStudents) * 100) : 0 },

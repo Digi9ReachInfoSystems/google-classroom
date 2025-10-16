@@ -142,7 +142,7 @@ export default function TeacherstudentsTable() {
         'Unknown Name';
       
       // Use real progress data from the API
-      const progress = student.progress || {};
+      const progress = (student as any).progress || {};
       const lessonProgress = progress.lessonProgress || 0;
       
       return {

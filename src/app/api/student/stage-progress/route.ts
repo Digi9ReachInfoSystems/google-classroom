@@ -6,6 +6,7 @@ import { CourseworkModel } from '@/models/Coursework';
 import { UserModel } from '@/models/User';
 import { StageCompletionModel } from '@/models/StageCompletion';
 import { google } from 'googleapis';
+import { getPublicFormUrl } from '@/lib/form-utils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -236,9 +237,9 @@ export async function GET(req: NextRequest) {
       courseCompleted,
       ideasCompleted: !!ideasCompletion,
       postSurveyCompleted: !!postSurveyCompletion,
-      preSurveyUrl: getFormUrl(preSurveyWork),
-      ideasUrl: getFormUrl(ideasWork),
-      postSurveyUrl: getFormUrl(postSurveyWork),
+      preSurveyUrl: getPublicFormUrl(getFormUrl(preSurveyWork)),
+      ideasUrl: getPublicFormUrl(getFormUrl(ideasWork)),
+      postSurveyUrl: getPublicFormUrl(getFormUrl(postSurveyWork)),
       regularCourseworkCount: regularCoursework.length,
       completedCourseworkCount: completedCount
     };

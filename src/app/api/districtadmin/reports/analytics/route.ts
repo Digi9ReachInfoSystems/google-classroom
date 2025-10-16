@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     const gradeFilter = searchParams.get('grade');
     const genderFilter = searchParams.get('gender');
     const disabilityFilter = searchParams.get('disability');
+    const districtFilter = searchParams.get('district');
 
     if (!courseIdParam) {
       return NextResponse.json({ message: 'Course ID is required' }, { status: 400 });
@@ -67,6 +68,7 @@ export async function GET(req: NextRequest) {
       if (gradeFilter && gradeFilter !== 'All') userQuery.grade = gradeFilter;
       if (genderFilter && genderFilter !== 'All') userQuery.gender = genderFilter;
       if (disabilityFilter && disabilityFilter !== 'All') userQuery.disability = disabilityFilter;
+      if (districtFilter && districtFilter !== 'All') userQuery.district = districtFilter;
 
       // Get filtered student emails from database
       const filteredStudents = await UserModel.find(userQuery).select('email');
@@ -244,7 +246,8 @@ export async function GET(req: NextRequest) {
           age: ageFilter || 'All',
           grade: gradeFilter || 'All',
           gender: genderFilter || 'All',
-          disability: disabilityFilter || 'All'
+          disability: disabilityFilter || 'All',
+          district: districtFilter || 'All'
         }
       });
 

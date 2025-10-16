@@ -1,3 +1,5 @@
+"use client"
+
 import React from 'react'
 import ProgressSidebar from './modules/progress-sidebar'
 import Getcoursecertificate from './modules/getcoursecertificate'

@@ -55,6 +55,12 @@ export async function POST(req: NextRequest) {
     // Award badge for this stage
     const badgeTypeMap: { [key: string]: BadgeType } = {
       'pre-survey': 'pre-survey',
+      'learning-module-1': 'learning-module-1',
+      'learning-module-2': 'learning-module-2',
+      'learning-module-3': 'learning-module-3',
+      'learning-module-4': 'learning-module-4',
+      'learning-module-5': 'learning-module-5',
+      'learning-module-6': 'learning-module-6',
       'ideas': 'ideas',
       'post-survey': 'post-survey'
     };
@@ -63,9 +69,14 @@ export async function POST(req: NextRequest) {
     if (badgeType) {
       const badgeTitles: { [key in BadgeType]: string } = {
         'pre-survey': 'Pre-Survey Champion',
+        'learning-module-1': 'Learning Module 1 Master',
+        'learning-module-2': 'Learning Module 2 Master',
+        'learning-module-3': 'Learning Module 3 Master',
+        'learning-module-4': 'Learning Module 4 Master',
+        'learning-module-5': 'Learning Module 5 Master',
+        'learning-module-6': 'Learning Module 6 Master',
         'ideas': 'Idea Innovator',
-        'post-survey': 'Post-Survey Champion',
-        'learning-module': 'Learning Module Master'
+        'post-survey': 'Post-Survey Champion'
       };
 
       try {

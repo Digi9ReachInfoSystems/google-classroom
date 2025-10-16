@@ -51,7 +51,7 @@ const ReportSchema = new Schema<IReport>(
 
 // Virtual for id field
 ReportSchema.virtual('id').get(function() {
-  return this._id.toHexString();
+  return (this as any)._id.toHexString();
 });
 
 // Index for efficient queries

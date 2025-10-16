@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
-import { BadgeModel } from '@/models/Badge';
+import { BadgeModel, BadgeType } from '@/models/Badge';
+import { BADGE_ORDER, TOTAL_BADGES } from '@/lib/badge-utils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -35,13 +36,20 @@ export async function GET(req: NextRequest) {
     const badges = await BadgeModel.find({
       courseId,
       studentEmail
-    }).sort({ awardedAt: -1 }); // Most recent first
+    });
+
+    // Sort badges according to the defined order
+    const sortedBadges = badges.sort((a, b) => {
+      const aIndex = BADGE_ORDER.indexOf(a.badgeType);
+      const bIndex = BADGE_ORDER.indexOf(b.badgeType);
+      return aIndex - bIndex;
+    });
 
     return NextResponse.json({
       success: true,
-      totalBadges: 9, // Total possible badges (3 stages + 6 modules)
+      totalBadges: TOTAL_BADGES,
       earnedCount: badges.length,
-      badges: badges.map(badge => ({
+      badges: sortedBadges.map(badge => ({
         id: badge._id,
         badgeType: badge.badgeType,
         badgeIdentifier: badge.badgeIdentifier,

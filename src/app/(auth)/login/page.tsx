@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginForm() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [error, setError] = useState<string | null>(null);
@@ -117,5 +117,29 @@ export default function LoginPage() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function LoadingFallback() {
+	return (
+		<div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+			<div className="w-full max-w-sm bg-white rounded-lg shadow p-6 space-y-4">
+				<div className="text-center">
+					<h1 className="text-2xl font-semibold text-black mb-2">Google Classroom Analytics</h1>
+					<p className="text-sm text-gray-600 mb-6">Sign in with your Google account</p>
+				</div>
+				<div className="flex items-center justify-center py-8">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense fallback={<LoadingFallback />}>
+			<LoginForm />
+		</Suspense>
 	);
 }

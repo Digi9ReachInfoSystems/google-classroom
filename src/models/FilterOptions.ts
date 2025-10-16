@@ -1,7 +1,7 @@
 import { Schema, model, models } from 'mongoose';
 
 export interface IFilterOptions {
-  category: 'age' | 'grade' | 'gender' | 'disability';
+  category: 'age' | 'grade' | 'gender' | 'disability' | 'district';
   options: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -12,7 +12,7 @@ const FilterOptionsSchema = new Schema<IFilterOptions>(
     category: { 
       type: String, 
       required: true, 
-      enum: ['age', 'grade', 'gender', 'disability'],
+      enum: ['age', 'grade', 'gender', 'disability', 'district'],
       unique: true 
     },
     options: [{ type: String, required: true }]
@@ -62,6 +62,28 @@ export const DEFAULT_FILTER_OPTIONS = {
     'Mild',
     'Moderate',
     'Severe'
+  ],
+  district: [
+    'Bumthang',
+    'Chhukha',
+    'Dagana',
+    'Gasa',
+    'Haa',
+    'Lhuentse',
+    'Mongar',
+    'Paro',
+    'Pemagatshel',
+    'Punakha',
+    'Samdrup Jongkhar',
+    'Samtse',
+    'Sarpang',
+    'Thimphu',
+    'Trashigang',
+    'Trashiyangtse',
+    'Trongsa',
+    'Tsirang',
+    'Wangdue Phodrang',
+    'Zhemgang'
   ]
 };
 

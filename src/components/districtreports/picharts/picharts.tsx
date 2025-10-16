@@ -27,6 +27,7 @@ const DEFAULT_AGES = ["All", "10", "11", "12", "13", "14", "15", "16", "17", "18
 const DEFAULT_GRADES = ["All", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
 const DEFAULT_GENDERS = ["All", "Male", "Female"];
 const DEFAULT_DISABILITY = ["All", "None", "Mild", "Moderate", "Severe"];
+const DEFAULT_DISTRICTS = ["All", "Bumthang", "Chhukha", "Dagana", "Gasa", "Haa", "Lhuentse", "Mongar", "Paro", "Pemagatshel", "Punakha", "Samdrup Jongkhar", "Samtse", "Sarpang", "Thimphu", "Trashigang", "Trashiyangtse", "Trongsa", "Tsirang", "Wangdue Phodrang", "Zhemgang"];
 const BLUE_100 = "var(--blue-800)";
 const ERROR_200 = "var(--pink-100)";
 const BLUE_700 = "var(--purple-100)";
@@ -193,6 +194,7 @@ export default function PiCharts() {
   const [grade, setGrade] = React.useState<string>('All');
   const [gender, setGender] = React.useState<string>('All');
   const [disability, setDisability] = React.useState<string>('All');
+  const [district, setDistrict] = React.useState<string>('All');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -212,7 +214,8 @@ export default function PiCharts() {
     ages: DEFAULT_AGES,
     grades: DEFAULT_GRADES,
     genders: DEFAULT_GENDERS,
-    disabilities: DEFAULT_DISABILITY
+    disabilities: DEFAULT_DISABILITY,
+    districts: DEFAULT_DISTRICTS
   });
 
   // Fetch filter options on mount
@@ -227,7 +230,8 @@ export default function PiCharts() {
             ages: ['All', ...(data.filters.age || [])],
             grades: ['All', ...(data.filters.grade || [])],
             genders: ['All', ...(data.filters.gender || [])],
-            disabilities: ['All', ...(data.filters.disability || [])]
+            disabilities: ['All', ...(data.filters.disability || [])],
+            districts: ['All', ...(data.filters.district || [])]
           });
         }
       } catch (error) {
@@ -280,7 +284,7 @@ export default function PiCharts() {
   const onGenerate = async () => {
     console.log('District admin generate button clicked');
     console.log('Selected course:', selectedCourse);
-    console.log('Current filters:', { age, grade, gender, disability });
+    console.log('Current filters:', { age, grade, gender, disability, district });
     
     // Re-fetch with filters applied to display in table
     if (!selectedCourse) {
@@ -297,6 +301,7 @@ export default function PiCharts() {
       if (grade && grade !== 'All') params.set('grade', grade);
       if (gender && gender !== 'All') params.set('gender', gender);
       if (disability && disability !== 'All') params.set('disability', disability);
+      if (district && district !== 'All') params.set('district', district);
 
       console.log('Fetching analytics with params:', params.toString());
       const response = await fetch(`/api/districtadmin/reports/analytics?${params.toString()}`);
@@ -422,6 +427,23 @@ export default function PiCharts() {
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
                     {filterOptions.disabilities.map((r) => (
+                      <SelectItem
+                        key={r}
+                        value={r}
+                        className="text-[14px] rounded-md data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white text-center flex justify-center"
+                      >
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={district} onValueChange={setDistrict}>
+                  <SelectTrigger className="h-9 px-4 rounded-full w-[180px] text-[14px]">
+                    <SelectValue placeholder="Select District" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl text-center">
+                    {filterOptions.districts.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}

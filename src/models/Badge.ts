@@ -1,6 +1,6 @@
 import { Schema, model, models } from 'mongoose';
 
-export type BadgeType = 'pre-survey' | 'ideas' | 'post-survey' | 'learning-module';
+export type BadgeType = 'pre-survey' | 'learning-module-1' | 'learning-module-2' | 'learning-module-3' | 'learning-module-4' | 'learning-module-5' | 'learning-module-6' | 'ideas' | 'post-survey';
 
 export interface IBadge {
   courseId: string;
@@ -19,7 +19,7 @@ const BadgeSchema = new Schema<IBadge>(
     badgeType: { 
       type: String, 
       required: true, 
-      enum: ['pre-survey', 'ideas', 'post-survey', 'learning-module'] 
+      enum: ['pre-survey', 'learning-module-1', 'learning-module-2', 'learning-module-3', 'learning-module-4', 'learning-module-5', 'learning-module-6', 'ideas', 'post-survey'] 
     },
     badgeIdentifier: { type: String, required: true },
     title: { type: String },

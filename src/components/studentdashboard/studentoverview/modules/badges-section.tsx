@@ -5,10 +5,12 @@ import { Lock } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useCourse } from "../../context/CourseContext";
+import { getBadgeImage, getBadgeTitle, TOTAL_BADGES } from '@/lib/badge-utils';
+import { BadgeType } from '@/models/Badge';
 
 interface BadgeData {
   id: string;
-  badgeType: string;
+  badgeType: BadgeType;
   badgeIdentifier: string;
   title: string;
   description: string;
@@ -44,7 +46,7 @@ export function BadgesSection() {
     }
   };
 
-  const totalBadges = 9;
+  const totalBadges = TOTAL_BADGES;
   const lockedCount = totalBadges - earnedCount;
 
   return (
@@ -58,17 +60,17 @@ export function BadgesSection() {
       <div className="grid grid-cols-3 gap-3 md:gap-4">
         {/* Earned Badges */}
         {badges.map((badge) => (
-          <div key={badge.id} className="relative group" title={badge.title}>
+          <div key={badge.id} className="relative group" title={badge.title || getBadgeTitle(badge.badgeType)}>
             <Image
-              src="/student/badge-first.png"
+              src={getBadgeImage(badge.badgeType)}
               width={100}
               height={100}
-              alt={badge.title}
+              alt={badge.title || getBadgeTitle(badge.badgeType)}
               className="w-20 h-20 md:w-24 md:h-24 mx-auto transition-transform group-hover:scale-105"
             />
             {/* Tooltip on hover */}
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-              {badge.title}
+              {badge.title || getBadgeTitle(badge.badgeType)}
             </div>
           </div>
         ))}
