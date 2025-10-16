@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useCourse } from '../context/CourseContext'
 import { Download, RotateCw, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -177,67 +178,15 @@ export default function Certificatepage() {
                   className="backface-hidden"
                   style={{ backfaceVisibility: 'hidden' }}
                 >
-                  <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-8 shadow-2xl">
-                    <div className="bg-white rounded-xl p-12 relative">
-                      {/* Decorative Corner */}
-                      <div className="absolute top-0 left-0 w-24 h-24 border-t-4 border-l-4 border-purple-600 rounded-tl-xl"></div>
-                      <div className="absolute bottom-0 right-0 w-24 h-24 border-b-4 border-r-4 border-purple-600 rounded-br-xl"></div>
-
-                      {/* Certificate Content */}
-                      <div className="text-center space-y-6">
-                        <h2 className="text-5xl font-bold text-purple-600 tracking-wider">CERTIFICATE</h2>
-                        <p className="text-xl text-gray-600 italic">of Completion</p>
-
-                        <div className="py-6">
-                          <p className="text-lg text-gray-700 mb-4">This is to certify that</p>
-                          <h3 className="text-4xl font-bold text-gray-900 border-b-2 border-purple-600 inline-block pb-2 px-8">
-                            {certificate.studentName}
-                          </h3>
-                        </div>
-
-                        <p className="text-lg text-gray-700">has successfully completed</p>
-
-                        <h4 className="text-2xl font-semibold text-gray-800">
-                          {certificate.courseName}
-                        </h4>
-
-                        <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed pt-4">
-                          This certificate is awarded in recognition of completing all course requirements including
-                          pre-survey, learning modules, idea submission, and post-survey with 100% completion.
-                        </p>
-
-                        {/* Details Row */}
-                        <div className="flex justify-around pt-8 border-t-2 border-gray-200 mt-8">
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide">Certificate No.</p>
-                            <p className="text-sm font-semibold text-gray-800">{certificate.certificateNumber}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide">Date Issued</p>
-                            <p className="text-sm font-semibold text-gray-800">
-                              {new Date(certificate.issuedAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide">Modules Completed</p>
-                            <p className="text-sm font-semibold text-gray-800">
-                              {certificate.completionData.completedModules}/{certificate.completionData.totalModules}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Gold Seal */}
-                      <div className="absolute bottom-8 right-8 w-20 h-20 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 border-4 border-yellow-700 flex items-center justify-center shadow-lg">
-                        <span className="text-xs font-bold text-yellow-900 text-center leading-tight">
-                          VERIFIED<br/>AUTHENTIC
-                        </span>
-                      </div>
-                    </div>
+                  <div className="relative">
+                    <Image 
+                      src="/student/Certificate_Front.jpg" 
+                      alt="Certificate Front" 
+                      width={1200}
+                      height={800}
+                      className="w-full h-auto rounded-2xl shadow-2xl"
+                      priority
+                    />
                   </div>
                 </div>
 
@@ -249,61 +198,15 @@ export default function Certificatepage() {
                     transform: 'rotateY(180deg)'
                   }}
                 >
-                  <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 shadow-2xl h-full">
-                    <div className="bg-white rounded-xl p-12 h-full flex flex-col justify-center">
-                      <h3 className="text-3xl font-bold text-center text-gray-900 mb-8">Certificate Details</h3>
-                      
-                      <div className="space-y-6">
-                        <div className="border-b pb-4">
-                          <p className="text-sm text-gray-600 mb-1">Student Name</p>
-                          <p className="text-lg font-semibold text-gray-900">{certificate.studentName}</p>
-                        </div>
-
-                        <div className="border-b pb-4">
-                          <p className="text-sm text-gray-600 mb-1">Course Name</p>
-                          <p className="text-lg font-semibold text-gray-900">{certificate.courseName}</p>
-                        </div>
-
-                        <div className="border-b pb-4">
-                          <p className="text-sm text-gray-600 mb-1">Certificate Number</p>
-                          <p className="text-lg font-semibold text-gray-900">{certificate.certificateNumber}</p>
-                        </div>
-
-                        <div className="border-b pb-4">
-                          <p className="text-sm text-gray-600 mb-3">Completion Status</p>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="h-5 w-5 text-green-500" />
-                              <span className="text-sm text-gray-700">Pre-Survey</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="h-5 w-5 text-green-500" />
-                              <span className="text-sm text-gray-700">Post-Survey</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="h-5 w-5 text-green-500" />
-                              <span className="text-sm text-gray-700">Ideas Submitted</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="h-5 w-5 text-green-500" />
-                              <span className="text-sm text-gray-700">Learning Modules</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Issue Date</p>
-                          <p className="text-lg font-semibold text-gray-900">
-                            {new Date(certificate.issuedAt).toLocaleDateString('en-US', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="relative">
+                    <Image 
+                      src="/student/Certificate_Rear.jpg" 
+                      alt="Certificate Rear" 
+                      width={1200}
+                      height={800}
+                      className="w-full h-auto rounded-2xl shadow-2xl"
+                      priority
+                    />
                   </div>
                 </div>
               </div>

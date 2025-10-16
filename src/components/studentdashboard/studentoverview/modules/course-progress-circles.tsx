@@ -3,26 +3,6 @@ import { useState, useEffect } from "react";
 import { useCourse } from "@/components/studentdashboard/context/CourseContext";
 import { ProgressCircle } from "./progress-circle";
 
-interface CourseWorkItem {
-  id: string;
-  title: string;
-  state: string;
-  workType: string;
-  dueDate?: {
-    year: number;
-    month: number;
-    day: number;
-  };
-}
-
-interface SubmissionItem {
-  id: string;
-  courseWorkId: string;
-  state: string;
-  assignedGrade?: number | null;
-  submitted: boolean;
-  late: boolean;
-}
 
 interface ProgressData {
   preSurvey: "completed" | "due" | "pending";
@@ -59,80 +39,45 @@ export function CourseProgressCircles() {
       setError(null);
 
       try {
-        // Fetch course data including coursework and submissions
-        const res = await fetch(`/api/student/course-data?courseId=${selectedCourse.id}`);
+        // Fetch stage progress data (same as mycourses section)
+        const res = await fetch(`/api/student/stage-progress?courseId=${selectedCourse.id}`);
         const data = await res.json();
 
-        if (data.success && data.data) {
-          const { courseWork, submissions } = data.data;
+        if (data.success && data.progress) {
+          const progress = data.progress;
           
+          // Map stage progress to our progress data format
+          const preSurveyStatus = progress.preSurveyCompleted ? "completed" : "due";
+          const ideasStatus = progress.ideasCompleted ? "completed" : "due";
+          const postSurveyStatus = progress.postSurveyCompleted ? "completed" : "due";
           
-          // Ensure courseWork is an array
-          const safeCourseWork = Array.isArray(courseWork) ? courseWork : [];
-          const safeSubmissions = Array.isArray(submissions) ? submissions : [];
-          
-          // Calculate course progress based on assignments
-          const assignments = safeCourseWork.filter((cw: CourseWorkItem) => 
-            cw && cw.workType === 'ASSIGNMENT' && cw.state === 'PUBLISHED'
-          );
-          
-          const completedAssignments = assignments.filter((assignment: CourseWorkItem) => {
-            const submission = safeSubmissions.find((sub: SubmissionItem) => 
-              sub.courseWorkId === assignment.id
-            );
-            return submission && (submission.state === 'TURNED_IN' || submission.state === 'RETURNED');
-          });
-
-          const totalAssignments = assignments.length;
-          const completedCount = completedAssignments.length;
-          const courseProgressPercentage = totalAssignments > 0 ? (completedCount / totalAssignments) * 100 : 0;
-
-          // Determine course progress status
+          // Calculate course progress status
           let courseProgressStatus: "completed" | "due" | "pending" = "pending";
-          if (totalAssignments === 0) {
-            courseProgressStatus = "pending";
-          } else if (completedCount === totalAssignments) {
-            courseProgressStatus = "completed";
-          } else if (completedCount > 0) {
-            courseProgressStatus = "due";
+          if (progress.regularCourseworkCount > 0) {
+            const completionPercentage = (progress.completedCourseworkCount / progress.regularCourseworkCount) * 100;
+            if (completionPercentage === 100) {
+              courseProgressStatus = "completed";
+            } else if (completionPercentage > 0) {
+              courseProgressStatus = "due";
+            } else {
+              courseProgressStatus = "pending";
+            }
           }
 
-          // Check for specific survey/idea assignments
-          const preSurveyAssignment = assignments.find((a: CourseWorkItem) => 
-            a.title.toLowerCase().includes('pre-survey') || 
-            a.title.toLowerCase().includes('pre survey')
-          );
-          const postSurveyAssignment = assignments.find((a: CourseWorkItem) => 
-            a.title.toLowerCase().includes('post-survey') || 
-            a.title.toLowerCase().includes('post survey')
-          );
-          const ideasAssignment = assignments.find((a: CourseWorkItem) => 
-            a.title.toLowerCase().includes('idea') || 
-            a.title.toLowerCase().includes('ideas')
-          );
-
-          // Check completion status for surveys and ideas
-          const checkAssignmentCompletion = (assignment: CourseWorkItem | undefined) => {
-            if (!assignment) return "due";
-            const submission = safeSubmissions.find((sub: SubmissionItem) => 
-              sub.courseWorkId === assignment.id
-            );
-            return submission && (submission.state === 'TURNED_IN' || submission.state === 'RETURNED') 
-              ? "completed" : "due";
-          };
-
           setProgressData({
-            preSurvey: checkAssignmentCompletion(preSurveyAssignment),
+            preSurvey: preSurveyStatus,
             courseProgress: courseProgressStatus,
-            ideas: checkAssignmentCompletion(ideasAssignment),
-            postSurvey: checkAssignmentCompletion(postSurveyAssignment),
-            courseProgressPercentage: Math.round(courseProgressPercentage),
-            totalAssignments,
-            completedAssignments: completedCount
+            ideas: ideasStatus,
+            postSurvey: postSurveyStatus,
+            courseProgressPercentage: progress.regularCourseworkCount > 0 
+              ? Math.round((progress.completedCourseworkCount / progress.regularCourseworkCount) * 100) 
+              : 0,
+            totalAssignments: progress.regularCourseworkCount,
+            completedAssignments: progress.completedCourseworkCount
           });
         } else {
           console.error('API response error:', data);
-          setError(data.message || "Failed to fetch course data");
+          setError(data.message || "Failed to fetch stage progress");
         }
       } catch (err) {
         console.error('Error fetching course progress:', err);

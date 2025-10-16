@@ -157,6 +157,11 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
       const data = await response.json();
 
       if (data.success) {
+        console.log(`Material ${materialId} marked as complete successfully`);
+        
+        // Add a small delay to ensure the database write is complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Refresh materials to show updated completion status
         const refreshResponse = await fetch(`/api/student/coursework?courseId=${courseId}`);
         const refreshData = await refreshResponse.json();
@@ -166,6 +171,14 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
             const title = item.title?.toLowerCase() || '';
             return !title.includes('survey') && !title.includes('idea');
           });
+          
+          console.log('Refreshed materials:', updatedMaterials.map((m: any) => ({
+            id: m.id,
+            title: m.title,
+            hasSubmission: !!m.submission,
+            submissionState: m.submission?.state
+          })));
+          
           setMaterials(updatedMaterials);
 
           // Auto-select next material after refresh
@@ -181,6 +194,8 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
               setSelectedMaterial(currentMaterial);
             }
           }
+        } else {
+          console.error('Failed to refresh materials:', refreshData.message);
         }
       } else {
         console.error('Failed to mark material complete:', data.message);

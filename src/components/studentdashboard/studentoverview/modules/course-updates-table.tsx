@@ -8,6 +8,7 @@ interface CourseUpdate {
   score: string
   dateOfSubmission: string
   status: "completed" | "pending"
+  moduleNumber?: number
 }
 
 export function CourseUpdatesTable() {
@@ -48,25 +49,64 @@ export function CourseUpdatesTable() {
     fetchCourseData();
   }, [selectedCourse?.id]);
 
+  // Helper function to extract module number from title
+  const extractModuleNumber = (title: string): number => {
+    // Try various patterns to extract module number
+    const patterns = [
+      /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc.
+      /^(\d+)[\s\-\.]/i,                   // "1 - Title", "2. Title", etc.
+      /lesson\s*(\d+)/i,                   // "Lesson 1", etc.
+      /chapter\s*(\d+)/i,                  // "Chapter 1", etc.
+      /unit\s*(\d+)/i,                     // "Unit 1", etc.
+      /part\s*(\d+)/i,                     // "Part 1", etc.
+      /section\s*(\d+)/i,                  // "Section 1", etc.
+    ];
+    
+    for (const pattern of patterns) {
+      const match = title.match(pattern);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+    }
+    
+    // Default to 999 for non-module items (will appear at the end)
+    return 999;
+  };
+
   // Transform course work and submissions into course updates
   const courseUpdates: CourseUpdate[] = courseData ? 
-    courseData.courseWork.map((work: any) => {
-      const submission = courseData.submissions.find((sub: any) => sub.courseWorkId === work.id);
-      const isCompleted = submission?.state === 'TURNED_IN' || submission?.state === 'RETURNED' || submission?.submitted;
-      const score = submission?.assignedGrade ? 
-        `${submission.assignedGrade}${work.maxPoints ? `/${work.maxPoints}` : ''}` : 
-        (submission?.draftGrade ? `${submission.draftGrade}${work.maxPoints ? `/${work.maxPoints}` : ''} (Draft)` : 'N/A');
-      const dateOfSubmission = submission?.updateTime ? 
-        new Date(submission.updateTime).toLocaleDateString() : 
-        (submission?.creationTime ? new Date(submission.creationTime).toLocaleDateString() : 'N/A');
-      
-      return {
-        module: work.title || 'Untitled Assignment',
-        score: score,
-        dateOfSubmission: dateOfSubmission,
-        status: isCompleted ? "completed" : "pending"
-      };
-    }) : [];
+    courseData.courseWork
+      .filter((work: any) => {
+        // Hide pre-survey, post-survey, and idea submission items
+        const title = (work.title || '').toLowerCase();
+        return !title.includes('survey') && !title.includes('idea');
+      })
+      .map((work: any) => {
+        const submission = courseData.submissions.find((sub: any) => sub.courseWorkId === work.id);
+        const isCompleted = submission?.state === 'TURNED_IN' || submission?.state === 'RETURNED' || submission?.submitted;
+        const score = submission?.assignedGrade ? 
+          `${submission.assignedGrade}${work.maxPoints ? `/${work.maxPoints}` : ''}` : 
+          (submission?.draftGrade ? `${submission.draftGrade}${work.maxPoints ? `/${work.maxPoints}` : ''} (Draft)` : 'N/A');
+        const dateOfSubmission = submission?.updateTime ? 
+          new Date(submission.updateTime).toLocaleDateString() : 
+          (submission?.creationTime ? new Date(submission.creationTime).toLocaleDateString() : 'N/A');
+        
+        return {
+          module: work.title || 'Untitled Assignment',
+          score: score,
+          dateOfSubmission: dateOfSubmission,
+          status: isCompleted ? "completed" : "pending",
+          moduleNumber: extractModuleNumber(work.title || '')
+        };
+      })
+      .sort((a: any, b: any) => {
+        // Sort by module number first, then by title for non-module items
+        if (a.moduleNumber !== b.moduleNumber) {
+          return a.moduleNumber - b.moduleNumber;
+        }
+        // If module numbers are the same (or both are 999), sort alphabetically
+        return a.module.localeCompare(b.module);
+      }) : [];
 
   if (loading) {
     return (
