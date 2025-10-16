@@ -156,6 +156,16 @@ tr:nth-child(even) {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #333333;
 }
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
  
  
 /* Utility classes for status labels */

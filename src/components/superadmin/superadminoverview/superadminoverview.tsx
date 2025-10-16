@@ -178,11 +178,11 @@ function HoverPanel({
 
       <div className="grid grid-cols-2 gap-y-3 gap-x-6">
         <div>
-          <div className="text-[12px] text-white/80">Active Students</div>
+          <div className="text-[12px] text-white/80">Total Students</div>
           <div className="text-[16px] mt-1">{stats ? fmt(stats.students) : "—"}</div>
         </div>
         <div>
-          <div className="text-[12px] text-white/80">Active Teachers</div>
+          <div className="text-[12px] text-white/80">Total Teachers</div>
           <div className="text-[16px] mt-1">{stats ? fmt(stats.teachers) : "—"}</div>
         </div>
         <div>
@@ -190,7 +190,7 @@ function HoverPanel({
           <div className="text-[16px] mt-1">{stats ? fmt(stats.preSurvey) : "—"}</div>
         </div>
         <div>
-          <div className="text-[12px] text-white/80">Completion</div>
+          <div className="text-[12px] text-white/80">Total Ideas</div>
           <div className="text-[16px] mt-1">
             {stats ? `${Math.min(99, Math.round((stats.courseCompletion / 40000) * 100))}%` : "—"}
           </div>

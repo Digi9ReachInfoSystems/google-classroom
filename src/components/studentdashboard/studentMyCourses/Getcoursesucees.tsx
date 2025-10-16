@@ -1,3 +1,5 @@
+"use client"
+
 import React from 'react'
 import ProgressSidebar from './modules/progress-sidebar'
 import Getcoursecertificate from './modules/getcoursecertificate'
@@ -22,7 +24,11 @@ export default function Getcoursesucees() {
             </div>
           </div>
           <div className="order-2 lg:order-2">
-            <ProgressSidebar />
+            <ProgressSidebar 
+              stageProgress={{}}
+              selectedStage=""
+              onStageSelect={() => {}}
+            />
           </div>
         </div>
       </div>

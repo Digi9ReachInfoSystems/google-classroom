@@ -147,7 +147,7 @@ export default function AddResourceModal({
             <button
               onClick={handleSubmit}
               disabled={!details.trim()}
-              className="h-10 px-6 rounded-full bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="h-10 px-6 rounded-full bg-[var(--primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               Submit
             </button>

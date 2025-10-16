@@ -1,5 +1,5 @@
 "use client";
-import { Bell, ChevronDown } from "lucide-react";
+import { Bell, ChevronDown, LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,13 +8,18 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
+import { useState } from "react";
+import { useDistrictCourse } from "../context/DistrictCourseContext";
 
 export function DashboardHeader() {
   const router = useRouter();
   const pathname = usePathname() ?? "/districtadmin/overview";
+  const { courses, selectedCourse, setSelectedCourse, refreshCourses } = useDistrictCourse();
+  const [syncing, setSyncing] = useState(false);
 
   const tabs = [
     { label: "Overview", value: "overview", href: "/districtadmin/overview" },
@@ -26,6 +31,46 @@ export function DashboardHeader() {
   // derive current tab from the 2nd segment after /districtadmin
   const seg = pathname.split("/")[2] || "overview";
   const currentTab = tabs.some(t => t.value === seg) ? seg : "overview";
+
+  const handleSync = async () => {
+    try {
+      setSyncing(true);
+      
+      // Use OAuth-based sync for district admin
+      const response = await fetch('/api/admin/sync-with-oauth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ syncType: 'full' })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Sync successful:', data);
+        alert(`Sync completed! Synced ${data.recordsSynced || 0} records in ${Math.round(data.duration / 1000)}s.`);
+        
+        // Refresh courses after successful sync
+        await refreshCourses();
+      } else {
+        const errorData = await response.json();
+        console.error('Sync request failed:', response.status, errorData);
+        alert(`Sync failed: ${errorData.message || errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Sync failed:', error);
+      alert('Sync failed. Please try again.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleLogout = () => {
+    // Clear the authentication cookie
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // Redirect to login page
+    router.push('/login');
+  };
 
   return (
     <header className="bg-white border-neutral-200 px-8 py-5">
@@ -70,44 +115,73 @@ export function DashboardHeader() {
 
         {/* Right: actions */}
         <div className="flex items-center space-x-4">
-       <DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button
-      variant="ghost"
-      className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white"
-    >
-      Select courses
-      <ChevronDown className="h-4 w-4" />
-    </Button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent className="rounded-xl overflow-hidden">
-    <DropdownMenuItem
-      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-    >
-      Course 1
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-    >
-      Course 2
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-    >
-      Course 3
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white"
+              >
+                {selectedCourse ? selectedCourse.name : "All Courses"}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="rounded-xl overflow-hidden">
+              <DropdownMenuItem
+                className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
+                onClick={() => setSelectedCourse(null)}
+              >
+                All Courses
+              </DropdownMenuItem>
+              {courses.length === 0 ? (
+                <DropdownMenuItem disabled className="text-sm text-muted-foreground">
+                  No courses found. Click sync button to fetch courses.
+                </DropdownMenuItem>
+              ) : (
+                courses.map((course) => (
+                  <DropdownMenuItem
+                    key={course.id}
+                    className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
+                    onClick={() => setSelectedCourse(course)}
+                  >
+                    {course.name}
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-neutral-600 hover:text-neutral-900"
+            onClick={handleSync}
+            disabled={syncing}
+            title="Sync latest data"
+          >
+            <RefreshCw className={`h-5 w-5 ${syncing ? 'animate-spin' : ''}`} />
+          </Button>
 
           <Button variant="ghost" size="icon" className="text-neutral-600 hover:text-neutral-900">
             <Bell className="h-5 w-5" />
           </Button>
 
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="Monish" />
-            <AvatarFallback className="bg-neutral-200 text-neutral-700">M</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="h-8 w-8 cursor-pointer">
+                <AvatarImage src="/placeholder-avatar.jpg" alt="District Admin" />
+                <AvatarFallback className="bg-neutral-200 text-neutral-700">DA</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="rounded-xl overflow-hidden">
+              <DropdownMenuItem 
+                className="data-[highlighted]:bg-red-500 data-[highlighted]:text-white focus:bg-red-500 focus:text-white"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

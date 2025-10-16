@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Bell, Send } from "lucide-react";
 import {
   Select,
@@ -132,13 +132,14 @@ function CommentModal({
 }
 
 /* ========================= list card ========================= */
-type Item = { id: number; text: string };
-
-const demo: Item[] = Array.from({ length: 12 }).map((_, i) => ({
-  id: i + 1,
-  text:
-    "Lorem ipsum dolor sit amet consectetur. Voluptate purus amet tincidunt nibh mauris interdum imperdiet elit in.",
-}));
+interface Announcement {
+  id: string;
+  text: string;
+  creationTime: string;
+  updateTime: string;
+  creatorUserId: string;
+  courseId: string;
+}
 
 /* student-style comment input (opens modal on click) */
 function CommentInput() {
@@ -159,34 +160,146 @@ function CommentInput() {
 
 export default function AnnouncementsCard() {
   const [open, setOpen] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handlePost = (text: string, audience: string) => {
-    console.log("POST announcement:", { audience, text });
+  // Fetch announcements
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch('/api/districtadmin/announcements');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch announcements');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          setAnnouncements(data.announcements);
+        } else {
+          throw new Error(data.message || 'Failed to load announcements');
+        }
+      } catch (err) {
+        console.error('Error fetching announcements:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load announcements');
+        setAnnouncements([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnnouncements();
+  }, []);
+
+  const handlePost = async (text: string, audience: string) => {
+    try {
+      setError(null);
+
+      const response = await fetch('/api/districtadmin/announcements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text,
+          courseId: 'district-wide' // District admin can post to all courses
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to post announcement');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Add the new announcement to the list
+        setAnnouncements(prev => [data.announcement, ...prev]);
+        console.log('Announcement posted successfully');
+      } else {
+        throw new Error(data.error || 'Failed to post announcement');
+      }
+    } catch (err) {
+      console.error('Error posting announcement:', err);
+      setError(err instanceof Error ? err.message : 'Failed to post announcement');
+    }
   };
 
   return (
     <>
       <div className="bg-white rounded-xl p-5">
-        <h3 className="text-[18px] font-bold text-[var(--neutral-1000)] mb-4">
-          Announcements
-        </h3>
-
-        <div className="p-1 space-y-6 max-h-[30rem] overflow-y-auto custom-scrollbar pr-3">
-          {demo.map((item) => (
-            <div key={item.id} className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <StatusBell />
-                <p className="text-sm text-neutral-700 leading-relaxed flex-1 line-clamp-2">{item.text}</p>
-              </div>
-
-              <div className="ml-11">
-                <CommentInput />
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[18px] font-bold text-[var(--neutral-1000)]">
+            Announcements
+          </h3>
+          <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+            District Wide
+          </div>
         </div>
 
-        <button onClick={() => setOpen(true)} className="mt-4 w-full rounded-full bg-[var(--primary)] hover:brightness-95 text-white py-3 text-sm">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="p-1 space-y-6 max-h-[30rem] overflow-y-auto custom-scrollbar pr-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-3 animate-pulse">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-200"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : announcements.length > 0 ? (
+          <div className="p-1 space-y-6 max-h-[30rem] overflow-y-auto custom-scrollbar pr-3">
+            {announcements.map((announcement) => (
+              <div key={announcement.id} className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <StatusBell />
+                  <div className="flex-1">
+                    <p className="text-sm text-neutral-700 leading-relaxed line-clamp-3">
+                      {announcement.text}
+                    </p>
+                    <div className="text-xs text-neutral-500 mt-2">
+                      {new Date(announcement.creationTime).toLocaleDateString()} at{' '}
+                      {new Date(announcement.creationTime).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-1 space-y-6 max-h-[30rem] overflow-y-auto custom-scrollbar pr-3">
+            <div className="text-center py-8">
+              <div className="w-8 h-8 rounded-full border-2 border-neutral-200 flex items-center justify-center mx-auto mb-3">
+                <Bell className="w-4 h-4 text-neutral-400" />
+              </div>
+              <p className="text-sm text-neutral-500">No announcements yet</p>
+            </div>
+          </div>
+        )}
+
+        <button 
+          onClick={() => setOpen(true)} 
+          className="mt-4 w-full rounded-full bg-[var(--primary)] hover:brightness-95 text-white py-3 text-sm"
+        >
           Create Announcement
         </button>
       </div>

@@ -12,12 +12,14 @@ import {
 type Props = {
   school: string
   district: string
-  status: string
+  schools: string[]
+  districts: string[]
   onSchoolChange: (v: string) => void
   onDistrictChange: (v: string) => void
-  onStatusChange: (v: string) => void
   totalStudents: number
   totalIdeas: number
+  submittedPercentage: number
+  loading: boolean
 }
 
 // --- circular progress ring (SVG) - using teacher's approach ---
@@ -100,13 +102,10 @@ function KPICard({
 }
 
 export default function Superadminideas({
-  school, district, status,
-  onSchoolChange, onDistrictChange, onStatusChange,
-  totalStudents, totalIdeas,
+  school, district, schools, districts,
+  onSchoolChange, onDistrictChange,
+  totalStudents, totalIdeas, submittedPercentage, loading
 }: Props) {
-  const studentProgress = Math.min(100, (totalStudents / 150) * 100)
-  const ideasProgress   = Math.min(100, (totalIdeas / 50) * 100)
-
   const pillBase =
     "h-9 px-5 rounded-full border text-[12px] font-normal bg-transparent data-[state=open]:ring-2 data-[state=open]:ring-[var(--primary)]"
   const pillWhenSelected =
@@ -119,49 +118,47 @@ export default function Superadminideas({
       <div className="flex items-start justify-between gap-6 px-5">
         {/* Left: Title + two cards */}
         <div className="flex-1">
-          <h2 className="text-3xl font-semibold">Ideas</h2>
-          <h3 className="text-[14px] font-normal text-foreground mb-4">
-            Let's see the current statistics performance
-          </h3>
+          <h2 className="text-3xl font-semibold mb-4">Ideas</h2>
 
           <div className="flex gap-6 mb-8">
-            <KPICard valueText={String(totalStudents)} label="Total no of students" percentArc={studentProgress} />
-            <KPICard valueText={String(totalIdeas)} label="Total no of idea submitted" percentArc={ideasProgress} />
+            <KPICard 
+              valueText={loading ? "..." : String(totalStudents)} 
+              label="Total no of students" 
+              percentArc={100} 
+            />
+            <KPICard 
+              valueText={loading ? "..." : String(totalIdeas)} 
+              label="Total no of idea submitted" 
+              percentArc={submittedPercentage} 
+            />
           </div>
         </div>
 
-        {/* Right: 3 pill selects */}
+        {/* Right: 2 pill selects */}
         <div className="flex items-center gap-4">
-          <Select value={school} onValueChange={onSchoolChange}>
-            <SelectTrigger className={`${pillBase} ${school ? pillWhenSelected : "border-[var(--neutral-300)]"}`}>
-              <SelectValue placeholder="Select School" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl overflow-hidden text-center">
-              <SelectItem value="School A" className={`${itemHover} justify-center text-center`}>School A</SelectItem>
-              <SelectItem value="School B" className={`${itemHover} justify-center text-center`}>School B</SelectItem>
-              <SelectItem value="School C" className={`${itemHover} justify-center text-center`}>School C</SelectItem>
-            </SelectContent>
-          </Select>
-
           <Select value={district} onValueChange={onDistrictChange}>
-            <SelectTrigger className={`${pillBase} ${district ? pillWhenSelected : "border-[var(--neutral-300)]"}`}>
+            <SelectTrigger className={`${pillBase} ${district && district !== 'All' ? pillWhenSelected : "border-[var(--neutral-300)]"}`}>
               <SelectValue placeholder="Select District" />
             </SelectTrigger>
             <SelectContent className="rounded-xl overflow-hidden text-center">
-              <SelectItem value="District 1" className={`${itemHover} justify-center text-center`}>District 1</SelectItem>
-              <SelectItem value="District 2" className={`${itemHover} justify-center text-center`}>District 2</SelectItem>
-              <SelectItem value="District 3" className={`${itemHover} justify-center text-center`}>District 3</SelectItem>
+              {districts.map((d) => (
+                <SelectItem key={d} value={d} className={`${itemHover} justify-center text-center`}>
+                  {d === 'All' ? 'All Districts' : d}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
-          <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger className={`${pillBase} ${status ? pillWhenSelected : "border-[var(--neutral-300)]"}`}>
-              <SelectValue placeholder="Select Idea status" />
+          <Select value={school} onValueChange={onSchoolChange}>
+            <SelectTrigger className={`${pillBase} ${school && school !== 'All' ? pillWhenSelected : "border-[var(--neutral-300)]"}`}>
+              <SelectValue placeholder="Select School" />
             </SelectTrigger>
             <SelectContent className="rounded-xl overflow-hidden text-center">
-              <SelectItem value="Approved" className={`${itemHover} justify-center text-center`}>Approved</SelectItem>
-              <SelectItem value="Pending"  className={`${itemHover} justify-center text-center`}>Pending</SelectItem>
-              <SelectItem value="Rejected" className={`${itemHover} justify-center text-center`}>Rejected</SelectItem>
+              {schools.map((s) => (
+                <SelectItem key={s} value={s} className={`${itemHover} justify-center text-center`}>
+                  {s === 'All' ? 'All Schools' : s}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

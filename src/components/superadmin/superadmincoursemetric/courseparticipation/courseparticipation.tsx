@@ -1,23 +1,19 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { useSuperAdminCourse } from "@/components/superadmin/context/SuperAdminCourseContext"
 
 type MetricCardProps = {
   iconSrc: string
   iconAlt: string
   label: string
   value: string
+  loading?: boolean
 }
 
-function MetricCard({ iconSrc, iconAlt, label, value }: MetricCardProps) {
+function MetricCard({ iconSrc, iconAlt, label, value, loading }: MetricCardProps) {
   return (
     <Card className="rounded-2xl border-0 shadow-none">
       <CardContent className="p-6 h-[140px] flex items-center justify-center">
@@ -37,7 +33,9 @@ function MetricCard({ iconSrc, iconAlt, label, value }: MetricCardProps) {
           {/* Label + Value stacked vertically */}
           <div className="flex flex-col justify-center">
             <span className="text-[16px] leading-4">{label}</span>
-            <span className="text-[20px] font-semibold leading-5 mt-2">{value}</span>
+            <span className="text-[20px] font-semibold leading-5 mt-2">
+              {loading ? "..." : value}
+            </span>
           </div>
         </div>
       </CardContent>
@@ -45,12 +43,56 @@ function MetricCard({ iconSrc, iconAlt, label, value }: MetricCardProps) {
   )
 }
 
-
+type CourseMetrics = {
+  totalStudents: number;
+  participation: {
+    course: { completed: number; percentage: number };
+    preSurvey: { completed: number; percentage: number };
+    postSurvey: { completed: number; percentage: number };
+    idea: { completed: number; percentage: number };
+  };
+};
 
 export default function CoursePartition() {
+  const { selectedCourse } = useSuperAdminCourse();
+  const [metrics, setMetrics] = useState<CourseMetrics | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (!selectedCourse?.id) {
+        setMetrics(null);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/superadmin/course-metrics?courseId=${selectedCourse.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          setMetrics(data.metrics);
+        } else {
+          console.error('Failed to fetch metrics:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [selectedCourse]);
+
   return (
     <div className="space-y-6">
-      {/* Header with title + dropdown */}
+      {/* Header with title */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-3xl font-semibold">Course Participation</h2>
@@ -58,60 +100,37 @@ export default function CoursePartition() {
             Overview of student progress and survey status
           </p>
         </div>
-
-        {/* Period dropdown */}
-        <Select defaultValue="thisMonth">
-          <SelectTrigger className="w-[180px] rounded-xl border border-[var(--neutral-300)]">
-            <SelectValue placeholder="Select period" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl overflow-hidden">
-            <SelectItem
-              value="thisMonth"
-              className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-            >
-              This Month
-            </SelectItem>
-            <SelectItem
-              value="lastMonth"
-              className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-            >
-              Last Month
-            </SelectItem>
-            <SelectItem
-              value="thisYear"
-              className="data-[highlighted]:bg-[var(--primary)] data-[highlighted]:text-white focus:bg-[var(--primary)] focus:text-white"
-            >
-              This Year
-            </SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Four metric cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-[140px]">
         <MetricCard
-          iconSrc="/metrics/teachers.png"   // or /students.png as per your asset
+          iconSrc="/metrics/students.png"
           iconAlt="Course icon"
           label="Course"
-          value="45,000"
+          value={metrics ? `${metrics.participation.course.percentage}%` : "-"}
+          loading={loading}
         />
         <MetricCard
-        iconSrc="/metrics/teachers.png" 
+          iconSrc="/metrics/teachers.png" 
           iconAlt="Pre-Survey icon"
           label="Pre-Survey"
-          value="38,500"
+          value={metrics ? `${metrics.participation.preSurvey.percentage}%` : "-"}
+          loading={loading}
         />
         <MetricCard
           iconSrc="/metrics/teachers.png" 
           iconAlt="Post-Survey icon"
           label="Post-Survey"
-          value="85%"
+          value={metrics ? `${metrics.participation.postSurvey.percentage}%` : "-"}
+          loading={loading}
         />
         <MetricCard
-       iconSrc="/metrics/teachers.png" 
+          iconSrc="/metrics/ideas.png" 
           iconAlt="Idea icon"
           label="Idea"
-          value="6,500"
+          value={metrics ? `${metrics.participation.idea.percentage}%` : "-"}
+          loading={loading}
         />
       </div>
     </div>

@@ -1,81 +1,52 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import TeacherCircleProgressRow from "./modules/ideasprogress"
 import { FiltersBar } from "./modules/FiltersBar"
 import { IdeaRow, IdeasTable } from "./modules/IdeasTable"
-
-// Sample data matching the image
-const sampleIdeas: IdeaRow[] = [
-  {
-    studentName: "Alice Smith",
-    ideaTitle: "Smart Recycling Bin",
-    category: "STEM",
-    dateSubmitted: "Sep 10, 2025",
-    status: "completed",
-    fileUrl: "https://forms.google.com/example1",
-  },
-  {
-    studentName: "Rahul P",
-    ideaTitle: "Digital Art Showcase",
-    category: "Arts",
-    dateSubmitted: "Sep 1, 2025",
-    status: "completed",
-    fileUrl: "https://forms.google.com/example2",
-  },
-  {
-    studentName: "Sneha M",
-    ideaTitle: "-",
-    category: "-",
-    dateSubmitted: "-",
-    status: "pending",
-  },
-  {
-    studentName: "Arjun T",
-    ideaTitle: "-",
-    category: "-",
-    dateSubmitted: "-",
-    status: "pending",
-  },
-  {
-    studentName: "Alice Smith",
-    ideaTitle: "Smart Recycling Bin",
-    category: "Arts",
-    dateSubmitted: "Sep 10, 2025",
-    status: "completed",
-    fileUrl: "https://forms.google.com/example3",
-  },
-  {
-    studentName: "Alice Smith",
-    ideaTitle: "-",
-    category: "-",
-    dateSubmitted: "-",
-    status: "pending",
-  },
-  {
-    studentName: "Alice Smith",
-    ideaTitle: "Smart Recycling Bin",
-    category: "Arts",
-    dateSubmitted: "Sep 10, 2025",
-    status: "completed",
-    fileUrl: "https://forms.google.com/example4",
-  },
-  {
-    studentName: "Alice Smith",
-    ideaTitle: "-",
-    category: "-",
-    dateSubmitted: "-",
-    status: "pending",
-  },
-]
+import { useTeacherCourse } from "../context/TeacherCourseContext"
 
 export default function IdeasPage() {
+  const { selectedCourse } = useTeacherCourse()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [ideas, setIdeas] = useState<IdeaRow[]>([])
+  const [totalStudents, setTotalStudents] = useState(0)
+  const [totalIdeasSubmitted, setTotalIdeasSubmitted] = useState(0)
+  const [submittedPercentage, setSubmittedPercentage] = useState(0)
+  const [loading, setLoading] = useState(false)
+
+  // Fetch ideas data when course changes
+  useEffect(() => {
+    if (selectedCourse?.id) {
+      fetchIdeasData()
+    }
+  }, [selectedCourse])
+
+  const fetchIdeasData = async () => {
+    if (!selectedCourse?.id) return
+
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/teacher/ideas?courseId=${selectedCourse.id}`)
+      const data = await response.json()
+
+      if (data.success) {
+        setIdeas(data.ideas || [])
+        setTotalStudents(data.totalStudents || 0)
+        setTotalIdeasSubmitted(data.totalIdeasSubmitted || 0)
+        setSubmittedPercentage(data.submittedPercentage || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching ideas data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Filter the ideas based on search and status
   const filteredIdeas = useMemo(() => {
-    return sampleIdeas.filter((idea) => {
+    return ideas.filter((idea) => {
       const matchesSearch =
         idea.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         idea.ideaTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,7 +59,15 @@ export default function IdeasPage() {
 
       return matchesSearch && matchesStatus
     })
-  }, [searchQuery, statusFilter])
+  }, [ideas, searchQuery, statusFilter])
+
+  if (!selectedCourse) {
+    return (
+      <div className="min-h-screen bg-white p-6 flex items-center justify-center">
+        <p className="text-muted-foreground">Please select a course to view ideas</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white p-6">
@@ -96,32 +75,44 @@ export default function IdeasPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-semibold">Ideas</h1>
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 rounded-full border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
-          >
-            <option value="all">All</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-          </select>
         </div>
 
         {/* Progress Cards */}
-        <TeacherCircleProgressRow />
+        <TeacherCircleProgressRow 
+          totalStudents={totalStudents}
+          totalIdeasSubmitted={totalIdeasSubmitted}
+          submittedPercentage={submittedPercentage}
+        />
 
         {/* My submitted idea section */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-[var(--neutral-1000)]">My submitted idea</h2>
-            <FiltersBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-            />
+            <h2 className="text-lg font-medium text-[var(--neutral-1000)]">Student Ideas</h2>
+            <div className="flex items-center gap-3">
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-9 rounded-full border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
+              >
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+              </select>
+              <FiltersBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
+            </div>
           </div>
 
           {/* Ideas Table */}
-          <IdeasTable rows={filteredIdeas} />
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <IdeasTable rows={filteredIdeas} />
+          )}
         </div>
       </div>
     </div>

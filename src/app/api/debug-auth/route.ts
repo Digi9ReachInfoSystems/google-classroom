@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       'https://www.googleapis.com/auth/admin.directory.userschema',
       'https://www.googleapis.com/auth/admin.directory.orgunit',
       'https://www.googleapis.com/auth/admin.directory.user.readonly',
-      'https://www.googleapis.com/auth/admin.directory.domain'
+      'https://www.googleapis.com/auth/admin.directory.domain',
     ];
 
     // Test JWT creation

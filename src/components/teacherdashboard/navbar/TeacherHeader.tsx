@@ -1,15 +1,43 @@
 "use client"
-import { Bell, ChevronDown } from "lucide-react"
+import { Bell, ChevronDown, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { usePathname, useRouter } from "next/navigation"
 import Image from "next/image"
+import { useTeacherCourse } from "../context/TeacherCourseContext"
+import { useState, useEffect } from "react"
 
 export function TeacherDashboardHeader() {
   const router = useRouter()
   const pathname = usePathname()
+  const { courses, selectedCourse, setSelectedCourse, loading: coursesLoading, error } = useTeacherCourse()
+  const [user, setUser] = useState<any>(null)
+  
+  // Debug logging
+  console.log('TeacherHeader - courses:', courses.length, 'loading:', coursesLoading, 'error:', error)
+
+  useEffect(() => {
+    // Fetch user info
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUser(data.user)
+        }
+      })
+      .catch(console.error)
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
 
   const tabs = [
     { label: "Overview", value: "Overview", href: "/teacher/dashboard" },
@@ -17,7 +45,7 @@ export function TeacherDashboardHeader() {
     { label: "Leaderboards", value: "Leaderboards", href: "/teacher/dashboard/leaderboards" },
     { label: "Reports", value: "Reports", href: "/teacher/dashboard/reports" },
     { label: "Learning Resources", value: "Learning Resources", href: "/teacher/dashboard/learningresources" },
-    { label: "Gemini", value: "Gemini", href: "/teacher/dashboard/gemini" },
+    // { label: "Gemini", value: "Gemini", href: "/teacher/dashboard/gemini" },
   ] as const
 
  const currentTab = (() => {
@@ -64,15 +92,46 @@ export function TeacherDashboardHeader() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white">
-                Select courses
+              <Button 
+                variant="ghost" 
+                className="text-neutral-600 hover:text-neutral-900 gap-2 border border-neutral-300 rounded-full px-4 py-2 bg-white min-w-[180px]"
+                disabled={coursesLoading}
+              >
+                {coursesLoading ? (
+                  "Loading..."
+                ) : selectedCourse ? (
+                  <>
+                    {selectedCourse.name}
+                    {selectedCourse.section && ` (${selectedCourse.section})`}
+                  </>
+                ) : (
+                  "Select Course"
+                )}
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Course 1</DropdownMenuItem>
-              <DropdownMenuItem>Course 2</DropdownMenuItem>
-              <DropdownMenuItem>Course 3</DropdownMenuItem>
+            <DropdownMenuContent className="w-80 max-h-80 overflow-y-auto">
+              {error ? (
+                <DropdownMenuItem disabled className="text-red-600">
+                  Error: {error}
+                </DropdownMenuItem>
+              ) : courses.length === 0 ? (
+                <DropdownMenuItem disabled>
+                  No courses found
+                </DropdownMenuItem>
+              ) : (
+                courses.map((course) => (
+                  <DropdownMenuItem
+                    key={course.id}
+                    onClick={() => setSelectedCourse(course)}
+                    className={`cursor-pointer ${selectedCourse?.id === course.id ? 'bg-primary/10 text-primary' : ''}`}
+                  >
+                    <div className="flex flex-col items-start w-full">
+                      <div className="font-medium">{course.name}</div>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -80,10 +139,28 @@ export function TeacherDashboardHeader() {
             <Bell className="h-5 w-5" />
           </Button>
 
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="Monish" />
-            <AvatarFallback className="bg-neutral-200 text-neutral-700">M</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 rounded-full p-0">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/placeholder-avatar.jpg" alt={user?.email || "User"} />
+                  <AvatarFallback className="bg-neutral-200 text-neutral-700">
+                    {user?.email?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium">{user?.email || "User"}</p>
+                <p className="text-xs text-muted-foreground">Teacher</p>
+              </div>
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

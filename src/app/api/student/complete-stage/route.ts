@@ -1,0 +1,120 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuthToken } from '@/lib/auth';
+import { connectToDatabase } from '@/lib/mongodb';
+import { StageCompletionModel } from '@/models/StageCompletion';
+import { BadgeModel, BadgeType } from '@/models/Badge';
+
+export async function POST(req: NextRequest) {
+  try {
+    // Check authentication
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const payload = verifyAuthToken(token);
+    if (!payload || payload.role !== 'student') {
+      return NextResponse.json({ message: 'Access denied' }, { status: 403 });
+    }
+
+    // Connect to database
+    await connectToDatabase();
+
+    const body = await req.json();
+    const { courseId, stageId } = body;
+
+    if (!courseId || !stageId) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Course ID and Stage ID are required' 
+      }, { status: 400 });
+    }
+
+    const studentEmail = payload.email;
+
+    // Store completion in MongoDB
+    console.log(`Marking ${stageId} complete for ${studentEmail} in course ${courseId}`);
+    
+    await StageCompletionModel.findOneAndUpdate(
+      {
+        courseId,
+        studentEmail,
+        stageId
+      },
+      {
+        courseId,
+        studentEmail,
+        stageId,
+        completedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log(`${stageId} marked as complete successfully`);
+
+    // Award badge for this stage
+    const badgeTypeMap: { [key: string]: BadgeType } = {
+      'pre-survey': 'pre-survey',
+      'learning-module-1': 'learning-module-1',
+      'learning-module-2': 'learning-module-2',
+      'learning-module-3': 'learning-module-3',
+      'learning-module-4': 'learning-module-4',
+      'learning-module-5': 'learning-module-5',
+      'learning-module-6': 'learning-module-6',
+      'ideas': 'ideas',
+      'post-survey': 'post-survey'
+    };
+
+    const badgeType = badgeTypeMap[stageId];
+    if (badgeType) {
+      const badgeTitles: { [key in BadgeType]: string } = {
+        'pre-survey': 'Pre-Survey Champion',
+        'learning-module-1': 'Learning Module 1 Master',
+        'learning-module-2': 'Learning Module 2 Master',
+        'learning-module-3': 'Learning Module 3 Master',
+        'learning-module-4': 'Learning Module 4 Master',
+        'learning-module-5': 'Learning Module 5 Master',
+        'learning-module-6': 'Learning Module 6 Master',
+        'ideas': 'Idea Innovator',
+        'post-survey': 'Post-Survey Champion'
+      };
+
+      try {
+        await BadgeModel.findOneAndUpdate(
+          {
+            courseId,
+            studentEmail,
+            badgeIdentifier: stageId
+          },
+          {
+            courseId,
+            studentEmail,
+            badgeType,
+            badgeIdentifier: stageId,
+            title: badgeTitles[badgeType],
+            description: `Awarded for completing ${badgeTitles[badgeType]}`,
+            awardedAt: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        console.log(`Badge awarded for ${stageId}`);
+      } catch (badgeError) {
+        // Log error but don't fail the request
+        console.error('Error awarding badge:', badgeError);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Stage completed successfully'
+    });
+
+  } catch (error) {
+    console.error('Complete stage API error:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}

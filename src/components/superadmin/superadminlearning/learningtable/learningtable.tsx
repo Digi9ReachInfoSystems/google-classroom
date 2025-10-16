@@ -1,39 +1,92 @@
 // LearningResourcesTable.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Eye, PencilLine, Trash, Search } from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Eye, PencilLine, Trash, Search, Plus } from "lucide-react";
 import Pagination from "@/components/ui/pagination";
 import AddResourceModal from "../popup/addresourcesmodal";
+import EditResourceModal from "../popup/editresourcemodal";
+import DeleteResourceModal from "../popup/deleteresourcemodal";
 
-type Row = { id: number; name: string; type: "Course video" | "PDF" };
+type Row = { 
+  id: string; 
+  details: string; 
+  type: "Video" | "Document" | "Link" | "Image" | "Other";
+  link?: string;
+  createdBy: string;
+  createdAt: string;
+};
+type ResourceModalData = { details: string; type: string; link: string };
 
 /** Demo data (30 rows so you can see pagination working).
  * Replace with your own data source.
  */
 const seed: Row[] = Array.from({ length: 30 }, (_, i) => ({
-  id: i + 1,
-  name: "File Name",
-  type: (i % 3 === 0 ? "PDF" : "Course video") as Row["type"],
+  id: (i + 1).toString(),
+  details: "English courses",
+  type: i % 3 === 0 ? "Document" : "Video",
+  link: "www.UpshiftCoursesvideo.com",
+  createdBy: "Admin",
+  createdAt: new Date().toISOString(),
 }));
 
 export default function LearningResourcesTable() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [resources, setResources] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<ResourceModalData | null>(null);
+  const [selectedRow, setSelectedRow] = useState<Row | null>(null);
   const pageSize = 10;
+
+  // Fetch resources from API
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch('/api/superadmin/learning-resources');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch resources: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.resources) {
+          setResources(data.resources);
+        } else {
+          throw new Error(data.message || 'Failed to load resources');
+        }
+      } catch (err) {
+        console.error('Error fetching resources:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load resources');
+        setResources([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResources();
+  }, []);
 
   // Filter then paginate
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return seed;
-    return seed.filter(
+    if (!q) return resources;
+    return resources.filter(
       (r) =>
-        r.name.toLowerCase().includes(q) ||
+        r.details.toLowerCase().includes(q) ||
         r.type.toLowerCase().includes(q) ||
-        String(r.id).includes(q)
+        r.id.toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, resources]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages); // guard if filter shrinks pages
@@ -44,44 +97,191 @@ export default function LearningResourcesTable() {
     setPage(Math.min(Math.max(1, newPage), totalPages));
   };
 
-  const handleEditClick = () => {
-    setIsModalOpen(true);
+
+  const handleEditClick = (resource: Row) => {
+    setSelectedRow(resource);
+    setSelectedResource({ 
+      details: resource.details, 
+      type: resource.type, 
+      link: resource.link || "" 
+    });
+    setIsEditModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
+  const handleResourceSubmit = async (details: string, type: string, link: string) => {
+    try {
+      const response = await fetch('/api/superadmin/learning-resources', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ details, type, link }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create resource: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Add the new resource to the list
+        setResources(prev => [data.resource, ...prev]);
+        console.log('Resource created successfully:', data.resource);
+      } else {
+        throw new Error(data.message || 'Failed to create resource');
+      }
+    } catch (err) {
+      console.error('Error creating resource:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create resource');
+    }
   };
 
-  const handleResourceSubmit = (details: string, type: string, link: string) => {
-    console.log("Resource submitted:", { details, type, link });
-    // TODO: Implement actual resource submission logic
-    // This could involve API calls to save the resource
+  const handleDeleteClick = (resource: Row) => {
+    setSelectedRow(resource);
+    setIsDeleteModalOpen(true);
   };
+
+  const handleAddResourceClick = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddResourceSubmit = async (details: string, type: string, link: string) => {
+    await handleResourceSubmit(details, type, link);
+    setIsAddModalOpen(false);
+  };
+
+  const handleEditResourceSubmit = async (details: string, type: string, link: string) => {
+    if (!selectedRow) return;
+
+    try {
+      const response = await fetch(`/api/superadmin/learning-resources/${selectedRow.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ details, type, link }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update resource: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update the resource in the list
+        setResources(prev => prev.map(r => 
+          r.id === selectedRow.id ? data.resource : r
+        ));
+        setIsEditModalOpen(false);
+        console.log('Resource updated successfully:', data.resource);
+      } else {
+        throw new Error(data.message || 'Failed to update resource');
+      }
+    } catch (err) {
+      console.error('Error updating resource:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update resource');
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedRow) return;
+    
+    await handleDeleteResource(selectedRow.id);
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleDeleteResource = async (resourceId: string) => {
+    if (!confirm('Are you sure you want to delete this resource?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/superadmin/learning-resources/${resourceId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete resource: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Remove the resource from the list
+        setResources(prev => prev.filter(r => r.id !== resourceId));
+        console.log('Resource deleted successfully');
+      } else {
+        throw new Error(data.message || 'Failed to delete resource');
+      }
+    } catch (err) {
+      console.error('Error deleting resource:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete resource');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg mx-auto w-full max-w-[1600px] p-8">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2 text-gray-600">Loading resources...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg mx-auto w-full max-w-[1600px] p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600 text-sm">Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg mx-auto w-full max-w-[1600px]">
       {/* Header */}
-      <div className="px-5 pt-4 pb-4 flex justify-between items-center">
+      <div className="px-5 pt-4 pb-4 flex justify-between items-center gap-4">
         <h1 className="text-3xl font-semibold text-gray-900">
           Learning Resources
         </h1>
 
-        <div className="relative w-full max-w-[520px]">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-            size={18}
-            stroke="var(--neutral-700)"
-          />
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1); // reset to first page when searching
-            }}
-            type="text"
-            placeholder="Search..."
-            className="w-full rounded-full border border-[var(--neutral-300)] bg-[var(--neutral-100)] py-2 pl-9 pr-4 text-sm text-[var(--neutral-900)] outline-none focus:border-[var(--blue-400)]"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative w-full max-w-[520px]">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+              size={18}
+              stroke="var(--neutral-700)"
+            />
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1); // reset to first page when searching
+              }}
+              type="text"
+              placeholder="Search..."
+              className="w-full rounded-full border border-[var(--neutral-300)] bg-[var(--neutral-100)] py-2 pl-9 pr-4 text-sm text-[var(--neutral-900)] outline-none focus:border-[var(--blue-400)]"
+            />
+          </div>
+
+          <button
+            onClick={handleAddResourceClick}
+            className="flex items-center gap-2 h-10 px-5 rounded-full bg-[var(--primary)] text-white hover:opacity-90 transition-all whitespace-nowrap"
+          >
+            <Plus size={18} />
+            Add Resource
+          </button>
         </div>
       </div>
 
@@ -98,22 +298,47 @@ export default function LearningResourcesTable() {
           </thead>
 
           <tbody>
-            {pageRows.map((r) => (
+            {pageRows.map((r, index) => (
               <tr key={r.id} className="text-sm md:text-[14px] bg-white">
-                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">{r.id}</td>
-                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">{r.name}</td>
-                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">{r.type}</td>
+                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">
+                  {start + index + 1}
+                </td>
+                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{r.details}</span>
+                    {r.link && (
+                      <a 
+                        href={r.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 text-xs hover:underline"
+                      >
+                        {r.link}
+                      </a>
+                    )}
+                  </div>
+                </td>
+                <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {r.type}
+                  </span>
+                </td>
                 <td className="pl-4 pr-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-10 py-4 border-b border-[var(--neutral-200)]">
                   <div className="flex gap-4">
+                    {r.link && (
+                      <a
+                        href={r.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
+                        aria-label="View"
+                        title="Open Link"
+                      >
+                        <Eye size={20} />
+                      </a>
+                    )}
                     <button
-                      className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
-                      aria-label="View"
-                      title="View"
-                    >
-                      <Eye size={20} />
-                    </button>
-                    <button
-                      onClick={handleEditClick}
+                      onClick={() => handleEditClick(r)}
                       className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
                       aria-label="Edit"
                       title="Edit"
@@ -121,6 +346,7 @@ export default function LearningResourcesTable() {
                       <PencilLine size={20} />
                     </button>
                     <button
+                      onClick={() => handleDeleteResource(r.id)}
                       className="rounded-full p-2 transition-colors hover:bg-[var(--neutral-200)]"
                       aria-label="Delete"
                       title="Delete"
@@ -132,14 +358,22 @@ export default function LearningResourcesTable() {
               </tr>
             ))}
 
-            {/* Empty state when search has no matches */}
+            {/* Empty state when no resources */}
             {pageRows.length === 0 && (
               <tr>
                 <td
                   colSpan={4}
-                  className="px-6 py-10 text-center text-sm text-[var(--neutral-700)]"
+                  className="px-6 py-10 text-center"
                 >
-                  No resources found.
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 text-sm">No learning resources found</p>
+                    <p className="text-gray-400 text-xs">Click the "Add Resource" button to create your first resource</p>
+                  </div>
                 </td>
               </tr>
             )}
@@ -163,9 +397,25 @@ export default function LearningResourcesTable() {
 
       {/* Add Resource Modal */}
       <AddResourceModal
-        open={isModalOpen}
-        onClose={handleModalClose}
-        onSubmit={handleResourceSubmit}
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddResourceSubmit}
+      />
+
+
+      {/* Edit Resource Modal */}
+      <EditResourceModal
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditResourceSubmit}
+        resource={selectedResource}
+      />
+
+      {/* Delete Resource Modal */}
+      <DeleteResourceModal
+        open={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );

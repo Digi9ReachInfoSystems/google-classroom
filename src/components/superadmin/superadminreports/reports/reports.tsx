@@ -2,8 +2,6 @@
 
 import React from "react";
 import { PieChart, Pie, LabelList } from "recharts";
-import { format } from "date-fns";
-import type { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -20,17 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { useSuperAdminCourse } from "@/components/superadmin/context/SuperAdminCourseContext";
 
-const AGES = ["10–12", "13–15", "16–18"] as const;
-const GRADES = ["6", "7", "8", "9", "10", "11", "12"] as const;
-const GENDERS = ["Male", "Female", "Other"] as const;
-const DISABILITY = ["None", "Hearing", "Vision", "Learning", "Mobility"] as const;
+/* -------------------- filter option values (will be fetched from API) -------------------- */
+const DEFAULT_AGES = ["All", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"];
+const DEFAULT_GRADES = ["All", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+const DEFAULT_GENDERS = ["All", "Male", "Female"];
+const DEFAULT_DISABILITY = ["All", "None", "Mild", "Moderate", "Severe"];
 const CORAL = "#FF928A"; // Coral color for main segments
 const PURPLE = "#8979FF"; // Purple color for secondary segments  
 const CYAN = "#3CC3DF"; // Cyan color for tertiary segments
@@ -38,7 +32,6 @@ const CYAN = "#3CC3DF"; // Cyan color for tertiary segments
 const baseConfig: ChartConfig = {
   submit:   { label: "Submit",   color: CORAL },
   pending:  { label: "Pending",  color: PURPLE },
-  reviewed: { label: "Reviewed", color: CYAN },
 };
 
 type Slice = { key: keyof typeof baseConfig; value: number; fill?: string };
@@ -53,7 +46,6 @@ const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
 
 function makeCharts(filters: {
-  dateRange?: DateRange;
   age?: string;
   grade?: string;
   gender?: string;
@@ -68,7 +60,6 @@ function makeCharts(filters: {
     ],
     /* Student course status */
     course: [
-      { key: "reviewed", value: 40, fill: CORAL },  // Not started
       { key: "pending",  value: 20, fill: PURPLE },   // In progress
       { key: "submit",   value: 40, fill: CYAN },    // Completed
     ],
@@ -76,7 +67,6 @@ function makeCharts(filters: {
     idea: [
       { key: "submit",   value: 80, fill: CORAL },     // Submitted ideas
       { key: "pending",  value: 2.75, fill: PURPLE },    // In draft ideas
-      { key: "reviewed", value: 18.15, fill: CYAN },    // Not started idea submission
     ],
     /* Post survey status */
     post: [
@@ -156,24 +146,153 @@ function PieBlock({
 }
 
 export default function Reports() {
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
-  const [age, setAge] = React.useState<string | undefined>();
-  const [grade, setGrade] = React.useState<string | undefined>();
-  const [gender, setGender] = React.useState<string | undefined>();
-  const [disability, setDisability] = React.useState<string | undefined>();
+  const { selectedCourse } = useSuperAdminCourse();
+  const [age, setAge] = React.useState<string>('All');
+  const [grade, setGrade] = React.useState<string>('All');
+  const [gender, setGender] = React.useState<string>('All');
+  const [disability, setDisability] = React.useState<string>('All');
+  const [loading, setLoading] = React.useState(false);
 
-  const [charts, setCharts] = React.useState<ChartSet>(() =>
-    makeCharts({ dateRange, age, grade, gender, disability })
-  );
+  const [charts, setCharts] = React.useState<ChartSet>({
+    pre: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+    course: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+    idea: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+    post: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+  });
+
+  // Dynamic filter options from API
+  const [filterOptions, setFilterOptions] = React.useState({
+    ages: DEFAULT_AGES,
+    grades: DEFAULT_GRADES,
+    genders: DEFAULT_GENDERS,
+    disabilities: DEFAULT_DISABILITY
+  });
+
+  // Fetch filter options on mount
+  React.useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/filter-options');
+        const data = await response.json();
+        
+        if (data.success && data.filters) {
+          setFilterOptions({
+            ages: ['All', ...(data.filters.age || [])],
+            grades: ['All', ...(data.filters.grade || [])],
+            genders: ['All', ...(data.filters.gender || [])],
+            disabilities: ['All', ...(data.filters.disability || [])]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
+
+  // Fetch analytics data (unfiltered for charts)
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (!selectedCourse?.id) {
+        setCharts({
+          pre: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+          course: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+          idea: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+          post: [{ key: "submit", value: 0, fill: PURPLE }, { key: "pending", value: 0, fill: CORAL }],
+        });
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ courseId: selectedCourse.id });
+        const response = await fetch(`/api/superadmin/reports/analytics?${params}`, {
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+        if (data.success && data.analytics) {
+          const analytics = data.analytics;
+          setCharts({
+            pre: [
+              { key: "submit", value: analytics.preSurvey.completed, fill: PURPLE },
+              { key: "pending", value: analytics.preSurvey.pending + analytics.preSurvey.notStarted, fill: CORAL },
+            ],
+            course: [
+              { key: "submit", value: analytics.course.completed, fill: PURPLE },
+              { key: "pending", value: analytics.course.inProgress + analytics.course.notStarted, fill: CORAL },
+            ],
+            idea: [
+              { key: "submit", value: analytics.ideas.submitted, fill: PURPLE },
+              { key: "pending", value: analytics.ideas.pending + analytics.ideas.notStarted, fill: CORAL },
+            ],
+            post: [
+              { key: "submit", value: analytics.postSurvey.completed, fill: PURPLE },
+              { key: "pending", value: analytics.postSurvey.pending + analytics.postSurvey.notStarted, fill: CORAL },
+            ],
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [selectedCourse]); // Charts only depend on selectedCourse
 
   const isLg = useMedia("(min-width: 1024px)");
-  const dateLabel =
-    dateRange?.from && dateRange?.to
-      ? `${format(dateRange.from, "dd MMM")} – ${format(dateRange.to, "dd MMM yyyy")}`
-      : "Select date range";
 
-  const onGenerate = () => {
-    setCharts(makeCharts({ dateRange, age, grade, gender, disability }));
+  const onGenerate = async () => {
+    if (!selectedCourse?.id) {
+      alert('Please select a course first');
+      return;
+    }
+
+    // Build filter params
+    const params: any = { courseId: selectedCourse.id };
+    if (age && age !== 'All') params.age = age;
+    if (grade && grade !== 'All') params.grade = grade;
+    if (gender && gender !== 'All') params.gender = gender;
+    if (disability && disability !== 'All') params.disability = disability;
+
+    try {
+      const response = await fetch('/api/superadmin/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          courseId: selectedCourse.id, 
+          filters: { 
+            age: age !== 'All' ? age : undefined,
+            grade: grade !== 'All' ? grade : undefined,
+            gender: gender !== 'All' ? gender : undefined,
+            disability: disability !== 'All' ? disability : undefined
+          } 
+        })
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `report_${selectedCourse.name}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const error = await response.json();
+        console.error('Failed to generate report:', error);
+        alert('Failed to generate report');
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Error generating report');
+    }
   };
 
   return (
@@ -194,36 +313,12 @@ export default function Reports() {
               <div className="text-[16px] font-medium text-[var(--neutral-900)]">Data Analytics</div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-9 rounded-full px-4 text-[14px] w-[170px] justify-start font-normal">
-                      {dateLabel}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="end"
-                    side="bottom"
-                    sideOffset={8}
-                    collisionPadding={12}
-                    className="p-2 w-auto rounded-xl border bg-white shadow-xl"
-                  >
-                    <Calendar
-                      mode="range"
-                      numberOfMonths={isLg ? 2 : 1}
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      initialFocus
-                      className="w-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-
                 <Select value={age} onValueChange={setAge}>
                   <SelectTrigger className="h-9 px-4 rounded-full w-[140px] text-[14px]">
                     <SelectValue placeholder="Select Age" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {AGES.map((r) => (
+                    {filterOptions.ages.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -240,7 +335,7 @@ export default function Reports() {
                     <SelectValue placeholder="Select Grade" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {GRADES.map((r) => (
+                    {filterOptions.grades.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -257,7 +352,7 @@ export default function Reports() {
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {GENDERS.map((r) => (
+                    {filterOptions.genders.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -274,7 +369,7 @@ export default function Reports() {
                     <SelectValue placeholder="Select Disability" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl text-center">
-                    {DISABILITY.map((r) => (
+                    {filterOptions.disabilities.map((r) => (
                       <SelectItem
                         key={r}
                         value={r}
@@ -302,22 +397,22 @@ export default function Reports() {
               <PieBlock
                 title="Pre survey status"
                 data={charts.pre}
-                legendLabels={["Submit", "Pending"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Student course status"
                 data={charts.course}
-                legendLabels={["Not started", "In progress", "Completed"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Idea Submission status"
                 data={charts.idea}
-                legendLabels={["Submitted ideas", "In draft ideas", "Not started idea submission"]}
+                legendLabels={["Completed", "Pending"]}
               />
               <PieBlock
                 title="Post survey status"
                 data={charts.post}
-                legendLabels={["Submit", "pending"]}
+                legendLabels={["Completed", "Pending"]}
               />
             </div>
           </CardContent>

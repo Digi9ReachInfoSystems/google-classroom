@@ -1,6 +1,8 @@
 "use client";
 import Image from "next/image";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useDistrictCourse } from "../context/DistrictCourseContext";
+import { useSchoolFilter } from "@/app/(districtadmin)/districtadmin/overview/page";
 
 /* ✓ / ? using your assets */
 function StatusIcon({ type }: { type: "ok" | "warn" }) {
@@ -66,24 +68,58 @@ type Row = {
   cert: "ok" | "warn";
 };
 
-const DATA: Row[] = [
-  { name: "Sam",  pre: "ok",   lesson: 64, idea: "warn", post: "ok",   cert: "warn" },
-  { name: "Jack", pre: "warn", lesson: 52, idea: "ok",   post: "warn", cert: "warn" },
-  { name: "Tina", pre: "warn", lesson: 6,  idea: "ok",   post: "ok",   cert: "warn" },
-  { name: "Lee",  pre: "warn", lesson: 18, idea: "ok",   post: "ok",   cert: "warn" },
-  { name: "Ssam",  pre: "ok",   lesson: 64, idea: "warn", post: "ok",   cert: "warn" },
-  { name: "Jasck", pre: "warn", lesson: 52, idea: "ok",   post: "warn", cert: "warn" },
-  { name: "Tisna", pre: "warn", lesson: 6,  idea: "ok",   post: "ok",   cert: "warn" },
-  { name: "Lsee",  pre: "warn", lesson: 18, idea: "ok",   post: "ok",   cert: "warn" },
-];
-
 export default function StudentsTable() {
+  const { selectedCourse } = useDistrictCourse();
+  const { selectedSchool } = useSchoolFilter();
   const [q, setQ] = useState("");
+  const [students, setStudents] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch students from API
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Build URL with courseId and schoolName filters
+        const params = new URLSearchParams();
+        if (selectedCourse) params.set('courseId', selectedCourse.id);
+        if (selectedSchool && selectedSchool !== 'all') params.set('schoolName', selectedSchool);
+        
+        const url = `/api/districtadmin/students?${params.toString()}`;
+        
+        console.log('Fetching students:', url);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch students: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.students) {
+          setStudents(data.students);
+        } else {
+          throw new Error(data.message || 'Failed to load students');
+        }
+      } catch (err) {
+        console.error('Error fetching students:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load students');
+        setStudents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, [selectedCourse, selectedSchool]); // Re-fetch when course or school changes
 
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
-    return term ? DATA.filter(r => r.name.toLowerCase().includes(term)) : DATA;
-  }, [q]);
+    return term ? students.filter(r => r.name.toLowerCase().includes(term)) : students;
+  }, [q, students]);
 
   const headers = [
     "Student Name",
@@ -93,6 +129,33 @@ export default function StudentsTable() {
     "Post survey",
     "Course certificate",
   ];
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border-neutral-200 p-6">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2 text-gray-600">Loading students...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border-neutral-200 p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600 text-sm">Error loading students: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg  border-neutral-200">
