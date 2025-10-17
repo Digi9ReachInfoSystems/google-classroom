@@ -76,7 +76,12 @@ export async function GET(req: NextRequest) {
 
     // Convert canvas to base64
     const frontImageWithName = canvas.toDataURL('image/jpeg', 0.9);
-    const rearImageBase64 = rearImage.toDataURL('image/jpeg', 0.9);
+    
+    // Create canvas for rear image to convert to base64
+    const rearCanvas = createCanvas(rearImage.width, rearImage.height);
+    const rearCtx = rearCanvas.getContext('2d');
+    rearCtx.drawImage(rearImage, 0, 0);
+    const rearImageBase64 = rearCanvas.toDataURL('image/jpeg', 0.9);
 
     // Create PDF
     const pdf = new jsPDF({
