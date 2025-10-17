@@ -86,6 +86,10 @@ export async function GET(req: NextRequest) {
 
 	} catch (error) {
 		console.error('OAuth callback error:', error);
+		console.error('Error details:', {
+			message: error instanceof Error ? error.message : 'Unknown error',
+			stack: error instanceof Error ? error.stack : undefined
+		});
 		return NextResponse.redirect(new URL('/login?error=callback_failed', req.url));
 	}
 }

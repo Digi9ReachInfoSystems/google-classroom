@@ -103,6 +103,30 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
     }
   }, [selectedCourse])
 
+  // Helper function to extract module number from title
+  const extractModuleNumber = (title: string): number => {
+    // Try various patterns to extract module number
+    const patterns = [
+      /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc.
+      /^(\d+)[\s\-\.]/i,                   // "1 - Title", "2. Title", etc.
+      /lesson\s*(\d+)/i,                   // "Lesson 1", etc.
+      /chapter\s*(\d+)/i,                  // "Chapter 1", etc.
+      /unit\s*(\d+)/i,                     // "Unit 1", etc.
+      /part\s*(\d+)/i,                     // "Part 1", etc.
+      /section\s*(\d+)/i,                  // "Section 1", etc.
+    ];
+    
+    for (const pattern of patterns) {
+      const match = title.match(pattern);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+    }
+    
+    // Default to 999 for non-module items (will appear at the end)
+    return 999;
+  };
+
   const fetchCourseMaterials = async () => {
     try {
       const response = await fetch(`/api/student/coursework?courseId=${selectedCourse.id}`)
@@ -116,8 +140,22 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
           const title = item.title?.toLowerCase() || ''
           return !title.includes('survey') && !title.includes('idea')
         })
-        console.log('Filtered materials for sidebar:', materials)
-        setCourseMaterials(materials)
+        
+        // Sort materials by module number
+        const sortedMaterials = materials.sort((a: any, b: any) => {
+          const aModuleNumber = extractModuleNumber(a.title || '');
+          const bModuleNumber = extractModuleNumber(b.title || '');
+          
+          // Sort by module number first, then by title for non-module items
+          if (aModuleNumber !== bModuleNumber) {
+            return aModuleNumber - bModuleNumber;
+          }
+          // If module numbers are the same (or both are 999), sort alphabetically
+          return (a.title || '').localeCompare(b.title || '');
+        });
+        
+        console.log('Filtered and sorted materials for sidebar:', sortedMaterials)
+        setCourseMaterials(sortedMaterials)
       }
     } catch (err) {
       console.error('Error fetching course materials:', err)
@@ -134,10 +172,33 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
 
       if (data.success) {
         console.log('Setting hierarchical data:', data.hierarchicalData)
-        setHierarchicalData(data.hierarchicalData)
+        
+        // Sort hierarchical data if it exists
+        let sortedHierarchicalData = data.hierarchicalData;
+        if (sortedHierarchicalData?.learningModules?.children) {
+          sortedHierarchicalData = {
+            ...sortedHierarchicalData,
+            learningModules: {
+              ...sortedHierarchicalData.learningModules,
+              children: sortedHierarchicalData.learningModules.children.sort((a: any, b: any) => {
+                const aModuleNumber = extractModuleNumber(a.title || '');
+                const bModuleNumber = extractModuleNumber(b.title || '');
+                
+                // Sort by module number first, then by title for non-module items
+                if (aModuleNumber !== bModuleNumber) {
+                  return aModuleNumber - bModuleNumber;
+                }
+                // If module numbers are the same (or both are 999), sort alphabetically
+                return (a.title || '').localeCompare(b.title || '');
+              })
+            }
+          };
+        }
+        
+        setHierarchicalData(sortedHierarchicalData)
         // Notify parent component about the hierarchical data
         if (onHierarchicalDataChange) {
-          onHierarchicalDataChange(data.hierarchicalData)
+          onHierarchicalDataChange(sortedHierarchicalData)
         }
       } else {
         console.error('Failed to fetch hierarchical data:', data.message)
@@ -440,6 +501,51 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
     return !isAssignmentCompleted(previousAssignment);
   }
 
+  // Helper function to check if a video is locked (previous videos not completed)
+  const isVideoLocked = (videoIndex: number, assignment: any) => {
+    if (videoIndex === 0) {
+      return false; // First video is never locked
+    }
+    
+    // Check if all previous videos are completed
+    const videos = (assignment as any).children?.videos || [];
+    for (let i = 0; i < videoIndex; i++) {
+      const videoId = `video-${assignment.id}-${i}`;
+      if (!isVideoCompleted(videoId)) {
+        return true; // Previous video not completed, so this one is locked
+      }
+    }
+    return false;
+  }
+
+  // Helper function to check if a quiz is locked (all videos in assignment must be completed)
+  const isQuizLocked = (assignment: any) => {
+    const videos = (assignment as any).children?.videos || [];
+    
+    // Check if all videos in this assignment are completed
+    for (let i = 0; i < videos.length; i++) {
+      const videoId = `video-${assignment.id}-${i}`;
+      if (!isVideoCompleted(videoId)) {
+        return true; // Not all videos completed, so quiz is locked
+      }
+    }
+    return false;
+  }
+
+  // Helper function to check if a resource is locked (all previous videos must be completed)
+  const isResourceLocked = (resourceIndex: number, assignment: any) => {
+    const videos = (assignment as any).children?.videos || [];
+    
+    // Check if all videos are completed (resources come after videos)
+    for (let i = 0; i < videos.length; i++) {
+      const videoId = `video-${assignment.id}-${i}`;
+      if (!isVideoCompleted(videoId)) {
+        return true; // Not all videos completed, so resource is locked
+      }
+    }
+    return false;
+  }
+
   const handleItemClick = (item: ModuleItem, moduleId: string) => {
     if (item.locked) return
     
@@ -606,6 +712,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                               {(assignment as any).children?.videos?.map((video: any, idx: number) => {
                                 const videoId = `video-${assignment.id}-${idx}`;
                                 const isCompleted = isVideoCompleted(videoId);
+                                const isVideoLockedForThis = isVideoLocked(idx, assignment);
                                 
                                 // Get the title from various possible sources
                                 const getVideoTitle = (video: any) => {
@@ -622,13 +729,13 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                                   <div 
                                     key={videoId} 
                                     className={`flex items-center gap-2 rounded p-1 -m-1 transition-colors ${
-                                      isLocked 
+                                      isLocked || isVideoLockedForThis
                                         ? 'cursor-not-allowed opacity-50' 
                                         : 'cursor-pointer hover:bg-gray-50'
                                     }`}
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      if (!isLocked) {
+                                      if (!isLocked && !isVideoLockedForThis) {
                                         if (onVideoSelect) {
                                           onVideoSelect(videoId, video, assignment)
                                         }
@@ -639,20 +746,20 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                                     }}
                                   >
                                     <div className={`h-2 w-2 rounded-full ${
-                                      isLocked 
+                                      isLocked || isVideoLockedForThis
                                         ? 'bg-gray-300' 
                                         : isCompleted 
                                           ? 'bg-green-500' 
                                           : 'bg-blue-400'
                                     }`}></div>
                                     <span className={`text-xs ${
-                                      isLocked 
+                                      isLocked || isVideoLockedForThis
                                         ? 'text-gray-400' 
                                         : isCompleted 
                                           ? 'text-green-600 font-medium' 
                                           : 'text-gray-600 hover:text-blue-600'
                                     } truncate`} title={videoTitle}>
-                                      {videoTitle} {isCompleted && '✓'} {isLocked && '🔒'}
+                                      {videoTitle} {isCompleted && '✓'} {(isLocked || isVideoLockedForThis) && '🔒'}
                                     </span>
                                   </div>
                                 );
@@ -673,18 +780,19 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                                 const resourceTitle = getResourceTitle(resource);
                                 const resourceId = `resource-${assignment.id}-${idx}`;
                                 const isCompleted = isVideoCompleted(resourceId);
+                                const isResourceLockedForThis = isResourceLocked(idx, assignment);
 
                                 return (
                                   <div 
                                     key={resourceId} 
                                     className={`flex items-center gap-2 rounded p-1 -m-1 transition-colors ${
-                                      isLocked 
+                                      isLocked || isResourceLockedForThis
                                         ? 'cursor-not-allowed opacity-50' 
                                         : 'cursor-pointer hover:bg-gray-50'
                                     }`}
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      if (!isLocked) {
+                                      if (!isLocked && !isResourceLockedForThis) {
                                         // Check if resource is a video
                                         if (resource.youtubeVideo || 
                                             (resource.link && getYouTubeEmbedUrl(resource.link.url)) ||
@@ -712,20 +820,20 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                                     }}
                                   >
                                     <div className={`h-2 w-2 rounded-full ${
-                                      isLocked 
+                                      isLocked || isResourceLockedForThis
                                         ? 'bg-gray-300' 
                                         : isCompleted 
                                           ? 'bg-green-500' 
                                           : 'bg-gray-400'
                                     }`}></div>
                                     <span className={`text-xs ${
-                                      isLocked 
+                                      isLocked || isResourceLockedForThis
                                         ? 'text-gray-400' 
                                         : isCompleted 
                                           ? 'text-green-600 font-medium' 
                                           : 'text-gray-600 hover:text-gray-800'
                                     } truncate`} title={resourceTitle}>
-                                      {resourceTitle} {isCompleted && '✓'} {isLocked && '🔒'}
+                                      {resourceTitle} {isCompleted && '✓'} {(isLocked || isResourceLockedForThis) && '🔒'}
                                     </span>
                                   </div>
                                 );
@@ -743,37 +851,38 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                                 const quizTitle = getQuizTitle(quiz);
                                 const quizId = `quiz-${assignment.id}-${idx}`;
                                 const isQuizCompleted = isVideoCompleted(quizId);
+                                const isQuizLockedForThis = isQuizLocked(assignment);
 
                                 return (
                                   <div 
                                     key={quizId} 
                                     className={`flex items-center gap-2 rounded p-1 -m-1 transition-colors ${
-                                      isLocked 
+                                      isLocked || isQuizLockedForThis
                                         ? 'cursor-not-allowed opacity-50' 
                                         : 'cursor-pointer hover:bg-gray-50'
                                     }`}
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      if (!isLocked && onQuizSelect) {
+                                      if (!isLocked && !isQuizLockedForThis && onQuizSelect) {
                                         onQuizSelect(quizId, quiz)
                                       }
                                     }}
                                   >
                                     <div className={`h-2 w-2 rounded-full ${
-                                      isLocked 
+                                      isLocked || isQuizLockedForThis
                                         ? 'bg-gray-300' 
                                         : isQuizCompleted
                                           ? 'bg-green-500'
                                           : 'bg-green-400'
                                     }`}></div>
                                     <span className={`text-xs ${
-                                      isLocked 
+                                      isLocked || isQuizLockedForThis
                                         ? 'text-gray-400' 
                                         : isQuizCompleted
                                           ? 'text-green-600 font-medium'
                                           : 'text-gray-600 hover:text-green-600'
                                     } truncate`} title={quizTitle}>
-                                      {quizTitle} {isQuizCompleted && '✓'} {isLocked && '🔒'}
+                                      {quizTitle} {isQuizCompleted && '✓'} {(isLocked || isQuizLockedForThis) && '🔒'}
                                     </span>
                                   </div>
                                 );
