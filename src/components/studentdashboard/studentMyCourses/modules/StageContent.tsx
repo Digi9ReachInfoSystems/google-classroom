@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Lock, CheckCircle, Circle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,6 +29,12 @@ export default function StageContent({
   const [submitting, setSubmitting] = useState(false)
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null)
+  const [formSubmitted, setFormSubmitted] = useState(false)
+
+  // Reset form submitted state when stage changes
+  useEffect(() => {
+    setFormSubmitted(false)
+  }, [selectedStage])
 
   const handleVideoSelect = (videoId: string, videoData: any) => {
     console.log('Video selected:', videoId, videoData)
@@ -41,6 +47,137 @@ export default function StageContent({
     setSelectedQuiz({ id: quizId, data: quizData })
     setSelectedVideo(null) // Clear video selection
   }
+
+  // Set up form submission detection for Google Forms in stage content
+  const setupFormSubmissionDetection = () => {
+    console.log('Setting up form submission detection for stage form');
+    
+    let isSubmitted = false; // Prevent multiple submissions
+    
+    // Method 1: Listen for postMessage events from Google Forms
+    const handleMessage = (event: MessageEvent) => {
+      if (isSubmitted) return; // Prevent duplicate submissions
+      
+      console.log('Stage form message received from iframe:', event.origin, event.data);
+      
+      // Check if message is from Google Forms
+      if (event.origin.includes('docs.google.com') || event.origin.includes('forms.gle')) {
+        const data = event.data;
+        
+        // Check for various submission indicators
+        if (typeof data === 'string') {
+          if (data.includes('submit') || data.includes('response') || data.includes('complete') || 
+              data.includes('thank') || data.includes('success') || data.includes('formResponse')) {
+            console.log('Stage form submission detected via message:', data);
+            isSubmitted = true;
+            setFormSubmitted(true);
+            // Auto-mark stage as complete when form is submitted
+            handleMarkComplete();
+            return;
+          }
+        }
+        
+        // Check for object data
+        if (typeof data === 'object' && data !== null) {
+          const dataStr = JSON.stringify(data).toLowerCase();
+          if (dataStr.includes('submit') || dataStr.includes('response') || dataStr.includes('complete') ||
+              dataStr.includes('thank') || dataStr.includes('success')) {
+            console.log('Stage form submission detected via object message:', data);
+            isSubmitted = true;
+            setFormSubmitted(true);
+            // Auto-mark stage as complete when form is submitted
+            handleMarkComplete();
+            return;
+          }
+        }
+      }
+    };
+    
+    // Method 2: Poll for URL changes in the iframe (Google Forms redirect after submission)
+    let lastUrl = '';
+    const pollForUrlChange = () => {
+      if (isSubmitted) return; // Prevent duplicate submissions
+      
+      const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
+      if (iframe && iframe.contentWindow) {
+        try {
+          const currentUrl = iframe.contentWindow.location.href;
+          if (currentUrl !== lastUrl && (currentUrl.includes('formResponse') || currentUrl.includes('thank'))) {
+            console.log('Stage form submission detected via URL change:', currentUrl);
+            isSubmitted = true;
+            setFormSubmitted(true);
+            // Auto-mark stage as complete when form is submitted
+            handleMarkComplete();
+            return;
+          }
+          lastUrl = currentUrl;
+        } catch (e) {
+          // Cross-origin access blocked, this is expected
+        }
+      }
+    };
+    
+    // Method 3: Listen for iframe load events (Google Forms redirect after submission)
+    const handleIframeLoad = () => {
+      if (isSubmitted) return; // Prevent duplicate submissions
+      
+      const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
+      if (iframe) {
+        const src = iframe.src;
+        if (src.includes('formResponse') || src.includes('thank')) {
+          console.log('Stage form submission detected via iframe load:', src);
+          isSubmitted = true;
+          setFormSubmitted(true);
+          // Auto-mark stage as complete when form is submitted
+          handleMarkComplete();
+        }
+      }
+    };
+    
+    // Method 4: Listen for click events on the iframe (user clicking submit)
+    const handleIframeClick = () => {
+      console.log('Click detected on stage form iframe, user might be submitting form');
+      // Give a delay to allow form submission to complete
+      setTimeout(() => {
+        if (isSubmitted) return;
+        
+        const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
+        if (iframe) {
+          const src = iframe.src;
+          if (src.includes('formResponse') || src.includes('thank')) {
+            console.log('Stage form submission detected via click + URL check:', src);
+            isSubmitted = true;
+            setFormSubmitted(true);
+            // Auto-mark stage as complete when form is submitted
+            handleMarkComplete();
+          }
+        }
+      }, 3000); // Wait 3 seconds for form submission to complete
+    };
+    
+    // Add event listeners
+    window.addEventListener('message', handleMessage);
+    
+    // Poll for URL changes every 1 second (more frequent for better detection)
+    const urlPollInterval = setInterval(pollForUrlChange, 1000);
+    
+    // Listen for iframe events
+    const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
+    if (iframe) {
+      iframe.addEventListener('load', handleIframeLoad);
+      iframe.addEventListener('click', handleIframeClick);
+    }
+    
+    // Clean up function
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      clearInterval(urlPollInterval);
+      if (iframe) {
+        iframe.removeEventListener('load', handleIframeLoad);
+        iframe.removeEventListener('click', handleIframeClick);
+      }
+    };
+  };
 
   if (loading || !stageProgress) {
     return (
@@ -103,6 +240,7 @@ export default function StageContent({
   const handleMarkComplete = async () => {
     try {
       setSubmitting(true)
+      setFormSubmitted(true) // Mark form as submitted when manually completing
       const response = await fetch('/api/student/complete-stage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -123,6 +261,7 @@ export default function StageContent({
       }
     } catch (error) {
       console.error('Error completing stage:', error)
+      setFormSubmitted(false) // Reset if there was an error
     } finally {
       setSubmitting(false)
     }
@@ -183,20 +322,36 @@ export default function StageContent({
                     marginHeight={0}
                     marginWidth={0}
                     className="w-full h-full"
+                    onLoad={() => {
+                      console.log('Stage form iframe loaded, setting up form submission detection');
+                      setupFormSubmissionDetection();
+                    }}
                   >
                     Loading…
                   </iframe>
                 </div>
                 <div className="flex justify-between items-center">
-                  <p className="text-sm text-muted-foreground">
-                    After submitting the form, click the button to continue
-                  </p>
-                  <Button 
-                    onClick={handleMarkComplete}
-                    disabled={submitting}
-                  >
-                    {submitting ? 'Marking Complete...' : 'Mark as Complete'}
-                  </Button>
+                  {!formSubmitted ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Form will be automatically marked as complete when submitted. Use the button below if needed.
+                      </p>
+                      <Button 
+                        onClick={handleMarkComplete}
+                        disabled={submitting}
+                        variant="outline"
+                      >
+                        {submitting ? 'Marking Complete...' : 'Mark as Complete'}
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="h-5 w-5" />
+                      <p className="text-sm font-medium">
+                        Form submitted successfully! Stage will be marked as complete automatically.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
