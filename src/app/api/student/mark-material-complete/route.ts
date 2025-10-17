@@ -42,22 +42,26 @@ export async function POST(req: NextRequest) {
     const studentEmail = payload.email;
 
     // Store completion in MongoDB (for video-based assignments without submissions)
-    await StageCompletionModel.findOneAndUpdate(
+    const completionData = {
+      courseId,
+      studentEmail,
+      stageId: `material-${courseWorkId}`,
+      completedAt: new Date()
+    };
+    
+    console.log('Storing completion data:', completionData);
+    
+    const result = await StageCompletionModel.findOneAndUpdate(
       {
         courseId,
         studentEmail,
         stageId: `material-${courseWorkId}`
       },
-      {
-        courseId,
-        studentEmail,
-        stageId: `material-${courseWorkId}`,
-        completedAt: new Date()
-      },
+      completionData,
       { upsert: true, new: true }
     );
 
-    console.log(`Material ${courseWorkId} marked complete for ${studentEmail}`);
+    console.log(`Material ${courseWorkId} marked complete for ${studentEmail}. Stored result:`, result);
 
     // Award badge for this learning module
     try {

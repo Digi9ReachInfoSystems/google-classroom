@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { CertificateModel } from '@/models/Certificate';
+import { createCanvas, loadImage } from 'canvas';
+import { jsPDF } from 'jspdf';
+import path from 'path';
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,179 +46,71 @@ export async function GET(req: NextRequest) {
       }, { status: 404 });
     }
 
-    // Generate simple HTML certificate (will be converted to PDF by browser)
-    const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Certificate of Completion</title>
-  <style>
-    @page {
-      size: A4 landscape;
-      margin: 0;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Georgia', serif;
-    }
-    .certificate {
-      width: 297mm;
-      height: 210mm;
-      padding: 40px 60px;
-      box-sizing: border-box;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    .certificate-border {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      right: 20px;
-      bottom: 20px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      pointer-events: none;
-    }
-    .certificate-content {
-      background: white;
-      padding: 60px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      text-align: center;
-      max-width: 800px;
-      position: relative;
-      z-index: 1;
-    }
-    h1 {
-      font-size: 48px;
-      color: #667eea;
-      margin: 0 0 10px 0;
-      font-weight: 700;
-      letter-spacing: 2px;
-    }
-    .subtitle {
-      font-size: 20px;
-      color: #666;
-      margin: 0 0 40px 0;
-      font-style: italic;
-    }
-    .recipient {
-      font-size: 36px;
-      color: #333;
-      margin: 20px 0;
-      font-weight: 600;
-      border-bottom: 2px solid #667eea;
-      display: inline-block;
-      padding-bottom: 10px;
-    }
-    .course-name {
-      font-size: 24px;
-      color: #555;
-      margin: 20px 0;
-      font-weight: 500;
-    }
-    .description {
-      font-size: 16px;
-      color: #777;
-      margin: 30px 0;
-      line-height: 1.6;
-    }
-    .details {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 40px;
-      padding-top: 30px;
-      border-top: 2px solid #eee;
-    }
-    .detail-item {
-      text-align: center;
-    }
-    .detail-label {
-      font-size: 12px;
-      color: #999;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 5px;
-    }
-    .detail-value {
-      font-size: 14px;
-      color: #333;
-      font-weight: 600;
-    }
-    .seal {
-      position: absolute;
-      bottom: 30px;
-      right: 60px;
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
-      border: 4px solid #d4af37;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: #8b6914;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    }
-  </style>
-</head>
-<body>
-  <div class="certificate">
-    <div class="certificate-border"></div>
-    <div class="certificate-content">
-      <h1>CERTIFICATE</h1>
-      <p class="subtitle">of Completion</p>
-      
-      <p style="font-size: 18px; color: #666; margin: 20px 0;">This is to certify that</p>
-      
-      <div class="recipient">${certificate.studentName}</div>
-      
-      <p style="font-size: 18px; color: #666; margin: 20px 0;">has successfully completed</p>
-      
-      <div class="course-name">${certificate.courseName}</div>
-      
-      <p class="description">
-        This certificate is awarded in recognition of completing all course requirements including
-        pre-survey, learning modules, idea submission, and post-survey with 100% completion.
-      </p>
-      
-      <div class="details">
-        <div class="detail-item">
-          <div class="detail-label">Certificate No.</div>
-          <div class="detail-value">${certificate.certificateNumber}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Date Issued</div>
-          <div class="detail-value">${new Date(certificate.issuedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Modules Completed</div>
-          <div class="detail-value">${certificate.completionData.completedModules}/${certificate.completionData.totalModules}</div>
-        </div>
-      </div>
-      
-      <div class="seal">
-        VERIFIED<br/>AUTHENTIC
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-    `;
 
-    return new NextResponse(html, {
+    // Load certificate images
+    const frontImagePath = path.join(process.cwd(), 'public', 'student', 'Certificate_Front.jpg');
+    const rearImagePath = path.join(process.cwd(), 'public', 'student', 'Certificate_Rear.jpg');
+    
+    const frontImage = await loadImage(frontImagePath);
+    const rearImage = await loadImage(rearImagePath);
+
+    // Create canvas to add student name to front image
+    const canvas = createCanvas(frontImage.width, frontImage.height);
+    const ctx = canvas.getContext('2d');
+
+    // Draw the front certificate image
+    ctx.drawImage(frontImage, 0, 0);
+
+    // Set font properties for the name
+    ctx.font = 'bold 48px Arial, sans-serif';
+    ctx.fillStyle = '#1a365d'; // Dark blue color
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Calculate position for the name (adjust these coordinates based on your certificate design)
+    const nameX = frontImage.width / 2;
+    const nameY = frontImage.height * 0.45; // Adjust this value to position the name correctly
+
+    // Draw the student name
+    ctx.fillText(certificate.studentName, nameX, nameY);
+
+    // Convert canvas to base64
+    const frontImageWithName = canvas.toDataURL('image/jpeg', 0.9);
+    
+    // Create canvas for rear image to convert to base64
+    const rearCanvas = createCanvas(rearImage.width, rearImage.height);
+    const rearCtx = rearCanvas.getContext('2d');
+    rearCtx.drawImage(rearImage, 0, 0);
+    const rearImageBase64 = rearCanvas.toDataURL('image/jpeg', 0.9);
+
+    // Create PDF
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Get PDF dimensions
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    // Add front page
+    pdf.addImage(frontImageWithName, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    
+    // Add new page for rear
+    pdf.addPage();
+    pdf.addImage(rearImageBase64, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+    // Generate PDF buffer
+    const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+
+    // Return the PDF
+    return new NextResponse(pdfBuffer, {
       headers: {
-        'Content-Type': 'text/html',
-        'Content-Disposition': `inline; filename="certificate-${certificate.certificateNumber}.html"`
-      }
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="certificate-${certificate.certificateNumber}.pdf"`,
+        'Content-Length': pdfBuffer.length.toString(),
+      },
     });
 
   } catch (error) {

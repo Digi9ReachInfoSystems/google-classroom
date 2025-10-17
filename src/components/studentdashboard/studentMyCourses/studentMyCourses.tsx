@@ -46,6 +46,127 @@ export default function ClassroomPage() {
     setSelectedVideo(null) // Clear video selection
   }
 
+  // Set up form submission detection for Google Forms
+  const setupFormSubmissionDetection = (quizId: string) => {
+    console.log('Setting up form submission detection for quiz:', quizId);
+    
+    let isSubmitted = false; // Prevent multiple submissions
+    
+    // Method 1: Listen for postMessage events from Google Forms
+    const handleMessage = (event: MessageEvent) => {
+      if (isSubmitted) return; // Prevent duplicate submissions
+      
+      console.log('Message received from iframe:', event.origin, event.data);
+      
+      // Check if message is from Google Forms
+      if (event.origin.includes('docs.google.com') || event.origin.includes('forms.gle')) {
+        const data = event.data;
+        
+        // Check for various submission indicators
+        if (typeof data === 'string') {
+          if (data.includes('submit') || data.includes('response') || data.includes('complete') || 
+              data.includes('thank') || data.includes('success') || data.includes('formResponse')) {
+            console.log('Form submission detected via message:', data);
+            isSubmitted = true;
+            handleQuizSubmit(quizId);
+            return;
+          }
+        }
+        
+        // Check for object data
+        if (typeof data === 'object' && data !== null) {
+          const dataStr = JSON.stringify(data).toLowerCase();
+          if (dataStr.includes('submit') || dataStr.includes('response') || dataStr.includes('complete') ||
+              dataStr.includes('thank') || dataStr.includes('success')) {
+            console.log('Form submission detected via object message:', data);
+            isSubmitted = true;
+            handleQuizSubmit(quizId);
+            return;
+          }
+        }
+      }
+    };
+    
+    // Method 2: Poll for URL changes in the iframe (Google Forms redirect after submission)
+    let lastUrl = '';
+    const pollForUrlChange = () => {
+      if (isSubmitted) return; // Prevent duplicate submissions
+      
+      const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
+      if (iframe && iframe.contentWindow) {
+        try {
+          const currentUrl = iframe.contentWindow.location.href;
+          if (currentUrl !== lastUrl && (currentUrl.includes('formResponse') || currentUrl.includes('thank'))) {
+            console.log('Form submission detected via URL change:', currentUrl);
+            isSubmitted = true;
+            handleQuizSubmit(quizId);
+            return;
+          }
+          lastUrl = currentUrl;
+        } catch (e) {
+          // Cross-origin access blocked, this is expected
+        }
+      }
+    };
+    
+    // Method 3: Listen for iframe load events (Google Forms redirect after submission)
+    const handleIframeLoad = () => {
+      if (isSubmitted) return; // Prevent duplicate submissions
+      
+      const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
+      if (iframe) {
+        const src = iframe.src;
+        if (src.includes('formResponse') || src.includes('thank')) {
+          console.log('Form submission detected via iframe load:', src);
+          isSubmitted = true;
+          handleQuizSubmit(quizId);
+        }
+      }
+    };
+    
+    // Method 4: Listen for click events on the iframe (user clicking submit)
+    const handleIframeClick = () => {
+      console.log('Click detected on iframe, user might be submitting form');
+      // Give a delay to allow form submission to complete
+      setTimeout(() => {
+        if (isSubmitted) return;
+        
+        const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
+        if (iframe) {
+          const src = iframe.src;
+          if (src.includes('formResponse') || src.includes('thank')) {
+            console.log('Form submission detected via click + URL check:', src);
+            isSubmitted = true;
+            handleQuizSubmit(quizId);
+          }
+        }
+      }, 3000); // Wait 3 seconds for form submission to complete
+    };
+    
+    // Add event listeners
+    window.addEventListener('message', handleMessage);
+    
+    // Poll for URL changes every 1 second (more frequent for better detection)
+    const urlPollInterval = setInterval(pollForUrlChange, 1000);
+    
+    // Listen for iframe events
+    const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
+    if (iframe) {
+      iframe.addEventListener('load', handleIframeLoad);
+      iframe.addEventListener('click', handleIframeClick);
+    }
+    
+    // Clean up function
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      clearInterval(urlPollInterval);
+      if (iframe) {
+        iframe.removeEventListener('load', handleIframeLoad);
+        iframe.removeEventListener('click', handleIframeClick);
+      }
+    };
+  };
+
   // Auto-detect quiz completion when form is submitted
   const handleQuizSubmit = (quizId: string) => {
     console.log('Quiz submitted:', quizId, 'Current assignment:', currentAssignment?.id)
@@ -487,27 +608,9 @@ export default function ClassroomPage() {
                           className="w-full h-full border-0"
                           loading="lazy"
                           onLoad={() => {
-                            // Add message listener for form submission detection
-                            const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
-                            if (iframe) {
-                              // Listen for messages from the iframe
-                              const handleMessage = (event: MessageEvent) => {
-                                if (event.origin.includes('docs.google.com') && event.data) {
-                                  console.log('Form message received:', event.data);
-                                  // Check if it's a submission confirmation
-                                  if (event.data.includes('submit') || event.data.includes('response')) {
-                                    handleQuizSubmit(selectedQuiz.id);
-                                  }
-                                }
-                              };
-                              
-                              window.addEventListener('message', handleMessage);
-                              
-                              // Clean up listener when component unmounts or quiz changes
-                              return () => {
-                                window.removeEventListener('message', handleMessage);
-                              };
-                            }
+                            console.log('Quiz iframe loaded, setting up form submission detection');
+                            // Set up multiple detection methods for form submission
+                            setupFormSubmissionDetection(selectedQuiz.id);
                           }}
                         />
                       ) : selectedQuiz.data?.link ? (
@@ -517,27 +620,9 @@ export default function ClassroomPage() {
                           className="w-full h-full border-0"
                           loading="lazy"
                           onLoad={() => {
-                            // Add message listener for form submission detection
-                            const iframe = document.querySelector('iframe[src*="docs.google.com/forms"]') as HTMLIFrameElement;
-                            if (iframe) {
-                              // Listen for messages from the iframe
-                              const handleMessage = (event: MessageEvent) => {
-                                if (event.origin.includes('docs.google.com') && event.data) {
-                                  console.log('Form message received:', event.data);
-                                  // Check if it's a submission confirmation
-                                  if (event.data.includes('submit') || event.data.includes('response')) {
-                                    handleQuizSubmit(selectedQuiz.id);
-                                  }
-                                }
-                              };
-                              
-                              window.addEventListener('message', handleMessage);
-                              
-                              // Clean up listener when component unmounts or quiz changes
-                              return () => {
-                                window.removeEventListener('message', handleMessage);
-                              };
-                            }
+                            console.log('Quiz iframe loaded, setting up form submission detection');
+                            // Set up multiple detection methods for form submission
+                            setupFormSubmissionDetection(selectedQuiz.id);
                           }}
                         />
                       ) : (

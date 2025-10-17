@@ -71,9 +71,18 @@ export async function GET(req: NextRequest) {
 				stageId: { $regex: '^material-' }
 			});
 
+			console.log('Found material completions:', materialCompletions.map(mc => ({
+				stageId: mc.stageId,
+				courseId: mc.courseId,
+				studentEmail: mc.studentEmail,
+				completedAt: mc.completedAt
+			})));
+
 			const completedMaterialIds = new Set(
 				materialCompletions.map(mc => mc.stageId.replace('material-', ''))
 			);
+			
+			console.log('Completed material IDs:', Array.from(completedMaterialIds));
 
 			// Fetch submissions for each coursework individually
 			const courseworkData = [];
@@ -97,6 +106,15 @@ export async function GET(req: NextRequest) {
 
 				// Check if material is completed in MongoDB (for video-based assignments)
 				const isCompletedLocally = completedMaterialIds.has(work.id);
+				
+				if (work.id && (isCompletedLocally || submission)) {
+					console.log(`Coursework ${work.id} (${work.title}):`, {
+						hasGoogleSubmission: !!submission,
+						submissionState: submission?.state,
+						isCompletedLocally,
+						willShowAsCompleted: !!(submission || isCompletedLocally)
+					});
+				}
 
 				courseworkData.push({
 					id: work.id,

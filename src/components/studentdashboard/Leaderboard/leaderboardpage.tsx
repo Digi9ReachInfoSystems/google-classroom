@@ -143,8 +143,8 @@ export default function Leaderboardpage() {
           <div className="lg:col-span-2 space-y-4 md:space-y-6 order-2 lg:order-1">
             <UserProfile 
               rank={selectedStudent?.rank ?? currentUser?.rank ?? 5}
-              schoolRank={18}
-              districtRank={120}
+              schoolRank={0}
+              districtRank={0}
               certificates={selectedStudent?.certificates ?? currentUser?.certificates ?? 0}
             />
             <BadgesSection />
