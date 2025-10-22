@@ -423,8 +423,8 @@ export default function ClassroomPage() {
       try {
         const parsed = JSON.parse(savedProgress)
         // Find the module with the most recent activity
-        let lastModule = null
-        let lastActivity = null
+        let lastModule: string | null = null
+        let lastActivity: string | null = null
         
         Object.entries(parsed).forEach(([moduleId, progress]: [string, any]) => {
           if (progress.completedAt && (!lastActivity || new Date(progress.completedAt) > new Date(lastActivity))) {
@@ -596,6 +596,16 @@ export default function ClassroomPage() {
     }
   }
 
+  // Helper function to check if the entire course is completed
+  const isCourseFullyCompleted = () => {
+    if (!stageProgress) return false;
+    
+    return stageProgress.preSurveyCompleted && 
+           stageProgress.courseCompleted && 
+           stageProgress.ideasCompleted && 
+           stageProgress.postSurveyCompleted;
+  }
+
   // Helper function to get stage title
   const getStageTitle = (stage: string) => {
     switch (stage) {
@@ -737,8 +747,52 @@ export default function ClassroomPage() {
           {/* Main content area */}
           <div className="flex-1 min-w-0 order-1 lg:order-1">
             <div className="max-w-4xl mx-auto xl:max-w-5xl 2xl:max-w-6xl">
-            {/* Only show StageContent if the current stage is not completed */}
-            {!isStageCompleted(selectedStage) && (
+            
+            {/* Show course completion screen when all stages are completed */}
+            {isCourseFullyCompleted() && (
+              <div className="text-center py-12">
+                <div className="max-w-2xl mx-auto">
+                  {/* Course Complete SVG */}
+                  <div className="mb-8">
+                    <img 
+                      src="/Course_Complete.svg" 
+                      alt="Course Complete" 
+                      className="w-full max-w-2xl mx-auto h-auto"
+                    />
+                  </div>
+                  
+                  {/* Congratulations message */}
+                  <div className="mb-6">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                      Congratulations!
+                    </h2>
+                    <p className="text-lg text-green-800 leading-relaxed">
+                      You have successfully completed all the lessons!
+                    </p>
+                  </div>
+                  
+                  {/* Completion details */}
+                  {/* <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-semibold text-green-800 mb-2">
+                      Course Completed Successfully!
+                    </h3>
+                    <p className="text-green-700">
+                      You have finished all stages: Pre-Survey, Learning Modules, Ideas, and Post-Survey.
+                    </p>
+                  </div> */}
+                </div>
+              </div>
+            )}
+            
+            {/* Only show StageContent if the current stage is not completed and course is not fully completed */}
+            {!isStageCompleted(selectedStage) && !isCourseFullyCompleted() && (
               <StageContent
                 courseId={selectedCourse.id}
                 studentEmail={studentEmail}
@@ -752,8 +806,8 @@ export default function ClassroomPage() {
               />
             )}
             
-            {/* Show completion message for completed stages */}
-            {isStageCompleted(selectedStage) && (
+            {/* Show completion message for completed stages (but not when course is fully completed) */}
+            {isStageCompleted(selectedStage) && !isCourseFullyCompleted() && (
               <div className="text-center py-12">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                   <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -769,8 +823,8 @@ export default function ClassroomPage() {
               </div>
             )}
 
-            {/* Selected Video/Quiz Content from Sidebar */}
-            {(selectedVideo || selectedQuiz) && (
+            {/* Selected Video/Quiz Content from Sidebar - only show if course is not fully completed */}
+            {(selectedVideo || selectedQuiz) && !isCourseFullyCompleted() && (
               <div className="mt-6 p-6 border rounded-lg bg-gray-50">
                 {selectedVideo && (
                   <div className="space-y-4">
@@ -957,13 +1011,13 @@ export default function ClassroomPage() {
           selectedCourse={selectedCourse}
           stageProgress={stageProgress}
           selectedStage={selectedStage}
-          onStageSelect={setSelectedStage}
-          onMaterialSelect={(materialId) => {
+          onStageSelect={isCourseFullyCompleted() ? () => {} : setSelectedStage}
+          onMaterialSelect={isCourseFullyCompleted() ? () => {} : (materialId) => {
             setSelectedMaterialId(materialId)
           }}
-          onVideoSelect={handleVideoSelect}
-          onQuizSelect={handleQuizSelect}
-          onAssignmentSelect={fetchVideoCompletions}
+          onVideoSelect={isCourseFullyCompleted() ? () => {} : handleVideoSelect}
+          onQuizSelect={isCourseFullyCompleted() ? () => {} : handleQuizSelect}
+          onAssignmentSelect={isCourseFullyCompleted() ? () => {} : fetchVideoCompletions}
           videoCompletions={videoCompletions}
           onHierarchicalDataChange={handleHierarchicalDataChange}
         />
