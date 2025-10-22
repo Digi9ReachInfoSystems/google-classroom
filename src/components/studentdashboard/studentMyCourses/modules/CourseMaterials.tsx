@@ -28,9 +28,11 @@ interface CourseMaterialsProps {
   submitting: boolean
   onVideoSelect?: (videoId: string, videoData: any) => void
   onQuizSelect?: (quizId: string, quizData: any) => void
+  learningModuleProgress?: Record<string, any>
+  videoCompletions?: Record<string, boolean>
 }
 
-export default function CourseMaterials({ courseId, studentEmail, selectedMaterialId, onAllComplete, submitting, onVideoSelect, onQuizSelect }: CourseMaterialsProps) {
+export default function CourseMaterials({ courseId, studentEmail, selectedMaterialId, onAllComplete, submitting, onVideoSelect, onQuizSelect, learningModuleProgress, videoCompletions }: CourseMaterialsProps) {
   console.log('CourseMaterials props:', { onVideoSelect: !!onVideoSelect, onQuizSelect: !!onQuizSelect })
   
   const [materials, setMaterials] = useState<CourseMaterial[]>([])
@@ -228,6 +230,32 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
 
     const isCompleted = selectedMaterial.submission?.state === 'TURNED_IN'
 
+    // Check if learning module is completed based on video/quiz completions
+    const isLearningModuleCompleted = () => {
+      if (!learningModuleProgress || !videoCompletions || !selectedMaterial) return false
+      
+      // Get the module ID from the selected material
+      const moduleId = selectedMaterial.id
+      const moduleProgress = learningModuleProgress[moduleId]
+      
+      if (!moduleProgress) return false
+      
+      // Check if all videos and quizzes are completed
+      const allVideosCompleted = selectedMaterial.children?.videos?.every((_: any, index: number) => {
+        const videoId = `video-${moduleId}-${index}`
+        return videoCompletions[videoId] === true
+      }) || false
+
+      const allQuizzesCompleted = selectedMaterial.children?.quizzes?.every((_: any, index: number) => {
+        const quizId = `quiz-${moduleId}-${index}`
+        return videoCompletions[quizId] === true
+      }) || false
+
+      return allVideosCompleted && allQuizzesCompleted
+    }
+
+    const moduleCompleted = isLearningModuleCompleted()
+
     // Use hierarchical data if available, otherwise fallback to materials
     let videos: any[] = []
     let assignments: any[] = []
@@ -258,7 +286,7 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
                 <p className="text-muted-foreground">{selectedMaterial.description}</p>
               )}
             </div>
-            {!isCompleted && (
+            {!isCompleted && !moduleCompleted && (
               <Button
                 onClick={() => handleMarkMaterialComplete(selectedMaterial.id)}
                 size="sm"
@@ -275,10 +303,10 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
                 {selectedMaterial.maxPoints} points
               </span>
             )}
-            {isCompleted && (
+            {(isCompleted || moduleCompleted) && (
               <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-medium flex items-center gap-1">
                 <CheckCircle className="h-4 w-4" />
-                Completed
+                {moduleCompleted ? 'Module Completed' : 'Completed'}
               </span>
             )}
           </div>

@@ -23,9 +23,9 @@ import Pagination from "@/components/ui/pagination";
 import { useDistrictCourse } from "../../districtadmin/context/DistrictCourseContext";
 
 /* -------------------- filter option values (will be fetched from API) -------------------- */
-const DEFAULT_AGES = ["All", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"];
+const DEFAULT_AGES = ["All", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"];
 const DEFAULT_GRADES = ["All", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
-const DEFAULT_GENDERS = ["All", "Male", "Female"];
+const DEFAULT_GENDERS = ["All", "Male", "Female", "Other"];
 const DEFAULT_DISABILITY = ["All", "None", "Mild", "Moderate", "Severe"];
 const DEFAULT_DISTRICTS = ["All", "Bumthang", "Chhukha", "Dagana", "Gasa", "Haa", "Lhuentse", "Mongar", "Paro", "Pemagatshel", "Punakha", "Samdrup Jongkhar", "Samtse", "Sarpang", "Thimphu", "Trashigang", "Trashiyangtse", "Trongsa", "Tsirang", "Wangdue Phodrang", "Zhemgang"];
 const BLUE_100 = "var(--blue-800)";
@@ -478,28 +478,40 @@ export default function PiCharts() {
           </CardHeader>
 
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-10">
-              <PieBlock
-                title="Pre survey status"
-                data={charts.pre}
-                legendLabels={["Completed", "Pending"]}
-              />
-              <PieBlock
-                title="Student course status"
-                data={charts.course}
-                legendLabels={["Completed", "Pending"]}
-              />
-              <PieBlock
-                title="Idea Submission status"
-                data={charts.idea}
-                legendLabels={["Completed", "Pending"]}
-              />
-              <PieBlock
-                title="Post survey status"
-                data={charts.post}
-                legendLabels={["Completed", "Pending"]}
-              />
-            </div>
+            {charts.pre.every(chart => chart.value === 0) && 
+             charts.course.every(chart => chart.value === 0) && 
+             charts.idea.every(chart => chart.value === 0) && 
+             charts.post.every(chart => chart.value === 0) ? (
+              <div className="text-center py-12">
+                <div className="text-gray-500 text-lg mb-2">No Data Available</div>
+                <div className="text-gray-400 text-sm">
+                  No student submissions found for this course. Charts will appear once students start submitting assignments.
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-10">
+                <PieBlock
+                  title="Pre survey status"
+                  data={charts.pre}
+                  legendLabels={["Completed", "Pending"]}
+                />
+                <PieBlock
+                  title="Student course status"
+                  data={charts.course}
+                  legendLabels={["Completed", "Pending"]}
+                />
+                <PieBlock
+                  title="Idea Submission status"
+                  data={charts.idea}
+                  legendLabels={["Completed", "Pending"]}
+                />
+                <PieBlock
+                  title="Post survey status"
+                  data={charts.post}
+                  legendLabels={["Completed", "Pending"]}
+                />
+              </div>
+            )}
 
             {/* Data table (student report data) */}
             {reportData.length > 0 && (

@@ -55,6 +55,9 @@ export default function Leaderboardpage() {
         const data = await res.json();
 
         if (data.success && data.students) {
+          console.log('Received leaderboard data:', data.students.length, 'students');
+          console.log('Student names:', data.students.map((s: any) => ({ name: s.name, email: s.email, isCurrentUser: s.isCurrentUser })));
+          
           // Transform data with actual badge and certificate counts
           const transformedStudents = data.students.map((student: any) => ({
             ...student,

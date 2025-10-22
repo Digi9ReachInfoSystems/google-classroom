@@ -91,7 +91,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
   const [modules, setModules] = useState<ProgressModule[]>([])
   const [courseMaterials, setCourseMaterials] = useState<any[]>([])
   const [hierarchicalData, setHierarchicalData] = useState<HierarchicalData | null>(null)
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set(['course'])) // Default expand Learning modules
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set()) // Start with all modules collapsed
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
   const [expandedAssignments, setExpandedAssignments] = useState<Set<string>>(new Set())
 
@@ -589,7 +589,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
   // Render hierarchical structure if available, otherwise fallback to original structure
   const renderHierarchicalContent = () => {
     // Always render the modules, but use hierarchical data for the learning modules section if available
-    return (
+  return (
       <div className="space-y-6 lg:space-y-8 2xl:space-y-10">
         {modules.map((module, index) => {
           // Find the learning modules in hierarchical data
@@ -599,50 +599,63 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
           
           if (module.id === 'course' && learningModule) {
             return (
-              <div key={module.id} className="relative">
-                {index < modules.length - 1 && (
-                  <div
-                    className={`absolute left-2.5 top-8 w-px h-12 lg:h-20 ${module.status === "completed" ? "bg-green-200" : "bg-gray-200"}`}
-                  ></div>
-                )}
+          <div key={module.id} className="relative">
+            {index < modules.length - 1 && (
+              <div
+                className={`absolute left-2.5 top-8 w-px h-12 lg:h-20 ${module.status === "completed" ? "bg-green-200" : "bg-gray-200"}`}
+              ></div>
+            )}
 
                 <div className="space-y-2">
-                  <div 
-                    className={`flex items-start space-x-4 group ${module.status !== "locked" ? "cursor-pointer" : ""}`}
-                    onClick={() => handleModuleClick(module.id)}
-                  >
-                    {/* Status Icon */}
-                    <div className="flex-shrink-0 mt-1">{getStatusIcon(module.status)}</div>
+            <div 
+              className={`flex items-start space-x-4 group ${
+                module.status !== "locked" && !(module.id === 'course' && module.status === 'completed') 
+                  ? "cursor-pointer" 
+                  : ""
+              }`}
+              onClick={() => {
+                // Don't allow clicking on completed course (Learning Modules)
+                if (module.id === 'course' && module.status === 'completed') {
+                  return;
+                }
+                handleModuleClick(module.id);
+              }}
+            >
+              {/* Status Icon */}
+              <div className="flex-shrink-0 mt-1">{getStatusIcon(module.status)}</div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex-1 min-w-0 flex items-center gap-2">
-                          <h3 className={`text-sm font-medium ${getStatusStyle(module.status)} line-clamp-2`}>
-                            {module.title}
-                          </h3>
-                          <button
-                            onClick={(e) => toggleModule(module.id, e)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                          >
-                            <svg 
-                              className={`h-4 w-4 transition-transform ${expandedModules.has(module.id) ? 'rotate-180' : ''}`} 
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
+                    <h3 className={`text-sm font-medium ${getStatusStyle(module.status)} line-clamp-2`}>
+                      {module.title}
+                    </h3>
+                          {/* Hide collapsible button for completed course (Learning Modules) */}
+                          {!(module.id === 'course' && module.status === 'completed') && (
+                            <button
+                              onClick={(e) => toggleModule(module.id, e)}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
+                              <svg 
+                                className={`h-4 w-4 transition-transform ${expandedModules.has(module.id) ? 'rotate-180' : ''}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
-                        {module.subtitle && <p className="text-xs text-gray-500 mt-1">{module.subtitle}</p>}
+                    {module.subtitle && <p className="text-xs text-gray-500 mt-1">{module.subtitle}</p>}
 
-                        <div className="flex items-center space-x-2 flex-shrink-0 sm:ml-2">
-                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border-none">
-                            {module.videoCount} {module.videoCount !== 1 ? "items" : "item"}
-                          </Badge>
-                        </div>
-                      </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0 sm:ml-2">
+                    <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border-none">
+                      {module.videoCount} {module.videoCount !== 1 ? "items" : "item"}
+                    </Badge>
+                  </div>
+                </div>
                     </div>
                   </div>
 

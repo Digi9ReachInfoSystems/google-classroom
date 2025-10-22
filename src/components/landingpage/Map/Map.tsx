@@ -285,17 +285,17 @@ const Map: React.FC = () => {
           <div className="mt-6 grid grid-cols-2 gap-x-10 gap-y-6">
             <Stat n={stats.schools}  label="Schools" />
             <Stat n={stats.teachers} label="Teachers" />
-            <Stat n={stats.teams}    label="Teams" />
+            {/* <Stat n={stats.teams}    label="Teams" /> */}
             <Stat n={stats.students} label="Students" />
             <Stat n={stats.ideas}    label="Ideas" />
           </div>
 
-          <a
+          {/* <a
             href="/login"
             className="inline-flex mt-8 px-10 py-1.5 rounded-full bg-[var(--primary)] text-white text-[14px] font-normal hover:bg-[var(--primary)] transition"
           >
             Login
-          </a>
+          </a> */}
         </div>
 
         {/* MIDDLE: divider + arrow button (decorative) */}
