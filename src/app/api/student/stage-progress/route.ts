@@ -147,10 +147,10 @@ export async function GET(req: NextRequest) {
       stageId: 'post-survey'
     });
 
-    // Calculate course completion (all non-survey/idea coursework)
+    // Calculate course completion (all non-survey/idea/material coursework)
     const regularCoursework = allCoursework.filter((cw: any) => {
       const title = cw.title ? cw.title.toLowerCase() : '';
-      return !title.includes('survey') && !title.includes('idea');
+      return !title.includes('survey') && !title.includes('idea') && !title.includes('material') && !title.includes('mat ');
     });
 
     // Check MongoDB for material completions
@@ -164,18 +164,20 @@ export async function GET(req: NextRequest) {
       materialCompletions.map(mc => mc.stageId.replace('material-', ''))
     );
 
-    // Count completed materials (either from Google submissions or MongoDB)
-    let completedCount = 0;
+    // Count completed regular coursework (modules)
+    let completedRegularCount = 0;
     for (const coursework of regularCoursework) {
       const hasGoogleSubmission = allSubmissions.some(
         (sub: any) => sub.courseWorkId === coursework.id && sub.state === 'TURNED_IN'
       );
-      const hasLocalCompletion = completedMaterialIds.has(coursework.id);
       
-      if (hasGoogleSubmission || hasLocalCompletion) {
-        completedCount++;
+      if (hasGoogleSubmission) {
+        completedRegularCount++;
       }
     }
+
+    // Count completed materials from MongoDB
+    const completedMaterialCount = materialCompletions.length;
 
     // Check if course stage is marked complete in MongoDB
     const courseStageCompletion = await StageCompletionModel.findOne({
@@ -200,13 +202,27 @@ export async function GET(req: NextRequest) {
       console.log(`Learning modules have progress, but course stage not explicitly marked complete`);
     }
     
+    // Get all materials (both modules and materials) to check total completion
+    const allMaterials = allCoursework.filter((cw: any) => {
+      const title = cw.title ? cw.title.toLowerCase() : '';
+      return !title.includes('survey') && !title.includes('idea');
+    });
+
     // Consider course completed if:
     // 1. Course stage is explicitly marked complete, OR
-    // 2. All regular coursework is completed
-    // Note: Learning module completions alone should NOT auto-complete the course
-    // The course should only be marked complete when explicitly done or all regular coursework is done
+    // 2. All regular coursework (modules) AND all materials are completed
     const courseCompleted = !!courseStageCompletion || 
-                           (regularCoursework.length > 0 && completedCount >= regularCoursework.length);
+                           (regularCoursework.length > 0 && completedRegularCount >= regularCoursework.length &&
+                            completedMaterialCount > 0);
+    
+    // Log completion status for debugging
+    console.log('Course completion check:', {
+      courseStageCompletion: !!courseStageCompletion,
+      regularCourseworkCount: regularCoursework.length,
+      completedRegularCount,
+      completedMaterialCount,
+      courseCompleted
+    });
 
     // Extract form URLs from coursework materials
     const getFormUrl = (coursework: any) => {
@@ -263,7 +279,9 @@ export async function GET(req: NextRequest) {
       ideasUrl: getPublicFormUrl(getFormUrl(ideasWork)),
       postSurveyUrl: getPublicFormUrl(getFormUrl(postSurveyWork)),
       regularCourseworkCount: regularCoursework.length,
-      completedCourseworkCount: completedCount
+      completedCourseworkCount: completedRegularCount,
+      materialCount: materialCompletions.length,
+      completedMaterialCount: completedMaterialCount
     };
 
     console.log('Progress data:', progress);

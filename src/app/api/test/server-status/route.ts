@@ -14,3 +14,4 @@ export async function GET(req: NextRequest) {
     note: 'All endpoints require authentication except this one'
   });
 }
+

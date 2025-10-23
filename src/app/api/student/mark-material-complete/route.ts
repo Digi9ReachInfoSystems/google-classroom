@@ -63,6 +63,89 @@ export async function POST(req: NextRequest) {
 
     console.log(`Material ${courseWorkId} marked complete for ${studentEmail}. Stored result:`, result);
 
+    // Check if this was Module 6 completion and auto-complete course stage
+    try {
+      // Get the coursework title to check if it's Module 6
+      const coursework = await CourseworkModel.findOne({ courseWorkId });
+      const title = coursework?.title?.toLowerCase() || '';
+      
+      // Check if this is Module 6 (various patterns)
+      const isModule6 = title.includes('module 6') || 
+                       title.includes('mod 6') || 
+                       title.includes('module6') ||
+                       title.includes('mod6') ||
+                       (title.includes('module') && title.includes('6')) ||
+                       (title.includes('mod') && title.includes('6'));
+      
+      if (isModule6) {
+        console.log('Module 6 completed! Checking if all modules are done...');
+        
+        // Get all material completions for this course
+        const allMaterialCompletions = await StageCompletionModel.find({
+          courseId,
+          studentEmail,
+          stageId: { $regex: '^material-' }
+        });
+        
+        console.log(`Found ${allMaterialCompletions.length} material completions`);
+        
+        // Get all coursework for this course to count total modules
+        const oauth2Client = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_SECRET,
+          process.env.GOOGLE_REDIRECT_URI
+        );
+        
+        oauth2Client.setCredentials({
+          access_token: payload.accessToken,
+          refresh_token: payload.refreshToken
+        });
+        
+        const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+        
+        const courseworkResponse = await classroom.courses.courseWork.list({
+          courseId: courseId,
+          pageSize: 100
+        });
+        
+        const allCoursework = courseworkResponse.data.courseWork || [];
+        
+        // Filter for learning modules (exclude surveys and ideas)
+        const learningModules = allCoursework.filter((cw: any) => {
+          const title = cw.title?.toLowerCase() || '';
+          return !title.includes('survey') && !title.includes('idea');
+        });
+        
+        console.log(`Total learning modules: ${learningModules.length}`);
+        console.log(`Completed materials: ${allMaterialCompletions.length}`);
+        
+        // If all modules are completed, auto-complete the course stage
+        if (learningModules.length > 0 && allMaterialCompletions.length >= learningModules.length) {
+          console.log('🎉 All learning modules completed! Auto-completing course stage...');
+          
+          await StageCompletionModel.findOneAndUpdate(
+            {
+              courseId,
+              studentEmail,
+              stageId: 'course'
+            },
+            {
+              courseId,
+              studentEmail,
+              stageId: 'course',
+              completedAt: new Date()
+            },
+            { upsert: true, new: true }
+          );
+          
+          console.log('✅ Course stage auto-completed successfully!');
+        }
+      }
+    } catch (autoCompleteError) {
+      // Log error but don't fail the main request
+      console.error('Error in auto-completion logic:', autoCompleteError);
+    }
+
     // Award badge for this learning module
     try {
       // Get coursework details for badge title

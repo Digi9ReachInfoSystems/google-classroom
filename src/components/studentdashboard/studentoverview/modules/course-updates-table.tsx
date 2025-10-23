@@ -73,13 +73,19 @@ export function CourseUpdatesTable() {
     return 999;
   };
 
+  // Helper function to check if an item is a material
+  const isMaterial = (title: string): boolean => {
+    const lowerTitle = title.toLowerCase();
+    return lowerTitle.includes('material') || lowerTitle.includes('mat ');
+  };
+
   // Transform course work and submissions into course updates
   const courseUpdates: CourseUpdate[] = courseData ? 
     courseData.courseWork
       .filter((work: any) => {
-        // Hide pre-survey, post-survey, and idea submission items
+        // Hide pre-survey, post-survey, idea submission items, and materials
         const title = (work.title || '').toLowerCase();
-        return !title.includes('survey') && !title.includes('idea');
+        return !title.includes('survey') && !title.includes('idea') && !isMaterial(work.title || '');
       })
       .map((work: any) => {
         const submission = courseData.submissions.find((sub: any) => sub.courseWorkId === work.id);

@@ -108,6 +108,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
     // Try various patterns to extract module number
     const patterns = [
       /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc.
+      /(?:material|mat)\s*(\d+)/i,         // "Material 1", "Mat 2", etc.
       /^(\d+)[\s\-\.]/i,                   // "1 - Title", "2. Title", etc.
       /lesson\s*(\d+)/i,                   // "Lesson 1", etc.
       /chapter\s*(\d+)/i,                  // "Chapter 1", etc.
@@ -141,16 +142,48 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
           return !title.includes('survey') && !title.includes('idea')
         })
         
-        // Sort materials by module number
+        // Sort materials to interleave modules and materials
         const sortedMaterials = materials.sort((a: any, b: any) => {
-          const aModuleNumber = extractModuleNumber(a.title || '');
-          const bModuleNumber = extractModuleNumber(b.title || '');
+          const aTitle = (a.title || '').toLowerCase();
+          const bTitle = (b.title || '').toLowerCase();
           
-          // Sort by module number first, then by title for non-module items
-          if (aModuleNumber !== bModuleNumber) {
-            return aModuleNumber - bModuleNumber;
+          // Check if items are modules or materials
+          const aIsModule = aTitle.includes('module') || aTitle.includes('mod ');
+          const bIsModule = bTitle.includes('module') || bTitle.includes('mod ');
+          const aIsMaterial = aTitle.includes('material') || aTitle.includes('mat ');
+          const bIsMaterial = bTitle.includes('material') || bTitle.includes('mat ');
+          
+          // Extract numbers for comparison
+          const aNumber = extractModuleNumber(a.title || '');
+          const bNumber = extractModuleNumber(b.title || '');
+          
+          // If both have the same number, prioritize materials over modules
+          if (aNumber === bNumber && aNumber !== 999) {
+            if (aIsMaterial && bIsModule) return -1;
+            if (aIsModule && bIsMaterial) return 1;
           }
-          // If module numbers are the same (or both are 999), sort alphabetically
+          
+          // If both are modules or both are materials, sort by number
+          if ((aIsModule && bIsModule) || (aIsMaterial && bIsMaterial)) {
+            if (aNumber !== bNumber) {
+              return aNumber - bNumber;
+            }
+            return (a.title || '').localeCompare(b.title || '');
+          }
+          
+          // Interleave: alternate between modules and materials with same number
+          if (aNumber === bNumber && aNumber !== 999) {
+            // Same number: material comes first, then module
+            if (aIsMaterial && bIsModule) return -1;
+            if (aIsModule && bIsMaterial) return 1;
+          }
+          
+          // Different numbers: sort by number first
+          if (aNumber !== bNumber) {
+            return aNumber - bNumber;
+          }
+          
+          // Fallback to alphabetical
           return (a.title || '').localeCompare(b.title || '');
         });
         
@@ -181,14 +214,46 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
             learningModules: {
               ...sortedHierarchicalData.learningModules,
               children: sortedHierarchicalData.learningModules.children.sort((a: any, b: any) => {
-                const aModuleNumber = extractModuleNumber(a.title || '');
-                const bModuleNumber = extractModuleNumber(b.title || '');
+                const aTitle = (a.title || '').toLowerCase();
+                const bTitle = (b.title || '').toLowerCase();
                 
-                // Sort by module number first, then by title for non-module items
-                if (aModuleNumber !== bModuleNumber) {
-                  return aModuleNumber - bModuleNumber;
+                // Check if items are modules or materials
+                const aIsModule = aTitle.includes('module') || aTitle.includes('mod ');
+                const bIsModule = bTitle.includes('module') || bTitle.includes('mod ');
+                const aIsMaterial = aTitle.includes('material') || aTitle.includes('mat ');
+                const bIsMaterial = bTitle.includes('material') || bTitle.includes('mat ');
+                
+                // Extract numbers for comparison
+                const aNumber = extractModuleNumber(a.title || '');
+                const bNumber = extractModuleNumber(b.title || '');
+                
+                // If both have the same number, prioritize materials over modules
+                if (aNumber === bNumber && aNumber !== 999) {
+                  if (aIsMaterial && bIsModule) return -1;
+                  if (aIsModule && bIsMaterial) return 1;
                 }
-                // If module numbers are the same (or both are 999), sort alphabetically
+                
+                // If both are modules or both are materials, sort by number
+                if ((aIsModule && bIsModule) || (aIsMaterial && bIsMaterial)) {
+                  if (aNumber !== bNumber) {
+                    return aNumber - bNumber;
+                  }
+                  return (a.title || '').localeCompare(b.title || '');
+                }
+                
+                // Interleave: alternate between modules and materials with same number
+                if (aNumber === bNumber && aNumber !== 999) {
+                  // Same number: material comes first, then module
+                  if (aIsMaterial && bIsModule) return -1;
+                  if (aIsModule && bIsMaterial) return 1;
+                }
+                
+                // Different numbers: sort by number first
+                if (aNumber !== bNumber) {
+                  return aNumber - bNumber;
+                }
+                
+                // Fallback to alphabetical
                 return (a.title || '').localeCompare(b.title || '');
               })
             }
