@@ -245,6 +245,48 @@ export default function ClassroomPage() {
           if (data.success) {
             console.log(`✅ Quiz ${pendingQuizId} marked as complete successfully`)
             
+            // Mark assignment as done in Google Classroom (equivalent to "Mark as Done")
+            try {
+              console.log('🔄 Marking assignment as done in Google Classroom...')
+              const googleResponse = await fetch('/api/student/mark-as-done', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  courseId: selectedCourse.id,
+                  courseWorkId: pendingQuizId
+                  // studentEmail is now automatically determined from the authenticated user
+                })
+              })
+
+              const googleData = await googleResponse.json()
+              console.log('📡 Google Classroom Mark as Done API response:', googleData)
+
+              if (googleData.success) {
+                if (googleData.googleClassroomSync === false) {
+                  console.log(`✅ Assignment marked as completed locally (Google Classroom sync not available due to API limitations)`)
+                  console.log('Note:', googleData.note)
+                } else {
+                  console.log(`✅ Assignment marked as done in Google Classroom`)
+                  console.log('Google Classroom submission state:', googleData.newState)
+                }
+              } else {
+                console.warn('⚠️ Failed to mark assignment as done in Google Classroom:', googleData.error)
+                console.warn('Error details:', googleData.details)
+                
+                // Show user-friendly error message for common issues
+                if (googleData.error === 'No submission found for this student and assignment') {
+                  console.warn('Student may not be enrolled in the Google Classroom course or assignment may not exist')
+                } else if (googleData.error === 'Assignment not found') {
+                  console.warn('The assignment does not exist in Google Classroom')
+                } else if (googleData.error === 'Permission denied for turn-in') {
+                  console.warn('Permission issue - student may not have access to turn in this assignment')
+                }
+              }
+            } catch (googleError) {
+              console.error('❌ Error marking assignment as done in Google Classroom:', googleError)
+              console.error('This might be due to network issues or Google Classroom API problems')
+            }
+            
             // Save learning module progress
             const moduleId = currentAssignment.id
             const currentProgress = learningModuleProgress[moduleId] || {}
@@ -256,8 +298,9 @@ export default function ClassroomPage() {
             }
             saveLearningModuleProgress(moduleId, updatedProgress)
             
-            // Refresh stage progress to update UI
-            await fetchStageProgress()
+            // Don't call fetchStageProgress() as it triggers entire course completion
+            // Just refresh the video completions to update the UI
+            console.log('✅ Quiz completion saved locally, UI will update automatically')
           } else {
             console.error('❌ Failed to mark quiz complete:', data)
           }
@@ -326,9 +369,9 @@ export default function ClassroomPage() {
           }
           saveLearningModuleProgress(moduleId, updatedProgress)
 
-          // Just refresh stage progress to update UI
-          console.log('🔄 Refreshing stage progress after video completion...')
-          await fetchStageProgress()
+          // Don't call fetchStageProgress() as it triggers entire course completion
+          // Just refresh the video completions to update the UI
+          console.log('✅ Video completion saved locally, UI will update automatically')
         }
       }
     } catch (error) {

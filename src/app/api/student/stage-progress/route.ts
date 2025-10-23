@@ -202,12 +202,11 @@ export async function GET(req: NextRequest) {
     
     // Consider course completed if:
     // 1. Course stage is explicitly marked complete, OR
-    // 2. All regular coursework is completed, OR  
-    // 3. There are learning module completions (indicating progress through learning modules)
-    // Note: This is a simplified check - ideally we'd verify ALL learning modules are complete
+    // 2. All regular coursework is completed
+    // Note: Learning module completions alone should NOT auto-complete the course
+    // The course should only be marked complete when explicitly done or all regular coursework is done
     const courseCompleted = !!courseStageCompletion || 
-                           (regularCoursework.length > 0 && completedCount >= regularCoursework.length) ||
-                           learningModuleCompletions.length > 0;
+                           (regularCoursework.length > 0 && completedCount >= regularCoursework.length);
 
     // Extract form URLs from coursework materials
     const getFormUrl = (coursework: any) => {
