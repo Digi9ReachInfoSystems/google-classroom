@@ -64,6 +64,8 @@ export async function POST(req: NextRequest) {
       studentEmail: payload.email
     });
 
+    let submission: any = null;
+    
     try {
       // Set up OAuth2 client
       const oauth2Client = new google.auth.OAuth2(
@@ -89,7 +91,7 @@ export async function POST(req: NextRequest) {
         id: submissionId
       });
 
-      const submission = submissionResponse.data;
+      submission = submissionResponse.data;
       console.log('Submission details:', {
         id: submission.id,
         state: submission.state,

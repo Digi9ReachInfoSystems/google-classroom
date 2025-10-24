@@ -70,6 +70,8 @@ export async function POST(req: NextRequest) {
       authenticatedUser: payload.email
     });
 
+    let submission: any = null;
+    
     try {
       // Set up OAuth2 client
       const oauth2Client = new google.auth.OAuth2(
@@ -106,8 +108,8 @@ export async function POST(req: NextRequest) {
       let coursework;
       try {
         const assignmentResponse = await classroom.courses.courseWork.get({
-          courseId: courseId,
-          id: actualCourseWorkId
+          courseId: courseId as string,
+          id: actualCourseWorkId as string
         });
         coursework = assignmentResponse.data;
         console.log('Assignment found:', coursework.title);
@@ -148,8 +150,8 @@ export async function POST(req: NextRequest) {
 
       // Get the student's submission to check current state
       const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
-        courseId: courseId,
-        courseWorkId: actualCourseWorkId,
+        courseId: courseId as string,
+        courseWorkId: actualCourseWorkId as string,
         userId: studentEmail,
         pageSize: 1
       });
@@ -171,7 +173,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Find the submission in CREATED or NEW state
-      const submission = submissions.find(sub => 
+      submission = submissions.find(sub => 
         sub.state === 'CREATED' || sub.state === 'NEW'
       );
 
@@ -192,9 +194,9 @@ export async function POST(req: NextRequest) {
       // Attempt to turn in the submission
       console.log('Attempting to turn in submission...');
       const turnInResponse = await classroom.courses.courseWork.studentSubmissions.turnIn({
-        courseId: courseId,
-        courseWorkId: actualCourseWorkId,
-        id: submission.id
+        courseId: courseId as string,
+        courseWorkId: actualCourseWorkId as string,
+        id: submission.id as string
         // No requestBody needed for "Mark as Done"
       });
 

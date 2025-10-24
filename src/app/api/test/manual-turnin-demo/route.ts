@@ -54,6 +54,8 @@ export async function GET(req: NextRequest) {
     // For each course, get coursework and submissions
     const courseData = [];
     for (const course of courses) {
+      if (!course.id) continue; // Skip courses without ID
+      
       try {
         // Get coursework for this course
         const courseworkResponse = await classroom.courses.courseWork.list({
@@ -66,6 +68,8 @@ export async function GET(req: NextRequest) {
         // For each coursework, get student submissions
         const courseworkData = [];
         for (const work of coursework) {
+          if (!work.id) continue; // Skip coursework without ID
+          
           try {
             const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
               courseId: course.id,
@@ -93,7 +97,7 @@ export async function GET(req: NextRequest) {
               }))
             });
           } catch (error) {
-            console.log(`Error fetching submissions for coursework ${work.id}:`, error.message);
+            console.log(`Error fetching submissions for coursework ${work.id}:`, error instanceof Error ? error.message : 'Unknown error');
             courseworkData.push({
               id: work.id,
               title: work.title,
@@ -110,7 +114,7 @@ export async function GET(req: NextRequest) {
           coursework: courseworkData
         });
       } catch (error) {
-        console.log(`Error fetching coursework for course ${course.id}:`, error.message);
+        console.log(`Error fetching coursework for course ${course.id}:`, error instanceof Error ? error.message : 'Unknown error');
         courseData.push({
           id: course.id,
           name: course.name,

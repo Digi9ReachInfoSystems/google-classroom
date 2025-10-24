@@ -275,18 +275,9 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
       
       if (!moduleProgress) return false
       
-      // Check if all videos and quizzes are completed
-      const allVideosCompleted = selectedMaterial.children?.videos?.every((_: any, index: number) => {
-        const videoId = `video-${moduleId}-${index}`
-        return videoCompletions[videoId] === true
-      }) || false
-
-      const allQuizzesCompleted = selectedMaterial.children?.quizzes?.every((_: any, index: number) => {
-        const quizId = `quiz-${moduleId}-${index}`
-        return videoCompletions[quizId] === true
-      }) || false
-
-      return allVideosCompleted && allQuizzesCompleted
+      // For now, just check if the module progress indicates completion
+      // This is a simplified approach since the children property doesn't exist
+      return moduleProgress.completed || false
     }
 
     const moduleCompleted = isLearningModuleCompleted()
