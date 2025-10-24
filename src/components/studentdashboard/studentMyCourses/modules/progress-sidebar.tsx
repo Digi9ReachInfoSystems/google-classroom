@@ -165,13 +165,13 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
           const aNumber = extractModuleNumber(a.title || '');
           const bNumber = extractModuleNumber(b.title || '');
           
-          // If both have the same number, prioritize assignments over courses
+          // If both have the same number, prioritize courses over assignments
           if (aNumber === bNumber && aNumber !== 999) {
-            if (aIsAssignment && bIsCourse) return -1;
-            if (aIsCourse && bIsAssignment) return 1;
+            if (aIsCourse && bIsAssignment) return -1;
+            if (aIsAssignment && bIsCourse) return 1;
             // Legacy support
-            if (aIsModule && bIsMaterial) return -1;
-            if (aIsMaterial && bIsModule) return 1;
+            if (aIsMaterial && bIsModule) return -1;
+            if (aIsModule && bIsMaterial) return 1;
           }
           
           // If both are assignments or both are courses, sort by number
@@ -183,14 +183,14 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
             return (a.title || '').localeCompare(b.title || '');
           }
           
-          // Interleave: alternate between assignments and courses with same number
+          // Interleave: alternate between courses and assignments with same number
           if (aNumber === bNumber && aNumber !== 999) {
-            // Same number: assignment comes first, then course
-            if (aIsAssignment && bIsCourse) return -1;
-            if (aIsCourse && bIsAssignment) return 1;
+            // Same number: course comes first, then assignment
+            if (aIsCourse && bIsAssignment) return -1;
+            if (aIsAssignment && bIsCourse) return 1;
             // Legacy support
-            if (aIsModule && bIsMaterial) return -1;
-            if (aIsMaterial && bIsModule) return 1;
+            if (aIsMaterial && bIsModule) return -1;
+            if (aIsModule && bIsMaterial) return 1;
           }
           
           // Different numbers: sort by number first
@@ -248,13 +248,13 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                 const aNumber = extractModuleNumber(a.title || '');
                 const bNumber = extractModuleNumber(b.title || '');
                 
-                // If both have the same number, prioritize assignments over courses
+                // If both have the same number, prioritize courses over assignments
                 if (aNumber === bNumber && aNumber !== 999) {
-                  if (aIsAssignment && bIsCourse) return -1;
-                  if (aIsCourse && bIsAssignment) return 1;
+                  if (aIsCourse && bIsAssignment) return -1;
+                  if (aIsAssignment && bIsCourse) return 1;
                   // Legacy support
-                  if (aIsModule && bIsMaterial) return -1;
-                  if (aIsMaterial && bIsModule) return 1;
+                  if (aIsMaterial && bIsModule) return -1;
+                  if (aIsModule && bIsMaterial) return 1;
                 }
                 
                 // If both are assignments or both are courses, sort by number
@@ -266,14 +266,14 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                   return (a.title || '').localeCompare(b.title || '');
                 }
                 
-                // Interleave: alternate between assignments and courses with same number
+                // Interleave: alternate between courses and assignments with same number
                 if (aNumber === bNumber && aNumber !== 999) {
-                  // Same number: assignment comes first, then course
-                  if (aIsAssignment && bIsCourse) return -1;
-                  if (aIsCourse && bIsAssignment) return 1;
+                  // Same number: course comes first, then assignment
+                  if (aIsCourse && bIsAssignment) return -1;
+                  if (aIsAssignment && bIsCourse) return 1;
                   // Legacy support
-                  if (aIsModule && bIsMaterial) return -1;
-                  if (aIsMaterial && bIsModule) return 1;
+                  if (aIsMaterial && bIsModule) return -1;
+                  if (aIsModule && bIsMaterial) return 1;
                 }
                 
                 // Different numbers: sort by number first
