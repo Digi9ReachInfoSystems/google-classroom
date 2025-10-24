@@ -53,7 +53,9 @@ export function CourseUpdatesTable() {
   const extractModuleNumber = (title: string): number => {
     // Try various patterns to extract module number
     const patterns = [
-      /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc.
+      /(?:assignment|assign)\s*(\d+)/i,    // "Assignment 1", "Assign 2", etc.
+      /(?:course|cours)\s*(\d+)/i,         // "Course 1", "Cours 2", etc.
+      /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc. (legacy)
       /^(\d+)[\s\-\.]/i,                   // "1 - Title", "2. Title", etc.
       /lesson\s*(\d+)/i,                   // "Lesson 1", etc.
       /chapter\s*(\d+)/i,                  // "Chapter 1", etc.
@@ -73,19 +75,20 @@ export function CourseUpdatesTable() {
     return 999;
   };
 
-  // Helper function to check if an item is a material
-  const isMaterial = (title: string): boolean => {
+  // Helper function to check if an item is a course (formerly material)
+  const isCourse = (title: string): boolean => {
     const lowerTitle = title.toLowerCase();
-    return lowerTitle.includes('material') || lowerTitle.includes('mat ');
+    return lowerTitle.includes('course') || lowerTitle.includes('cours ') || 
+           lowerTitle.includes('material') || lowerTitle.includes('mat '); // legacy support
   };
 
   // Transform course work and submissions into course updates
   const courseUpdates: CourseUpdate[] = courseData ? 
     courseData.courseWork
       .filter((work: any) => {
-        // Hide pre-survey, post-survey, idea submission items, and materials
+        // Hide pre-survey, post-survey, idea submission items, and courses
         const title = (work.title || '').toLowerCase();
-        return !title.includes('survey') && !title.includes('idea') && !isMaterial(work.title || '');
+        return !title.includes('survey') && !title.includes('idea') && !isCourse(work.title || '');
       })
       .map((work: any) => {
         const submission = courseData.submissions.find((sub: any) => sub.courseWorkId === work.id);

@@ -291,10 +291,17 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
 
     const moduleCompleted = isLearningModuleCompleted()
     
-    // Check if this is Module 6
-    const isModule6 = () => {
+    // Check if this is Assignment 6
+    const isAssignment6 = () => {
       const title = selectedMaterial.title?.toLowerCase() || ''
-      return title.includes('module 6') || 
+      return title.includes('assignment 6') || 
+             title.includes('assign 6') || 
+             title.includes('assignment6') ||
+             title.includes('assign6') ||
+             (title.includes('assignment') && title.includes('6')) ||
+             (title.includes('assign') && title.includes('6')) ||
+             // Legacy support for Module 6
+             title.includes('module 6') || 
              title.includes('mod 6') || 
              title.includes('module6') ||
              title.includes('mod6') ||
@@ -358,12 +365,12 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
           </div>
         </div>
 
-        {/* Module 6 Course Completion Button */}
-        {isModule6() && (isCompleted || isCompletedViaAPI || moduleCompleted) && (
+        {/* Assignment 6 Course Completion Button */}
+        {isAssignment6() && (isCompleted || isCompletedViaAPI || moduleCompleted) && (
           <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">🎉 Module 6 Completed!</h3>
-              <p className="text-blue-700 mb-4">You've completed the final learning module. Ready to mark the entire course as complete?</p>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">🎉 Assignment 6 Completed!</h3>
+              <p className="text-blue-700 mb-4">You've completed the final assignment. Ready to mark the entire course as complete?</p>
               <Button
                 onClick={onAllComplete}
                 disabled={submitting}

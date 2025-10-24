@@ -103,8 +103,19 @@ export async function GET(req: NextRequest) {
         for (const work of courseWork) {
           if (!work.id || work.workType !== 'ASSIGNMENT' || work.state !== 'PUBLISHED') continue;
           
-          studentTotalAssignments++;
-          totalAssignments++;
+          const title = work.title?.toLowerCase() || '';
+          
+          // Filter out surveys, ideas, and materials - only count learning assignments
+          const isSurvey = title.includes('survey');
+          const isIdea = title.includes('idea');
+          const isMaterial = title.includes('course') || title.includes('cours ') || 
+                            title.includes('material') || title.includes('mat '); // legacy support
+          
+          // Only count learning assignments (exclude surveys, ideas, and materials)
+          if (!isSurvey && !isIdea && !isMaterial) {
+            studentTotalAssignments++;
+            totalAssignments++;
+          }
 
           try {
             // Get student's submission for this assignment
@@ -120,8 +131,11 @@ export async function GET(req: NextRequest) {
             );
 
             if (studentSubmission && (studentSubmission.state === 'TURNED_IN' || studentSubmission.state === 'RETURNED')) {
-              completedAssignments++;
-              totalCompletedAssignments++;
+              // Only count learning assignments for completion
+              if (!isSurvey && !isIdea && !isMaterial) {
+                completedAssignments++;
+                totalCompletedAssignments++;
+              }
             }
           } catch (error) {
             console.warn(`Error fetching submission for student ${student.profile.emailAddress} in assignment ${work.id}:`, error);

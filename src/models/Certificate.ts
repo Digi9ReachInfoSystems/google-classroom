@@ -11,9 +11,9 @@ export interface ICertificate {
     preSurveyCompleted: boolean;
     postSurveyCompleted: boolean;
     ideasCompleted: boolean;
-    learningModulesCompleted: boolean;
-    totalModules: number;
-    completedModules: number;
+    assignmentsCompleted: boolean;
+    totalAssignments: number;
+    completedAssignments: number;
   };
 }
 
@@ -29,9 +29,9 @@ const CertificateSchema = new Schema<ICertificate>(
       preSurveyCompleted: { type: Boolean, required: true },
       postSurveyCompleted: { type: Boolean, required: true },
       ideasCompleted: { type: Boolean, required: true },
-      learningModulesCompleted: { type: Boolean, required: true },
-      totalModules: { type: Number, required: true },
-      completedModules: { type: Number, required: true }
+      assignmentsCompleted: { type: Boolean, required: true },
+      totalAssignments: { type: Number, required: true },
+      completedAssignments: { type: Number, required: true }
     }
   },
   { timestamps: true }

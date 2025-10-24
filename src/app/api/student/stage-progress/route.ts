@@ -147,10 +147,12 @@ export async function GET(req: NextRequest) {
       stageId: 'post-survey'
     });
 
-    // Calculate course completion (all non-survey/idea/material coursework)
+    // Calculate course completion (all non-survey/idea/course coursework)
     const regularCoursework = allCoursework.filter((cw: any) => {
       const title = cw.title ? cw.title.toLowerCase() : '';
-      return !title.includes('survey') && !title.includes('idea') && !title.includes('material') && !title.includes('mat ');
+      return !title.includes('survey') && !title.includes('idea') && 
+             !title.includes('course') && !title.includes('cours ') &&
+             !title.includes('material') && !title.includes('mat '); // legacy support
     });
 
     // Check MongoDB for material completions
@@ -210,10 +212,9 @@ export async function GET(req: NextRequest) {
 
     // Consider course completed if:
     // 1. Course stage is explicitly marked complete, OR
-    // 2. All regular coursework (modules) AND all materials are completed
+    // 2. All regular coursework (assignments) are completed (materials not required)
     const courseCompleted = !!courseStageCompletion || 
-                           (regularCoursework.length > 0 && completedRegularCount >= regularCoursework.length &&
-                            completedMaterialCount > 0);
+                           (regularCoursework.length > 0 && completedRegularCount >= regularCoursework.length);
     
     // Log completion status for debugging
     console.log('Course completion check:', {

@@ -107,8 +107,10 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
   const extractModuleNumber = (title: string): number => {
     // Try various patterns to extract module number
     const patterns = [
-      /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc.
-      /(?:material|mat)\s*(\d+)/i,         // "Material 1", "Mat 2", etc.
+      /(?:assignment|assign)\s*(\d+)/i,    // "Assignment 1", "Assign 2", etc.
+      /(?:course|cours)\s*(\d+)/i,         // "Course 1", "Cours 2", etc.
+      /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc. (legacy)
+      /(?:material|mat)\s*(\d+)/i,         // "Material 1", "Mat 2", etc. (legacy)
       /^(\d+)[\s\-\.]/i,                   // "1 - Title", "2. Title", etc.
       /lesson\s*(\d+)/i,                   // "Lesson 1", etc.
       /chapter\s*(\d+)/i,                  // "Chapter 1", etc.
@@ -142,12 +144,18 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
           return !title.includes('survey') && !title.includes('idea')
         })
         
-        // Sort materials to interleave modules and materials
+        // Sort materials to interleave courses and assignments
         const sortedMaterials = materials.sort((a: any, b: any) => {
           const aTitle = (a.title || '').toLowerCase();
           const bTitle = (b.title || '').toLowerCase();
           
-          // Check if items are modules or materials
+          // Check if items are assignments or courses
+          const aIsAssignment = aTitle.includes('assignment') || aTitle.includes('assign ');
+          const bIsAssignment = bTitle.includes('assignment') || bTitle.includes('assign ');
+          const aIsCourse = aTitle.includes('course') || aTitle.includes('cours ');
+          const bIsCourse = bTitle.includes('course') || bTitle.includes('cours ');
+          
+          // Legacy support for module/material naming
           const aIsModule = aTitle.includes('module') || aTitle.includes('mod ');
           const bIsModule = bTitle.includes('module') || bTitle.includes('mod ');
           const aIsMaterial = aTitle.includes('material') || aTitle.includes('mat ');
@@ -157,25 +165,32 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
           const aNumber = extractModuleNumber(a.title || '');
           const bNumber = extractModuleNumber(b.title || '');
           
-          // If both have the same number, prioritize materials over modules
+          // If both have the same number, prioritize assignments over courses
           if (aNumber === bNumber && aNumber !== 999) {
-            if (aIsMaterial && bIsModule) return -1;
-            if (aIsModule && bIsMaterial) return 1;
+            if (aIsAssignment && bIsCourse) return -1;
+            if (aIsCourse && bIsAssignment) return 1;
+            // Legacy support
+            if (aIsModule && bIsMaterial) return -1;
+            if (aIsMaterial && bIsModule) return 1;
           }
           
-          // If both are modules or both are materials, sort by number
-          if ((aIsModule && bIsModule) || (aIsMaterial && bIsMaterial)) {
+          // If both are assignments or both are courses, sort by number
+          if ((aIsAssignment && bIsAssignment) || (aIsCourse && bIsCourse) || 
+              (aIsModule && bIsModule) || (aIsMaterial && bIsMaterial)) {
             if (aNumber !== bNumber) {
               return aNumber - bNumber;
             }
             return (a.title || '').localeCompare(b.title || '');
           }
           
-          // Interleave: alternate between modules and materials with same number
+          // Interleave: alternate between assignments and courses with same number
           if (aNumber === bNumber && aNumber !== 999) {
-            // Same number: material comes first, then module
-            if (aIsMaterial && bIsModule) return -1;
-            if (aIsModule && bIsMaterial) return 1;
+            // Same number: assignment comes first, then course
+            if (aIsAssignment && bIsCourse) return -1;
+            if (aIsCourse && bIsAssignment) return 1;
+            // Legacy support
+            if (aIsModule && bIsMaterial) return -1;
+            if (aIsMaterial && bIsModule) return 1;
           }
           
           // Different numbers: sort by number first
@@ -217,7 +232,13 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                 const aTitle = (a.title || '').toLowerCase();
                 const bTitle = (b.title || '').toLowerCase();
                 
-                // Check if items are modules or materials
+                // Check if items are assignments or courses
+                const aIsAssignment = aTitle.includes('assignment') || aTitle.includes('assign ');
+                const bIsAssignment = bTitle.includes('assignment') || bTitle.includes('assign ');
+                const aIsCourse = aTitle.includes('course') || aTitle.includes('cours ');
+                const bIsCourse = bTitle.includes('course') || bTitle.includes('cours ');
+                
+                // Legacy support for module/material naming
                 const aIsModule = aTitle.includes('module') || aTitle.includes('mod ');
                 const bIsModule = bTitle.includes('module') || bTitle.includes('mod ');
                 const aIsMaterial = aTitle.includes('material') || aTitle.includes('mat ');
@@ -227,25 +248,32 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
                 const aNumber = extractModuleNumber(a.title || '');
                 const bNumber = extractModuleNumber(b.title || '');
                 
-                // If both have the same number, prioritize materials over modules
+                // If both have the same number, prioritize assignments over courses
                 if (aNumber === bNumber && aNumber !== 999) {
-                  if (aIsMaterial && bIsModule) return -1;
-                  if (aIsModule && bIsMaterial) return 1;
+                  if (aIsAssignment && bIsCourse) return -1;
+                  if (aIsCourse && bIsAssignment) return 1;
+                  // Legacy support
+                  if (aIsModule && bIsMaterial) return -1;
+                  if (aIsMaterial && bIsModule) return 1;
                 }
                 
-                // If both are modules or both are materials, sort by number
-                if ((aIsModule && bIsModule) || (aIsMaterial && bIsMaterial)) {
+                // If both are assignments or both are courses, sort by number
+                if ((aIsAssignment && bIsAssignment) || (aIsCourse && bIsCourse) || 
+                    (aIsModule && bIsModule) || (aIsMaterial && bIsMaterial)) {
                   if (aNumber !== bNumber) {
                     return aNumber - bNumber;
                   }
                   return (a.title || '').localeCompare(b.title || '');
                 }
                 
-                // Interleave: alternate between modules and materials with same number
+                // Interleave: alternate between assignments and courses with same number
                 if (aNumber === bNumber && aNumber !== 999) {
-                  // Same number: material comes first, then module
-                  if (aIsMaterial && bIsModule) return -1;
-                  if (aIsModule && bIsMaterial) return 1;
+                  // Same number: assignment comes first, then course
+                  if (aIsAssignment && bIsCourse) return -1;
+                  if (aIsCourse && bIsAssignment) return 1;
+                  // Legacy support
+                  if (aIsModule && bIsMaterial) return -1;
+                  if (aIsMaterial && bIsModule) return 1;
                 }
                 
                 // Different numbers: sort by number first

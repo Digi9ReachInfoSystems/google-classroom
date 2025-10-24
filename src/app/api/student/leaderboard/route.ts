@@ -233,8 +233,8 @@ export async function GET(req: NextRequest) {
             email: currentUser.email,
             profilePicture: undefined,
             completionPercentage,
-            totalAssignments: mainStages.length,
-            completedAssignments: completedMainStages,
+            totalAssignments: totalStages,
+            completedAssignments: completedStages,
             averageGrade: undefined,
             badges: badgeCount,
             certificates: certificateCount

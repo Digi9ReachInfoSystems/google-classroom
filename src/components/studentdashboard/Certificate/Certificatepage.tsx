@@ -15,9 +15,9 @@ interface Certificate {
     preSurveyCompleted: boolean;
     postSurveyCompleted: boolean;
     ideasCompleted: boolean;
-    learningModulesCompleted: boolean;
-    totalModules: number;
-    completedModules: number;
+    assignmentsCompleted: boolean;
+    totalAssignments: number;
+    completedAssignments: number;
   };
 }
 
@@ -25,9 +25,9 @@ interface CompletionStatus {
   preSurveyCompleted: boolean;
   postSurveyCompleted: boolean;
   ideasCompleted: boolean;
-  learningModulesCompleted: boolean;
-  totalModules: number;
-  completedModules: number;
+  assignmentsCompleted: boolean;
+  totalAssignments: number;
+  completedAssignments: number;
   completionPercentage: number;
 }
 
@@ -295,12 +295,12 @@ export default function Certificatepage() {
                 </div>
               </div>
 
-              <div className={`p-4 rounded-lg ${completionStatus.learningModulesCompleted ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
+              <div className={`p-4 rounded-lg ${completionStatus.assignmentsCompleted ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-gray-900">
-                    Learning Modules ({completionStatus.completedModules}/{completionStatus.totalModules})
+                    Assignments ({completionStatus.completedAssignments}/{completionStatus.totalAssignments})
                   </span>
-                  {completionStatus.learningModulesCompleted ? (
+                  {completionStatus.assignmentsCompleted ? (
                     <CheckCircle className="h-5 w-5 text-green-500" />
                   ) : (
                     <XCircle className="h-5 w-5 text-gray-400" />

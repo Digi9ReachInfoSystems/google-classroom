@@ -53,7 +53,10 @@ export function CourseProgressCircles() {
           
           // Calculate course progress status
           let courseProgressStatus: "completed" | "due" | "pending" = "pending";
-          if (progress.regularCourseworkCount > 0) {
+          if (progress.courseCompleted) {
+            // Course is explicitly marked as completed
+            courseProgressStatus = "completed";
+          } else if (progress.regularCourseworkCount > 0) {
             const completionPercentage = (progress.completedCourseworkCount / progress.regularCourseworkCount) * 100;
             if (completionPercentage === 100) {
               courseProgressStatus = "completed";

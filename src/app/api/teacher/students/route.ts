@@ -142,7 +142,18 @@ export async function GET(req: NextRequest) {
         for (const work of courseWork) {
           if (!work.id || work.workType !== 'ASSIGNMENT' || work.state !== 'PUBLISHED') continue;
           
-          totalAssignments++;
+          const title = work.title?.toLowerCase() || '';
+          
+          // Filter out surveys, ideas, and materials - only count learning assignments
+          const isSurvey = title.includes('survey');
+          const isIdea = title.includes('idea');
+          const isMaterial = title.includes('course') || title.includes('cours ') || 
+                            title.includes('material') || title.includes('mat '); // legacy support
+          
+          // Only count learning assignments (exclude surveys, ideas, and materials)
+          if (!isSurvey && !isIdea && !isMaterial) {
+            totalAssignments++;
+          }
 
           try {
             // Get student's submission for this assignment
@@ -158,10 +169,12 @@ export async function GET(req: NextRequest) {
             );
 
             if (studentSubmission && (studentSubmission.state === 'TURNED_IN' || studentSubmission.state === 'RETURNED')) {
-              completedAssignments++;
+              // Only count learning assignments for progress calculation
+              if (!isSurvey && !isIdea && !isMaterial) {
+                completedAssignments++;
+              }
 
               // Check for specific assignment types - only override if not already completed in database
-              const title = work.title?.toLowerCase() || '';
               if (title.includes('pre-survey') || title.includes('pre survey')) {
                 // Only set to true if not already completed in database
                 if (!preSurveyCompleted) {
