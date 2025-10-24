@@ -15,9 +15,9 @@ interface Certificate {
     preSurveyCompleted: boolean;
     postSurveyCompleted: boolean;
     ideasCompleted: boolean;
-    learningModulesCompleted: boolean;
-    totalModules: number;
-    completedModules: number;
+    assignmentsCompleted: boolean;
+    totalAssignments: number;
+    completedAssignments: number;
   };
 }
 
@@ -25,9 +25,9 @@ interface CompletionStatus {
   preSurveyCompleted: boolean;
   postSurveyCompleted: boolean;
   ideasCompleted: boolean;
-  learningModulesCompleted: boolean;
-  totalModules: number;
-  completedModules: number;
+  assignmentsCompleted: boolean;
+  totalAssignments: number;
+  completedAssignments: number;
   completionPercentage: number;
 }
 
@@ -137,14 +137,14 @@ export default function Certificatepage() {
           <div className="space-y-6">
             {/* Certificate Controls */}
             <div className="flex justify-end gap-3">
-              <Button
+              {/* <Button
                 onClick={handleRegenerateCertificate}
                 variant="outline"
                 className="flex items-center gap-2 border-red-300 text-red-600 hover:bg-red-50"
               >
                 <RotateCw className="h-4 w-4" />
                 Regenerate Certificate
-              </Button>
+              </Button> */}
               <Button
                 onClick={handleFlip}
                 variant="outline"
@@ -187,6 +187,38 @@ export default function Certificatepage() {
                       className="w-full h-auto rounded-2xl shadow-2xl"
                       priority
                     />
+                    {/* Overlay with student name and date - positioned like PDF */}
+                    <div className="absolute inset-0">
+                      {/* Student name positioned at 45% height (same as PDF) */}
+                      <div 
+                        className="absolute right-1/5 transform -translate-x-1/2"
+                        style={{ 
+                          top: '42%',
+                          transform: 'translateX(-50%)'
+                        }}
+                      >
+                        <h2 className="text-4xl font-bold text-blue-900 text-center" style={{ fontFamily: 'serif' }}>
+                          {certificate.studentName}
+                        </h2>
+                      </div>
+                      
+                      {/* Date positioned much lower (around 70% height) */}
+                      <div 
+                        className="absolute right-1/3 transform -translate-x-1/2"
+                        style={{ 
+                          top: '82%',
+                          transform: 'translateX(-32%)'
+                        }}
+                      >
+                        <p className="text-xl text-gray-600 text-center" style={{ fontFamily: 'serif' }}>
+                          {new Date(certificate.issuedAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -263,12 +295,12 @@ export default function Certificatepage() {
                 </div>
               </div>
 
-              <div className={`p-4 rounded-lg ${completionStatus.learningModulesCompleted ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
+              <div className={`p-4 rounded-lg ${completionStatus.assignmentsCompleted ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-gray-900">
-                    Learning Modules ({completionStatus.completedModules}/{completionStatus.totalModules})
+                    Assignments ({completionStatus.completedAssignments}/{completionStatus.totalAssignments})
                   </span>
-                  {completionStatus.learningModulesCompleted ? (
+                  {completionStatus.assignmentsCompleted ? (
                     <CheckCircle className="h-5 w-5 text-green-500" />
                   ) : (
                     <XCircle className="h-5 w-5 text-gray-400" />

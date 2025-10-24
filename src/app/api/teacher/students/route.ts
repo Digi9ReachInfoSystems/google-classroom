@@ -3,6 +3,7 @@ import { verifyAuthToken } from '@/lib/auth';
 import { createUserOAuthClient, getClassroomWithUserAuth } from '@/lib/user-oauth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { CertificateModel } from '@/models/Certificate';
+import { StageCompletionModel } from '@/models/StageCompletion';
 
 export async function GET(req: NextRequest) {
   try {
@@ -116,11 +117,43 @@ export async function GET(req: NextRequest) {
         });
         const certificateEarned = !!certificateExists;
 
+        // Check stage completion status from database
+        const stageCompletions = await StageCompletionModel.find({
+          courseId,
+          studentEmail
+        });
+
+        // Check for specific stage completions
+        const preSurveyStage = stageCompletions.find(stage => stage.stageId === 'pre-survey');
+        const ideasStage = stageCompletions.find(stage => stage.stageId === 'ideas');
+        const postSurveyStage = stageCompletions.find(stage => stage.stageId === 'post-survey');
+
+        if (preSurveyStage) {
+          preSurveyCompleted = true;
+        }
+        if (ideasStage) {
+          ideaSubmissionCompleted = true;
+        }
+        if (postSurveyStage) {
+          postSurveyCompleted = true;
+        }
+
         // Check each assignment for this student
         for (const work of courseWork) {
           if (!work.id || work.workType !== 'ASSIGNMENT' || work.state !== 'PUBLISHED') continue;
           
-          totalAssignments++;
+          const title = work.title?.toLowerCase() || '';
+          
+          // Filter out surveys, ideas, and materials - only count learning assignments
+          const isSurvey = title.includes('survey');
+          const isIdea = title.includes('idea');
+          const isMaterial = title.includes('course') || title.includes('cours ') || 
+                            title.includes('material') || title.includes('mat '); // legacy support
+          
+          // Only count learning assignments (exclude surveys, ideas, and materials)
+          if (!isSurvey && !isIdea && !isMaterial) {
+            totalAssignments++;
+          }
 
           try {
             // Get student's submission for this assignment
@@ -136,16 +169,27 @@ export async function GET(req: NextRequest) {
             );
 
             if (studentSubmission && (studentSubmission.state === 'TURNED_IN' || studentSubmission.state === 'RETURNED')) {
-              completedAssignments++;
+              // Only count learning assignments for progress calculation
+              if (!isSurvey && !isIdea && !isMaterial) {
+                completedAssignments++;
+              }
 
-              // Check for specific assignment types
-              const title = work.title?.toLowerCase() || '';
+              // Check for specific assignment types - only override if not already completed in database
               if (title.includes('pre-survey') || title.includes('pre survey')) {
-                preSurveyCompleted = true;
+                // Only set to true if not already completed in database
+                if (!preSurveyCompleted) {
+                  preSurveyCompleted = true;
+                }
               } else if (title.includes('idea') || title.includes('ideas')) {
-                ideaSubmissionCompleted = true;
+                // Only set to true if not already completed in database
+                if (!ideaSubmissionCompleted) {
+                  ideaSubmissionCompleted = true;
+                }
               } else if (title.includes('post-survey') || title.includes('post survey')) {
-                postSurveyCompleted = true;
+                // Only set to true if not already completed in database
+                if (!postSurveyCompleted) {
+                  postSurveyCompleted = true;
+                }
               }
             }
           } catch (error) {

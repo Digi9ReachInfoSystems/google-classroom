@@ -78,8 +78,6 @@ interface StudentData {
 
 interface Row {
   name: string;
-  email: string;
-  course: string;
   pre: "ok" | "warn";
   lesson: number;
   idea: "ok" | "warn";
@@ -147,8 +145,6 @@ export default function TeacherstudentsTable() {
       
       return {
         name,
-        email: student.profile.emailAddress || '',
-        course: `${student.courseName}${student.courseSection ? ` - ${student.courseSection}` : ''}`,
         pre: progress.preSurveyCompleted ? "ok" : "warn",
         lesson: lessonProgress,
         idea: progress.ideaSubmissionCompleted ? "ok" : "warn",
@@ -159,16 +155,12 @@ export default function TeacherstudentsTable() {
 
     const term = q.trim().toLowerCase();
     return term ? transformedRows.filter(r => 
-      r.name.toLowerCase().includes(term) || 
-      r.email.toLowerCase().includes(term) ||
-      r.course.toLowerCase().includes(term)
+      r.name.toLowerCase().includes(term)
     ) : transformedRows;
   }, [students, q]);
 
   const headers = [
     "Student Name",
-    "Email",
-    "Course",
     "Pre survey",
     "Lesson progress",
     "Idea submission",
@@ -268,15 +260,9 @@ export default function TeacherstudentsTable() {
         <table className="w-full table-fixed">
           <tbody>
             {rows.map((r, index) => (
-              <tr key={`${r.email}-${index}`} className="text-[12px] bg-white hover:bg-muted/50 transition-colors">
+              <tr key={`${r.name}-${index}`} className="text-[12px] bg-white hover:bg-muted/50 transition-colors">
                 <td className="px-5 py-4 font-light text-[var(--neutral-1000)] border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   {r.name}
-                </td>
-                <td className="px-5 py-4 font-light text-[var(--neutral-700)] border-r border-b border-[var(--neutral-200)] last:border-r-0">
-                  {r.email}
-                </td>
-                <td className="px-5 py-4 font-light text-[var(--neutral-700)] border-r border-b border-[var(--neutral-200)] last:border-r-0">
-                  {r.course}
                 </td>
                 <td className="px-5 py-4 border-r border-b border-[var(--neutral-200)] last:border-r-0">
                   <StatusIcon type={r.pre} />

@@ -91,7 +91,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
   const [modules, setModules] = useState<ProgressModule[]>([])
   const [courseMaterials, setCourseMaterials] = useState<any[]>([])
   const [hierarchicalData, setHierarchicalData] = useState<HierarchicalData | null>(null)
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set(['course'])) // Default expand Learning modules
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set()) // Start with all modules collapsed
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
   const [expandedAssignments, setExpandedAssignments] = useState<Set<string>>(new Set())
 
@@ -107,7 +107,10 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
   const extractModuleNumber = (title: string): number => {
     // Try various patterns to extract module number
     const patterns = [
-      /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc.
+      /(?:assignment|assign)\s*(\d+)/i,    // "Assignment 1", "Assign 2", etc.
+      /(?:course|cours)\s*(\d+)/i,         // "Course 1", "Cours 2", etc.
+      /(?:module|mod)\s*(\d+)/i,           // "Module 1", "Mod 2", etc. (legacy)
+      /(?:material|mat)\s*(\d+)/i,         // "Material 1", "Mat 2", etc. (legacy)
       /^(\d+)[\s\-\.]/i,                   // "1 - Title", "2. Title", etc.
       /lesson\s*(\d+)/i,                   // "Lesson 1", etc.
       /chapter\s*(\d+)/i,                  // "Chapter 1", etc.
@@ -141,16 +144,61 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
           return !title.includes('survey') && !title.includes('idea')
         })
         
-        // Sort materials by module number
+        // Sort materials to interleave courses and assignments
         const sortedMaterials = materials.sort((a: any, b: any) => {
-          const aModuleNumber = extractModuleNumber(a.title || '');
-          const bModuleNumber = extractModuleNumber(b.title || '');
+          const aTitle = (a.title || '').toLowerCase();
+          const bTitle = (b.title || '').toLowerCase();
           
-          // Sort by module number first, then by title for non-module items
-          if (aModuleNumber !== bModuleNumber) {
-            return aModuleNumber - bModuleNumber;
+          // Check if items are assignments or courses
+          const aIsAssignment = aTitle.includes('assignment') || aTitle.includes('assign ');
+          const bIsAssignment = bTitle.includes('assignment') || bTitle.includes('assign ');
+          const aIsCourse = aTitle.includes('course') || aTitle.includes('cours ');
+          const bIsCourse = bTitle.includes('course') || bTitle.includes('cours ');
+          
+          // Legacy support for module/material naming
+          const aIsModule = aTitle.includes('module') || aTitle.includes('mod ');
+          const bIsModule = bTitle.includes('module') || bTitle.includes('mod ');
+          const aIsMaterial = aTitle.includes('material') || aTitle.includes('mat ');
+          const bIsMaterial = bTitle.includes('material') || bTitle.includes('mat ');
+          
+          // Extract numbers for comparison
+          const aNumber = extractModuleNumber(a.title || '');
+          const bNumber = extractModuleNumber(b.title || '');
+          
+          // If both have the same number, prioritize assignments over courses
+          if (aNumber === bNumber && aNumber !== 999) {
+            if (aIsAssignment && bIsCourse) return -1;
+            if (aIsCourse && bIsAssignment) return 1;
+            // Legacy support
+            if (aIsModule && bIsMaterial) return -1;
+            if (aIsMaterial && bIsModule) return 1;
           }
-          // If module numbers are the same (or both are 999), sort alphabetically
+          
+          // If both are assignments or both are courses, sort by number
+          if ((aIsAssignment && bIsAssignment) || (aIsCourse && bIsCourse) || 
+              (aIsModule && bIsModule) || (aIsMaterial && bIsMaterial)) {
+            if (aNumber !== bNumber) {
+              return aNumber - bNumber;
+            }
+            return (a.title || '').localeCompare(b.title || '');
+          }
+          
+          // Interleave: alternate between assignments and courses with same number
+          if (aNumber === bNumber && aNumber !== 999) {
+            // Same number: assignment comes first, then course
+            if (aIsAssignment && bIsCourse) return -1;
+            if (aIsCourse && bIsAssignment) return 1;
+            // Legacy support
+            if (aIsModule && bIsMaterial) return -1;
+            if (aIsMaterial && bIsModule) return 1;
+          }
+          
+          // Different numbers: sort by number first
+          if (aNumber !== bNumber) {
+            return aNumber - bNumber;
+          }
+          
+          // Fallback to alphabetical
           return (a.title || '').localeCompare(b.title || '');
         });
         
@@ -181,14 +229,59 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
             learningModules: {
               ...sortedHierarchicalData.learningModules,
               children: sortedHierarchicalData.learningModules.children.sort((a: any, b: any) => {
-                const aModuleNumber = extractModuleNumber(a.title || '');
-                const bModuleNumber = extractModuleNumber(b.title || '');
+                const aTitle = (a.title || '').toLowerCase();
+                const bTitle = (b.title || '').toLowerCase();
                 
-                // Sort by module number first, then by title for non-module items
-                if (aModuleNumber !== bModuleNumber) {
-                  return aModuleNumber - bModuleNumber;
+                // Check if items are assignments or courses
+                const aIsAssignment = aTitle.includes('assignment') || aTitle.includes('assign ');
+                const bIsAssignment = bTitle.includes('assignment') || bTitle.includes('assign ');
+                const aIsCourse = aTitle.includes('course') || aTitle.includes('cours ');
+                const bIsCourse = bTitle.includes('course') || bTitle.includes('cours ');
+                
+                // Legacy support for module/material naming
+                const aIsModule = aTitle.includes('module') || aTitle.includes('mod ');
+                const bIsModule = bTitle.includes('module') || bTitle.includes('mod ');
+                const aIsMaterial = aTitle.includes('material') || aTitle.includes('mat ');
+                const bIsMaterial = bTitle.includes('material') || bTitle.includes('mat ');
+                
+                // Extract numbers for comparison
+                const aNumber = extractModuleNumber(a.title || '');
+                const bNumber = extractModuleNumber(b.title || '');
+                
+                // If both have the same number, prioritize assignments over courses
+                if (aNumber === bNumber && aNumber !== 999) {
+                  if (aIsAssignment && bIsCourse) return -1;
+                  if (aIsCourse && bIsAssignment) return 1;
+                  // Legacy support
+                  if (aIsModule && bIsMaterial) return -1;
+                  if (aIsMaterial && bIsModule) return 1;
                 }
-                // If module numbers are the same (or both are 999), sort alphabetically
+                
+                // If both are assignments or both are courses, sort by number
+                if ((aIsAssignment && bIsAssignment) || (aIsCourse && bIsCourse) || 
+                    (aIsModule && bIsModule) || (aIsMaterial && bIsMaterial)) {
+                  if (aNumber !== bNumber) {
+                    return aNumber - bNumber;
+                  }
+                  return (a.title || '').localeCompare(b.title || '');
+                }
+                
+                // Interleave: alternate between assignments and courses with same number
+                if (aNumber === bNumber && aNumber !== 999) {
+                  // Same number: assignment comes first, then course
+                  if (aIsAssignment && bIsCourse) return -1;
+                  if (aIsCourse && bIsAssignment) return 1;
+                  // Legacy support
+                  if (aIsModule && bIsMaterial) return -1;
+                  if (aIsMaterial && bIsModule) return 1;
+                }
+                
+                // Different numbers: sort by number first
+                if (aNumber !== bNumber) {
+                  return aNumber - bNumber;
+                }
+                
+                // Fallback to alphabetical
                 return (a.title || '').localeCompare(b.title || '');
               })
             }
@@ -589,7 +682,7 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
   // Render hierarchical structure if available, otherwise fallback to original structure
   const renderHierarchicalContent = () => {
     // Always render the modules, but use hierarchical data for the learning modules section if available
-    return (
+  return (
       <div className="space-y-6 lg:space-y-8 2xl:space-y-10">
         {modules.map((module, index) => {
           // Find the learning modules in hierarchical data
@@ -599,50 +692,63 @@ const ProgressSidebar = ({ selectedCourse, stageProgress, selectedStage, onStage
           
           if (module.id === 'course' && learningModule) {
             return (
-              <div key={module.id} className="relative">
-                {index < modules.length - 1 && (
-                  <div
-                    className={`absolute left-2.5 top-8 w-px h-12 lg:h-20 ${module.status === "completed" ? "bg-green-200" : "bg-gray-200"}`}
-                  ></div>
-                )}
+          <div key={module.id} className="relative">
+            {index < modules.length - 1 && (
+              <div
+                className={`absolute left-2.5 top-8 w-px h-12 lg:h-20 ${module.status === "completed" ? "bg-green-200" : "bg-gray-200"}`}
+              ></div>
+            )}
 
                 <div className="space-y-2">
-                  <div 
-                    className={`flex items-start space-x-4 group ${module.status !== "locked" ? "cursor-pointer" : ""}`}
-                    onClick={() => handleModuleClick(module.id)}
-                  >
-                    {/* Status Icon */}
-                    <div className="flex-shrink-0 mt-1">{getStatusIcon(module.status)}</div>
+            <div 
+              className={`flex items-start space-x-4 group ${
+                module.status !== "locked" && !(module.id === 'course' && module.status === 'completed') 
+                  ? "cursor-pointer" 
+                  : ""
+              }`}
+              onClick={() => {
+                // Don't allow clicking on completed course (Learning Modules)
+                if (module.id === 'course' && module.status === 'completed') {
+                  return;
+                }
+                handleModuleClick(module.id);
+              }}
+            >
+              {/* Status Icon */}
+              <div className="flex-shrink-0 mt-1">{getStatusIcon(module.status)}</div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex-1 min-w-0 flex items-center gap-2">
-                          <h3 className={`text-sm font-medium ${getStatusStyle(module.status)} line-clamp-2`}>
-                            {module.title}
-                          </h3>
-                          <button
-                            onClick={(e) => toggleModule(module.id, e)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                          >
-                            <svg 
-                              className={`h-4 w-4 transition-transform ${expandedModules.has(module.id) ? 'rotate-180' : ''}`} 
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
+                    <h3 className={`text-sm font-medium ${getStatusStyle(module.status)} line-clamp-2`}>
+                      {module.title}
+                    </h3>
+                          {/* Hide collapsible button for completed course (Learning Modules) */}
+                          {!(module.id === 'course' && module.status === 'completed') && (
+                            <button
+                              onClick={(e) => toggleModule(module.id, e)}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
+                              <svg 
+                                className={`h-4 w-4 transition-transform ${expandedModules.has(module.id) ? 'rotate-180' : ''}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
-                        {module.subtitle && <p className="text-xs text-gray-500 mt-1">{module.subtitle}</p>}
+                    {module.subtitle && <p className="text-xs text-gray-500 mt-1">{module.subtitle}</p>}
 
-                        <div className="flex items-center space-x-2 flex-shrink-0 sm:ml-2">
-                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border-none">
-                            {module.videoCount} {module.videoCount !== 1 ? "items" : "item"}
-                          </Badge>
-                        </div>
-                      </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0 sm:ml-2">
+                    <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border-none">
+                      {module.videoCount} {module.videoCount !== 1 ? "items" : "item"}
+                    </Badge>
+                  </div>
+                </div>
                     </div>
                   </div>
 

@@ -102,43 +102,33 @@ export async function GET(req: NextRequest) {
 
     const allCoursework = courseworkResponse.data.courseWork || [];
 
-    // Filter learning modules (exclude surveys and ideas)
-    const learningModules = allCoursework.filter((cw: any) => {
+    // Filter assignments only (exclude surveys, ideas, and courses)
+    const assignments = allCoursework.filter((cw: any) => {
       if (!cw.title) return false;
       const title = cw.title.toLowerCase();
-      return !title.includes('survey') && !title.includes('idea');
+      return !title.includes('survey') && 
+             !title.includes('idea') && 
+             !title.includes('course') && 
+             !title.includes('cours ') &&
+             !title.includes('material') && 
+             !title.includes('mat '); // legacy support
     });
 
-    // Get material completions from MongoDB
-    const materialCompletions = await StageCompletionModel.find({
-      courseId,
-      studentEmail,
-      stageId: { $regex: '^material-' }
-    });
+    // Note: We only check assignments via Google Classroom submissions now
+    // Material completions are not part of the certificate criteria
 
-    const completedMaterialIds = new Set(
-      materialCompletions.map(mc => mc.stageId.replace('material-', ''))
-    );
+    // Check Google Classroom submissions for assignments only
+    let completedAssignmentsCount = 0;
+    for (const assignment of assignments) {
+      if (!assignment.id) continue;
 
-    // Check Google Classroom submissions
-    let completedModulesCount = 0;
-    for (const module of learningModules) {
-      if (!module.id) continue;
-
-      console.log(`Checking module: ${module.title} (${module.id})`);
-
-      // Check local completion first
-      if (completedMaterialIds.has(module.id)) {
-        console.log(`  ✓ Completed locally`);
-        completedModulesCount++;
-        continue;
-      }
+      console.log(`Checking assignment: ${assignment.title} (${assignment.id})`);
 
       // Check Google Classroom submission
       try {
         const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
           courseId: courseId,
-          courseWorkId: module.id,
+          courseWorkId: assignment.id,
           userId: studentEmail,
           pageSize: 1
         });
@@ -150,20 +140,20 @@ export async function GET(req: NextRequest) {
           // Accept both TURNED_IN and RETURNED states
           if (submission.state === 'TURNED_IN' || submission.state === 'RETURNED') {
             console.log(`  ✓ Completed via Google Classroom`);
-            completedModulesCount++;
+            completedAssignmentsCount++;
           }
         } else {
           console.log(`  ✗ No submission found`);
         }
       } catch (error) {
-        console.warn(`Error fetching submission for module ${module.id}:`, error);
+        console.warn(`Error fetching submission for assignment ${assignment.id}:`, error);
       }
     }
 
-    console.log(`Completed modules: ${completedModulesCount}/${learningModules.length}`);
+    console.log(`Completed assignments: ${completedAssignmentsCount}/${assignments.length}`);
 
-    const allModulesCompleted = learningModules.length > 0 && 
-                                 completedModulesCount === learningModules.length;
+    const allAssignmentsCompleted = assignments.length > 0 && 
+                                   completedAssignmentsCount === assignments.length;
 
     const preSurveyCompleted = !!preSurveyCompletion;
     const postSurveyCompleted = !!postSurveyCompletion;
@@ -173,12 +163,12 @@ export async function GET(req: NextRequest) {
     console.log(`  Pre-Survey: ${preSurveyCompleted ? '✓' : '✗'}`);
     console.log(`  Post-Survey: ${postSurveyCompleted ? '✓' : '✗'}`);
     console.log(`  Ideas: ${ideasCompleted ? '✓' : '✗'}`);
-    console.log(`  Learning Modules: ${allModulesCompleted ? '✓' : '✗'} (${completedModulesCount}/${learningModules.length})`);
+    console.log(`  Assignments: ${allAssignmentsCompleted ? '✓' : '✗'} (${completedAssignmentsCount}/${assignments.length})`);
 
     const is100PercentComplete = preSurveyCompleted && 
                                   postSurveyCompleted && 
                                   ideasCompleted && 
-                                  allModulesCompleted;
+                                  allAssignmentsCompleted;
 
     console.log(`100% Complete: ${is100PercentComplete ? 'YES' : 'NO'}`);
 
@@ -223,9 +213,9 @@ export async function GET(req: NextRequest) {
           preSurveyCompleted,
           postSurveyCompleted,
           ideasCompleted,
-          learningModulesCompleted: allModulesCompleted,
-          totalModules: learningModules.length,
-          completedModules: completedModulesCount
+          assignmentsCompleted: allAssignmentsCompleted,
+          totalAssignments: assignments.length,
+          completedAssignments: completedAssignmentsCount
         }
       });
 
@@ -251,11 +241,11 @@ export async function GET(req: NextRequest) {
         preSurveyCompleted,
         postSurveyCompleted,
         ideasCompleted,
-        learningModulesCompleted: allModulesCompleted,
-        totalModules: learningModules.length,
-        completedModules: completedModulesCount,
+        assignmentsCompleted: allAssignmentsCompleted,
+        totalAssignments: assignments.length,
+        completedAssignments: completedAssignmentsCount,
         completionPercentage: Math.round(
-          ((Number(preSurveyCompleted) + Number(postSurveyCompleted) + Number(ideasCompleted) + (completedModulesCount / (learningModules.length || 1))) / 4) * 100
+          ((Number(preSurveyCompleted) + Number(postSurveyCompleted) + Number(ideasCompleted) + (completedAssignmentsCount / (assignments.length || 1))) / 4) * 100
         )
       }
     });

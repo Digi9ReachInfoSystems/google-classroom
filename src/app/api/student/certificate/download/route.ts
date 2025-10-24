@@ -74,6 +74,27 @@ export async function GET(req: NextRequest) {
     // Draw the student name
     ctx.fillText(certificate.studentName, nameX, nameY);
 
+    // Add date positioned to match the certificate page (right-1/3, top 82%) - moved left
+    const dateX = frontImage.width * 0.56; // Moved left from 67% to 60%
+    const dateY = frontImage.height * 0.84; // Position at 82% height
+    
+    // Format the date
+    const issueDate = new Date(certificate.issuedAt);
+    const formattedDate = issueDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    // Set font properties for the date (smaller than name)
+    ctx.font = '24px Arial, sans-serif';
+    ctx.fillStyle = '#4a5568'; // Gray color for date
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    
+    // Draw the date
+    ctx.fillText(formattedDate, dateX, dateY);
+
     // Convert canvas to base64
     const frontImageWithName = canvas.toDataURL('image/jpeg', 0.9);
     

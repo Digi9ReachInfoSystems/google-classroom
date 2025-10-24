@@ -51,7 +51,7 @@ export default function TeacherBadgesSection({ studentEmail }: TeacherBadgesSect
   };
 
   const totalBadges = TOTAL_BADGES;
-  const lockedCount = totalBadges - earnedCount;
+  const lockedCount = Math.max(0, totalBadges - earnedCount);
 
   return (
     <div className="space-y-2 p-4 md:p-6 rounded-lg bg-white">

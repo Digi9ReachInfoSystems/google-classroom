@@ -129,7 +129,7 @@ export default function Ideasubmitted({ rows, loading }: { rows: IdeaRow[]; load
                             className="text-[#10B981] hover:underline whitespace-nowrap inline-block font-medium"
                             title="View student's response in Google Forms"
                           >
-                            View Response
+                            View Responses
                           </a>
                         ) : (
                           <a
@@ -139,7 +139,7 @@ export default function Ideasubmitted({ rows, loading }: { rows: IdeaRow[]; load
                             className="text-[#2E7CF6] hover:underline whitespace-nowrap inline-block"
                             title="Open idea submission form"
                           >
-                            View Form
+                            Open Form
                           </a>
                         )
                       ) : (

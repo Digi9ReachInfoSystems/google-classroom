@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
-import { BadgeModel, BadgeType } from '@/models/Badge';
-import { BADGE_ORDER, TOTAL_BADGES } from '@/lib/badge-utils';
+import { StageCompletionModel } from '@/models/StageCompletion';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,14 +16,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 });
     }
 
-    // Get courseId from query params
     const { searchParams } = new URL(req.url);
     const courseId = searchParams.get('courseId');
+    const materialId = searchParams.get('materialId');
 
-    if (!courseId) {
+    if (!courseId || !materialId) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Course ID is required' 
+        message: 'Course ID and Material ID are required' 
       }, { status: 400 });
     }
 
@@ -32,35 +31,20 @@ export async function GET(req: NextRequest) {
 
     const studentEmail = payload.email;
 
-    // Fetch all badges for this student in this course
-    const badges = await BadgeModel.find({
+    // Check if material is completed in MongoDB
+    const completion = await StageCompletionModel.findOne({
       courseId,
-      studentEmail
-    });
-
-    // Sort badges according to the defined order (Pre, Module 1-6, Ideas, Post)
-    const sortedBadges = badges.sort((a, b) => {
-      const aIndex = BADGE_ORDER.indexOf(a.badgeType);
-      const bIndex = BADGE_ORDER.indexOf(b.badgeType);
-      return aIndex - bIndex;
+      studentEmail,
+      stageId: `material-${materialId}`
     });
 
     return NextResponse.json({
       success: true,
-      totalBadges: TOTAL_BADGES,
-      earnedCount: badges.length,
-      badges: sortedBadges.map(badge => ({
-        id: badge._id,
-        badgeType: badge.badgeType,
-        badgeIdentifier: badge.badgeIdentifier,
-        title: badge.title,
-        description: badge.description,
-        awardedAt: badge.awardedAt
-      }))
+      completed: !!completion
     });
 
   } catch (error) {
-    console.error('Get badges API error:', error);
+    console.error('Check material completion API error:', error);
     return NextResponse.json({
       success: false,
       message: 'Internal server error',
@@ -68,4 +52,3 @@ export async function GET(req: NextRequest) {
     }, { status: 500 });
   }
 }
-

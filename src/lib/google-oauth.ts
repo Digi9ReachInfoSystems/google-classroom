@@ -43,7 +43,7 @@ export function getGoogleAuthURL() {
 	return oauth2Client.generateAuthUrl({
 		access_type: 'offline',
 		scope: scopes,
-		prompt: 'select_account',
+		prompt: 'consent', // Changed from 'select_account' to 'consent' to force refresh token
 		include_granted_scopes: true
 	});
 }
