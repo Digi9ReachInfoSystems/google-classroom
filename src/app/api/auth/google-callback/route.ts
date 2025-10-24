@@ -84,13 +84,15 @@ export async function GET(req: NextRequest) {
 		// Set authentication cookie
 		res.cookies.set('token', token, {
 			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
+			secure: false, // Set to false since we're using HTTP in production
 			sameSite: 'lax',
 			path: '/',
 			maxAge: 60 * 60 * 24 * 7, // 7 days
 		});
 
 		console.log('Redirecting to:', redirectPath);
+		console.log('Cookie set with token length:', token.length);
+		console.log('Response headers:', Object.fromEntries(res.headers.entries()));
 		return res;
 
 	} catch (error) {
