@@ -92,4 +92,5 @@ export const config = {
 		'/login',
 		'/static-login'
 	],
+	runtime: 'nodejs', // Use Node.js runtime instead of Edge runtime
 };
