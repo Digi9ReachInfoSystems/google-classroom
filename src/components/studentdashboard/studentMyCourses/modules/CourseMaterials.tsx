@@ -28,9 +28,11 @@ interface CourseMaterialsProps {
   submitting: boolean
   onVideoSelect?: (videoId: string, videoData: any) => void
   onQuizSelect?: (quizId: string, quizData: any) => void
+  learningModuleProgress?: Record<string, any>
+  videoCompletions?: Record<string, boolean>
 }
 
-export default function CourseMaterials({ courseId, studentEmail, selectedMaterialId, onAllComplete, submitting, onVideoSelect, onQuizSelect }: CourseMaterialsProps) {
+export default function CourseMaterials({ courseId, studentEmail, selectedMaterialId, onAllComplete, submitting, onVideoSelect, onQuizSelect, learningModuleProgress, videoCompletions }: CourseMaterialsProps) {
   console.log('CourseMaterials props:', { onVideoSelect: !!onVideoSelect, onQuizSelect: !!onQuizSelect })
   
   const [materials, setMaterials] = useState<CourseMaterial[]>([])
@@ -39,11 +41,28 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
   const [error, setError] = useState<string | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set()) // Don't expand any sections by default
   const [hierarchicalData, setHierarchicalData] = useState<any>(null)
+  const [materialCompletionStatus, setMaterialCompletionStatus] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     fetchCourseMaterials()
     fetchHierarchicalData()
   }, [courseId])
+
+  // Check material completion status when materials are loaded
+  useEffect(() => {
+    const checkAllMaterialCompletions = async () => {
+      if (materials.length > 0) {
+        const completionStatus: Record<string, boolean> = {}
+        for (const material of materials) {
+          const isCompleted = await checkMaterialCompletion(material.id)
+          completionStatus[material.id] = isCompleted
+        }
+        setMaterialCompletionStatus(completionStatus)
+      }
+    }
+    
+    checkAllMaterialCompletions()
+  }, [materials])
 
   // Update selected material when selectedMaterialId changes
   useEffect(() => {
@@ -137,6 +156,17 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
     return null
   }
 
+  const checkMaterialCompletion = async (materialId: string) => {
+    try {
+      const response = await fetch(`/api/student/check-material-completion?courseId=${courseId}&materialId=${materialId}`)
+      const data = await response.json()
+      return data.success && data.completed
+    } catch (error) {
+      console.error('Error checking material completion:', error)
+      return false
+    }
+  }
+
   const handleMarkMaterialComplete = async (materialId: string) => {
     try {
       // Find current index before making the API call
@@ -158,6 +188,12 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
 
       if (data.success) {
         console.log(`Material ${materialId} marked as complete successfully`);
+        
+        // Update local completion status
+        setMaterialCompletionStatus(prev => ({
+          ...prev,
+          [materialId]: true
+        }));
         
         // Add a small delay to ensure the database write is complete
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -227,6 +263,42 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
     }
 
     const isCompleted = selectedMaterial.submission?.state === 'TURNED_IN'
+    const isCompletedViaAPI = materialCompletionStatus[selectedMaterial.id] || false
+
+    // Check if learning module is completed based on video/quiz completions
+    const isLearningModuleCompleted = () => {
+      if (!learningModuleProgress || !videoCompletions || !selectedMaterial) return false
+      
+      // Get the module ID from the selected material
+      const moduleId = selectedMaterial.id
+      const moduleProgress = learningModuleProgress[moduleId]
+      
+      if (!moduleProgress) return false
+      
+      // For now, just check if the module progress indicates completion
+      // This is a simplified approach since the children property doesn't exist
+      return moduleProgress.completed || false
+    }
+
+    const moduleCompleted = isLearningModuleCompleted()
+    
+    // Check if this is Assignment 6
+    const isAssignment6 = () => {
+      const title = selectedMaterial.title?.toLowerCase() || ''
+      return title.includes('assignment 6') || 
+             title.includes('assign 6') || 
+             title.includes('assignment6') ||
+             title.includes('assign6') ||
+             (title.includes('assignment') && title.includes('6')) ||
+             (title.includes('assign') && title.includes('6')) ||
+             // Legacy support for Module 6
+             title.includes('module 6') || 
+             title.includes('mod 6') || 
+             title.includes('module6') ||
+             title.includes('mod6') ||
+             (title.includes('module') && title.includes('6')) ||
+             (title.includes('mod') && title.includes('6'))
+    }
 
     // Use hierarchical data if available, otherwise fallback to materials
     let videos: any[] = []
@@ -258,7 +330,7 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
                 <p className="text-muted-foreground">{selectedMaterial.description}</p>
               )}
             </div>
-            {!isCompleted && (
+            {!isCompleted && !isCompletedViaAPI && !moduleCompleted && (
               <Button
                 onClick={() => handleMarkMaterialComplete(selectedMaterial.id)}
                 size="sm"
@@ -275,14 +347,32 @@ export default function CourseMaterials({ courseId, studentEmail, selectedMateri
                 {selectedMaterial.maxPoints} points
               </span>
             )}
-            {isCompleted && (
+            {(isCompleted || isCompletedViaAPI || moduleCompleted) && (
               <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-medium flex items-center gap-1">
                 <CheckCircle className="h-4 w-4" />
-                Completed
+                {moduleCompleted ? 'Module Completed' : 'Completed'}
               </span>
             )}
           </div>
         </div>
+
+        {/* Assignment 6 Course Completion Button */}
+        {isAssignment6() && (isCompleted || isCompletedViaAPI || moduleCompleted) && (
+          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">🎉 Assignment 6 Completed!</h3>
+              <p className="text-blue-700 mb-4">You've completed the final assignment. Ready to mark the entire course as complete?</p>
+              <Button
+                onClick={onAllComplete}
+                disabled={submitting}
+                size="lg"
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
+              >
+                {submitting ? 'Marking Course Complete...' : '✓ Mark Course as Complete'}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Content will be shown only when individual items are selected from sidebar */}
 

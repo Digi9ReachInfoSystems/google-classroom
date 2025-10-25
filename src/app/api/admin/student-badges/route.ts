@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       studentEmail
     });
 
-    // Sort badges according to the defined order
+    // Sort badges according to the defined order (Pre, Module 1-6, Ideas, Post)
     const sortedBadges = badges.sort((a, b) => {
       const aIndex = BADGE_ORDER.indexOf(a.badgeType);
       const bIndex = BADGE_ORDER.indexOf(b.badgeType);

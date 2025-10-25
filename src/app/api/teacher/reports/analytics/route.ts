@@ -3,6 +3,7 @@ import { verifyAuthToken } from '@/lib/auth';
 import { createUserOAuthClient, getClassroomWithUserAuth } from '@/lib/user-oauth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { UserModel } from '@/models/User';
+import { StageCompletionModel } from '@/models/StageCompletion';
 
 export async function GET(req: NextRequest) {
   try {
@@ -131,6 +132,42 @@ export async function GET(req: NextRequest) {
           email: student.profile.emailAddress 
         }).select('givenName familyName fullName age grade gender disability schoolName').lean() as any;
 
+        // Check database for stage completions (pre-survey, ideas, post-survey)
+        const stageCompletions = await StageCompletionModel.find({
+          courseId,
+          studentEmail: student.profile.emailAddress
+        });
+
+        console.log(`Stage completions for ${student.profile.emailAddress}:`, stageCompletions.map(s => s.stageId));
+
+        // Check for pre-survey completion in database
+        const preSurveyStage = stageCompletions.find(stage => stage.stageId === 'pre-survey');
+        if (preSurveyStage) {
+          preSurveyCompleted++;
+          studentPreSurvey = 'Completed';
+        }
+
+        // Check for ideas completion in database
+        const ideasStage = stageCompletions.find(stage => stage.stageId === 'ideas');
+        if (ideasStage) {
+          ideaSubmitted++;
+          studentIdea = 'Submitted';
+        }
+
+        // Check for post-survey completion in database
+        const postSurveyStage = stageCompletions.find(stage => stage.stageId === 'post-survey');
+        if (postSurveyStage) {
+          postSurveyCompleted++;
+          studentPostSurvey = 'Completed';
+        }
+
+        // Check for course completion in database
+        const courseStage = stageCompletions.find(stage => stage.stageId === 'course');
+        if (courseStage) {
+          courseCompleted++;
+          studentCourse = 'Completed';
+        }
+
         // Check each assignment for this student
         for (const work of courseWork) {
           if (!work.id || work.workType !== 'ASSIGNMENT' || work.state !== 'PUBLISHED') continue;
@@ -153,36 +190,39 @@ export async function GET(req: NextRequest) {
             const title = work.title?.toLowerCase() || '';
             
             if (title.includes('pre-survey') || title.includes('pre survey')) {
-              if (isCompleted) {
+              // Only update if not already completed in database
+              if (isCompleted && studentPreSurvey !== 'Completed') {
                 preSurveyCompleted++;
                 studentPreSurvey = 'Completed';
-              } else if (studentSubmission) {
+              } else if (studentSubmission && studentPreSurvey === 'Not Started') {
                 preSurveyPending++;
                 studentPreSurvey = 'In Progress';
                 studentCompletedAll = false;
-              } else {
+              } else if (studentPreSurvey === 'Not Started') {
                 studentCompletedAll = false;
               }
             } else if (title.includes('idea') || title.includes('ideas')) {
-              if (isCompleted) {
+              // Only update if not already completed in database
+              if (isCompleted && studentIdea !== 'Submitted') {
                 ideaSubmitted++;
                 studentIdea = 'Submitted';
-              } else if (studentSubmission) {
+              } else if (studentSubmission && studentIdea === 'Not Started') {
                 ideaPending++;
                 studentIdea = 'In Progress';
                 studentCompletedAll = false;
-              } else {
+              } else if (studentIdea === 'Not Started') {
                 studentCompletedAll = false;
               }
             } else if (title.includes('post-survey') || title.includes('post survey')) {
-              if (isCompleted) {
+              // Only update if not already completed in database
+              if (isCompleted && studentPostSurvey !== 'Completed') {
                 postSurveyCompleted++;
                 studentPostSurvey = 'Completed';
-              } else if (studentSubmission) {
+              } else if (studentSubmission && studentPostSurvey === 'Not Started') {
                 postSurveyPending++;
                 studentPostSurvey = 'In Progress';
                 studentCompletedAll = false;
-              } else {
+              } else if (studentPostSurvey === 'Not Started') {
                 studentCompletedAll = false;
               }
             } else {
@@ -197,9 +237,12 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        if (studentCompletedAll) {
-          courseCompleted++;
-          studentCourse = 'Completed';
+        // Update course completion status based on database or Google Classroom
+        if (studentCourse === 'Completed' || studentCompletedAll) {
+          if (studentCourse !== 'Completed') {
+            courseCompleted++;
+            studentCourse = 'Completed';
+          }
         } else {
           courseInProgress++;
           studentCourse = 'In Progress';

@@ -20,12 +20,19 @@ export default function ClassroomPage() {
   const [videoCompletions, setVideoCompletions] = useState<Record<string, boolean>>({})
   const [currentVideoIndex, setCurrentVideoIndex] = useState<number>(0)
   const [currentAssignment, setCurrentAssignment] = useState<any>(null)
+  const [hierarchicalData, setHierarchicalData] = useState<any>(null)
   const currentVideoRef = useRef<string | null>(null)
 
   const handleVideoSelect = (videoId: string, videoData: any, assignmentData?: any) => {
     console.log('Video selected from sidebar:', videoId, videoData)
     setSelectedVideo({ id: videoId, data: videoData })
     setSelectedQuiz(null) // Clear quiz selection
+    
+    // Reset overlay state for new video
+    setOverlayClicked(prev => ({
+      ...prev,
+      [videoId]: false
+    }))
     
     // Update the current video ref
     currentVideoRef.current = videoId
@@ -187,6 +194,131 @@ export default function ClassroomPage() {
     }
   }
 
+  // Handle manual quiz completion with disclaimer
+  const handleManualQuizSubmit = (quizId: string) => {
+    setPendingQuizId(quizId)
+    setShowQuizDisclaimer(true)
+  }
+
+
+  const handleConfirmQuizComplete = async () => {
+    if (!pendingQuizId) return
+    
+    setSubmitting(true)
+    try {
+      console.log('🎯 Manually marking quiz as complete:', pendingQuizId)
+      console.log('📊 Current state before completion:', {
+        pendingQuizId,
+        currentAssignment: currentAssignment?.id,
+        videoCompletions: Object.keys(videoCompletions).filter(k => videoCompletions[k])
+      })
+      
+      // Mark quiz as completed locally
+      setVideoCompletions(prev => {
+        const newCompletions = {
+          ...prev,
+          [pendingQuizId]: true
+        }
+        console.log('Updated quiz completions:', newCompletions)
+        saveVideoCompletions(newCompletions)
+        return newCompletions
+      })
+      
+      // Save to database using the same API as CourseMaterials
+      if (selectedCourse?.id && currentAssignment) {
+        console.log('Saving quiz completion to database:', { quizId: pendingQuizId, courseId: selectedCourse.id, assignmentId: currentAssignment.id })
+        
+        try {
+          // Use the same API endpoint as CourseMaterials for consistency
+          const response = await fetch('/api/student/mark-material-complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              courseId: selectedCourse.id,
+              courseWorkId: pendingQuizId
+            })
+          })
+
+          const data = await response.json()
+          console.log('📡 Quiz completion API response:', data)
+
+          if (data.success) {
+            console.log(`✅ Quiz ${pendingQuizId} marked as complete successfully`)
+            
+            // Mark assignment as done in Google Classroom (equivalent to "Mark as Done")
+            try {
+              console.log('🔄 Marking assignment as done in Google Classroom...')
+              const googleResponse = await fetch('/api/student/mark-as-done', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  courseId: selectedCourse.id,
+                  courseWorkId: pendingQuizId
+                  // studentEmail is now automatically determined from the authenticated user
+                })
+              })
+
+              const googleData = await googleResponse.json()
+              console.log('📡 Google Classroom Mark as Done API response:', googleData)
+
+              if (googleData.success) {
+                if (googleData.googleClassroomSync === false) {
+                  console.log(`✅ Assignment marked as completed locally (Google Classroom sync not available due to API limitations)`)
+                  console.log('Note:', googleData.note)
+                } else {
+                  console.log(`✅ Assignment marked as done in Google Classroom`)
+                  console.log('Google Classroom submission state:', googleData.newState)
+                }
+              } else {
+                console.warn('⚠️ Failed to mark assignment as done in Google Classroom:', googleData.error)
+                console.warn('Error details:', googleData.details)
+                
+                // Show user-friendly error message for common issues
+                if (googleData.error === 'No submission found for this student and assignment') {
+                  console.warn('Student may not be enrolled in the Google Classroom course or assignment may not exist')
+                } else if (googleData.error === 'Assignment not found') {
+                  console.warn('The assignment does not exist in Google Classroom')
+                } else if (googleData.error === 'Permission denied for turn-in') {
+                  console.warn('Permission issue - student may not have access to turn in this assignment')
+                }
+              }
+            } catch (googleError) {
+              console.error('❌ Error marking assignment as done in Google Classroom:', googleError)
+              console.error('This might be due to network issues or Google Classroom API problems')
+            }
+            
+            // Save learning module progress
+            const moduleId = currentAssignment.id
+            const currentProgress = learningModuleProgress[moduleId] || {}
+            const updatedProgress = {
+              ...currentProgress,
+              completedQuizzes: [...(currentProgress.completedQuizzes || []), pendingQuizId],
+              lastCompletedQuiz: pendingQuizId,
+              completedAt: new Date().toISOString()
+            }
+            saveLearningModuleProgress(moduleId, updatedProgress)
+            
+            // Don't call fetchStageProgress() as it triggers entire course completion
+            // Just refresh the video completions to update the UI
+            console.log('✅ Quiz completion saved locally, UI will update automatically')
+          } else {
+            console.error('❌ Failed to mark quiz complete:', data)
+          }
+        } catch (error) {
+          console.error('❌ Error marking quiz complete:', error)
+        }
+      }
+      
+      // Close disclaimer
+      setShowQuizDisclaimer(false)
+      setPendingQuizId(null)
+    } catch (error) {
+      console.error('Error marking quiz complete:', error)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const markVideoComplete = async (videoId: string, completed: boolean) => {
     if (!selectedCourse?.id || !currentAssignment) return
 
@@ -221,44 +353,169 @@ export default function ClassroomPage() {
             [videoId]: completed
           }
           console.log('Updated local video completions:', newCompletions)
+          saveVideoCompletions(newCompletions)
           return newCompletions
         })
+
+        // Save learning module progress for videos
+        if (completed && videoId.startsWith('video-')) {
+          const moduleId = currentAssignment.id
+          const currentProgress = learningModuleProgress[moduleId] || {}
+          const updatedProgress = {
+            ...currentProgress,
+            completedVideos: [...(currentProgress.completedVideos || []), videoId],
+            lastCompletedVideo: videoId,
+            completedAt: new Date().toISOString()
+          }
+          saveLearningModuleProgress(moduleId, updatedProgress)
+
+          // Don't call fetchStageProgress() as it triggers entire course completion
+          // Just refresh the video completions to update the UI
+          console.log('✅ Video completion saved locally, UI will update automatically')
+        }
       }
     } catch (error) {
       console.error('Error marking video complete:', error)
     }
   }
 
-  // Auto-detect video completion based on time spent watching
+  // Manual trigger for video tracking and YouTube play
+  const startVideoTracking = (videoId: string) => {
+    console.log('Starting video tracking and YouTube autoplay:', videoId);
+    
+    // Start video tracking
+    setVideoPlayStates(prev => ({
+      ...prev,
+      [videoId]: {
+        ...prev[videoId],
+        isPlaying: true,
+        startTime: Date.now()
+      }
+    }));
+    
+    // Hide the overlay and trigger autoplay
+    setOverlayClicked(prev => ({
+      ...prev,
+      [videoId]: true
+    }));
+  };
+
+  // Track video play state and completion
+  const [videoPlayStates, setVideoPlayStates] = useState<Record<string, { isPlaying: boolean; startTime: number; watchedDuration: number; videoDuration: number }>>({})
+  const [videoTimers, setVideoTimers] = useState<Record<string, NodeJS.Timeout>>({})
+  const [overlayClicked, setOverlayClicked] = useState<Record<string, boolean>>({})
+  const [showQuizDisclaimer, setShowQuizDisclaimer] = useState(false)
+  const [pendingQuizId, setPendingQuizId] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [learningModuleProgress, setLearningModuleProgress] = useState<Record<string, any>>({})
+
+  // Load learning module progress from localStorage
   useEffect(() => {
-    if (!selectedVideo || videoCompletions[selectedVideo.id]) {
-      console.log('Skipping timer - no video selected or already completed:', selectedVideo?.id, videoCompletions[selectedVideo?.id]);
-      return;
+    const savedProgress = localStorage.getItem(`learningModuleProgress_${studentEmail}`)
+    if (savedProgress) {
+      try {
+        const parsed = JSON.parse(savedProgress)
+        setLearningModuleProgress(parsed)
+        console.log('Loaded learning module progress:', parsed)
+        
+        // Restore video completions from localStorage
+        const savedVideoCompletions = localStorage.getItem(`videoCompletions_${studentEmail}`)
+        if (savedVideoCompletions) {
+          try {
+            const parsedCompletions = JSON.parse(savedVideoCompletions)
+            setVideoCompletions(parsedCompletions)
+            console.log('Loaded video completions from localStorage:', parsedCompletions)
+          } catch (error) {
+            console.error('Error loading video completions:', error)
+          }
+        }
+        
+        // Restore last viewed module
+        restoreLastViewedModule()
+      } catch (error) {
+        console.error('Error loading learning module progress:', error)
+      }
     }
+  }, [studentEmail])
+
+  // Save learning module progress to localStorage
+  const saveLearningModuleProgress = (moduleId: string, progress: any) => {
+    const newProgress = {
+      ...learningModuleProgress,
+      [moduleId]: {
+        ...learningModuleProgress[moduleId],
+        ...progress,
+        lastUpdated: new Date().toISOString()
+      }
+    }
+    setLearningModuleProgress(newProgress)
+    localStorage.setItem(`learningModuleProgress_${studentEmail}`, JSON.stringify(newProgress))
+    console.log('Saved learning module progress:', newProgress)
+  }
+
+  // Save video completions to localStorage
+  const saveVideoCompletions = (completions: Record<string, boolean>) => {
+    localStorage.setItem(`videoCompletions_${studentEmail}`, JSON.stringify(completions))
+    console.log('Saved video completions to localStorage:', completions)
+  }
+
+  // Restore last viewed module from localStorage
+  const restoreLastViewedModule = () => {
+    const savedProgress = localStorage.getItem(`learningModuleProgress_${studentEmail}`)
+    if (savedProgress) {
+      try {
+        const parsed = JSON.parse(savedProgress)
+        // Find the module with the most recent activity
+        let lastModule: string | null = null
+        let lastActivity: string | null = null
+        
+        Object.entries(parsed).forEach(([moduleId, progress]: [string, any]) => {
+          if (progress.completedAt && (!lastActivity || new Date(progress.completedAt) > new Date(lastActivity))) {
+            lastModule = moduleId
+            lastActivity = progress.completedAt
+          }
+        })
+        
+        if (lastModule) {
+          console.log('Restoring last viewed module:', lastModule)
+          // You can add logic here to automatically select the last viewed module
+          // For now, we'll just log it
+        }
+      } catch (error) {
+        console.error('Error restoring last viewed module:', error)
+      }
+    }
+  }
+
+  // Start completion timer when video starts playing
+  useEffect(() => {
+    if (!selectedVideo || videoCompletions[selectedVideo.id]) return;
 
     const videoId = selectedVideo.id;
-    console.log('Starting timer for video:', videoId, 'Current completions:', videoCompletions);
-
-    // Start a timer when a video is selected
-    const timer = setTimeout(() => {
-      // Double-check that this is still the current video and not completed
-      if (currentVideoRef.current === videoId && !videoCompletions[videoId]) {
-        console.log('Timer completed for video:', videoId);
-        markVideoComplete(videoId, true);
-      } else {
-        console.log('Timer skipped - video changed or already completed:', {
-          currentVideo: currentVideoRef.current,
-          timerVideo: videoId,
-          isCompleted: videoCompletions[videoId]
-        });
+    const playState = videoPlayStates[videoId];
+    
+    if (playState?.isPlaying && !videoTimers[videoId]) {
+      console.log('Video started playing - starting completion timer:', videoId);
+      
+      // Clear any existing timer
+      if (videoTimers[videoId]) {
+        clearTimeout(videoTimers[videoId]);
       }
-    }, 30000); // 30 seconds
 
-    return () => {
-      console.log('Clearing timer for video:', videoId);
-      clearTimeout(timer);
-    };
-  }, [selectedVideo?.id]); // Only depend on selectedVideo.id
+      const timer = setTimeout(() => {
+        const currentPlayState = videoPlayStates[videoId];
+        if (currentPlayState?.isPlaying && currentVideoRef.current === videoId && !videoCompletions[videoId]) {
+          console.log('Video completion timer reached - marking as complete:', videoId);
+          markVideoComplete(videoId, true);
+        }
+      }, 30000); // 30 seconds
+
+      setVideoTimers(prev => ({
+        ...prev,
+        [videoId]: timer
+      }));
+    }
+  }, [videoPlayStates, selectedVideo?.id, videoCompletions, videoTimers]);
 
   const navigateToNextVideo = () => {
     if (!currentAssignment || !currentAssignment.children.videos) return
@@ -274,6 +531,28 @@ export default function ClassroomPage() {
       })
       currentVideoRef.current = nextVideoId
     }
+  }
+
+  const navigateToQuiz = () => {
+    if (!currentAssignment || !currentAssignment.children.quizzes) return
+    
+    // Select the first quiz in the assignment
+    const firstQuiz = currentAssignment.children.quizzes[0]
+    if (firstQuiz) {
+      const quizId = `quiz-${currentAssignment.id}-0`
+      setSelectedQuiz({ id: quizId, data: firstQuiz })
+      setSelectedVideo(null)
+    }
+  }
+
+  // Check if all videos in current assignment are completed
+  const areAllVideosCompleted = () => {
+    if (!currentAssignment || !currentAssignment.children.videos) return false
+    
+    return currentAssignment.children.videos.every((_: any, index: number) => {
+      const videoId = `video-${currentAssignment.id}-${index}`
+      return videoCompletions[videoId] === true
+    })
   }
 
   const navigateToPreviousVideo = () => {
@@ -318,6 +597,9 @@ export default function ClassroomPage() {
 
   // Handle hierarchical data from sidebar
   const handleHierarchicalDataChange = (data: any) => {
+    console.log('Hierarchical data changed:', data)
+    setHierarchicalData(data)
+    
     if (data?.learningModules?.children && selectedCourse?.id) {
       // Fetch completions for all assignments (includes videos, resources, and quizzes)
       data.learningModules.children.forEach((assignment: any) => {
@@ -325,6 +607,16 @@ export default function ClassroomPage() {
           fetchVideoCompletions(assignment.id)
         }
       })
+      
+      // Auto-select the first assignment if we're in the learning modules stage and no assignment is selected
+      if (selectedStage === 'course' && data.learningModules.children.length > 0) {
+        const firstAssignment = data.learningModules.children[0]
+        console.log('Auto-selecting first assignment:', firstAssignment.id, firstAssignment.title)
+        setSelectedMaterialId(firstAssignment.id)
+        
+        // Also set the current assignment for video navigation
+        setCurrentAssignment(firstAssignment)
+      }
     }
   }
 
@@ -345,6 +637,16 @@ export default function ClassroomPage() {
       default:
         return false;
     }
+  }
+
+  // Helper function to check if the entire course is completed
+  const isCourseFullyCompleted = () => {
+    if (!stageProgress) return false;
+    
+    return stageProgress.preSurveyCompleted && 
+           stageProgress.courseCompleted && 
+           stageProgress.ideasCompleted && 
+           stageProgress.postSurveyCompleted;
   }
 
   // Helper function to get stage title
@@ -386,6 +688,16 @@ export default function ClassroomPage() {
       fetchStageProgress()
     }
   }, [selectedCourse])
+
+  // Auto-select first assignment when switching to learning modules stage
+  useEffect(() => {
+    if (selectedStage === 'course' && hierarchicalData?.learningModules?.children?.length > 0) {
+      const firstAssignment = hierarchicalData.learningModules.children[0]
+      console.log('Stage changed to course, auto-selecting first assignment:', firstAssignment.id, firstAssignment.title)
+      setSelectedMaterialId(firstAssignment.id)
+      setCurrentAssignment(firstAssignment)
+    }
+  }, [selectedStage, hierarchicalData])
 
   const fetchStageProgress = async () => {
     if (!selectedCourse?.id) return
@@ -478,8 +790,52 @@ export default function ClassroomPage() {
           {/* Main content area */}
           <div className="flex-1 min-w-0 order-1 lg:order-1">
             <div className="max-w-4xl mx-auto xl:max-w-5xl 2xl:max-w-6xl">
-            {/* Only show StageContent if the current stage is not completed */}
-            {!isStageCompleted(selectedStage) && (
+            
+            {/* Show course completion screen when all stages are completed */}
+            {isCourseFullyCompleted() && (
+              <div className="text-center py-12">
+                <div className="max-w-2xl mx-auto">
+                  {/* Course Complete SVG */}
+                  <div className="mb-8">
+                    <img 
+                      src="/Course_Complete.svg" 
+                      alt="Course Complete" 
+                      className="w-full max-w-2xl mx-auto h-auto"
+                    />
+                  </div>
+                  
+                  {/* Congratulations message */}
+                  <div className="mb-6">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                      Congratulations!
+                    </h2>
+                    <p className="text-lg text-green-800 leading-relaxed">
+                      You have successfully completed all the lessons!
+                    </p>
+                  </div>
+                  
+                  {/* Completion details */}
+                  {/* <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-semibold text-green-800 mb-2">
+                      Course Completed Successfully!
+                    </h3>
+                    <p className="text-green-700">
+                      You have finished all stages: Pre-Survey, Learning Modules, Ideas, and Post-Survey.
+                    </p>
+                  </div> */}
+                </div>
+              </div>
+            )}
+            
+            {/* Only show StageContent if the current stage is not completed and course is not fully completed */}
+            {!isStageCompleted(selectedStage) && !isCourseFullyCompleted() && (
               <StageContent
                 courseId={selectedCourse.id}
                 studentEmail={studentEmail}
@@ -488,11 +844,13 @@ export default function ClassroomPage() {
                 selectedMaterialId={selectedMaterialId}
                 onStageComplete={fetchStageProgress}
                 loading={loadingProgress}
+                learningModuleProgress={learningModuleProgress}
+                videoCompletions={videoCompletions}
               />
             )}
             
-            {/* Show completion message for completed stages */}
-            {isStageCompleted(selectedStage) && (
+            {/* Show completion message for completed stages (but not when course is fully completed) */}
+            {isStageCompleted(selectedStage) && !isCourseFullyCompleted() && (
               <div className="text-center py-12">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                   <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -505,14 +863,11 @@ export default function ClassroomPage() {
                 <p className="text-gray-600 mb-4">
                   You have successfully completed this stage. Great work!
                 </p>
-                <p className="text-sm text-gray-500">
-                  Continue to the next stage using the sidebar navigation.
-                </p>
               </div>
             )}
 
-            {/* Selected Video/Quiz Content from Sidebar */}
-            {(selectedVideo || selectedQuiz) && (
+            {/* Selected Video/Quiz Content from Sidebar - only show if course is not fully completed */}
+            {(selectedVideo || selectedQuiz) && !isCourseFullyCompleted() && (
               <div className="mt-6 p-6 border rounded-lg bg-gray-50">
                 {selectedVideo && (
                   <div className="space-y-4">
@@ -524,20 +879,27 @@ export default function ClassroomPage() {
                         <span className="text-xs text-gray-500">
                           Video {currentVideoIndex + 1} of {currentAssignment?.children?.videos?.length || 1}
                         </span>
-                        {videoCompletions[selectedVideo.id] && (
+                        {videoCompletions[selectedVideo.id] ? (
                           <span className="text-xs text-green-600 font-medium">✓ Completed</span>
+                        ) : videoPlayStates[selectedVideo.id]?.isPlaying ? (
+                          <span className="text-xs text-blue-600 font-medium">▶️ Playing</span>
+                        ) : videoPlayStates[selectedVideo.id] ? (
+                          <span className="text-xs text-orange-600 font-medium">⏸️ Paused</span>
+                        ) : (
+                          <span className="text-xs text-gray-500">⏸️ Not Started</span>
                         )}
                       </div>
                     </div>
                     
-                    <div className="aspect-video w-full rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg">
+                    <div className="aspect-video w-full rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg relative">
                       {selectedVideo.data?.youtubeVideo ? (
                         <iframe
-                          src={`https://www.youtube.com/embed/${selectedVideo.data.youtubeVideo.id}`}
+                          src={`https://www.youtube.com/embed/${selectedVideo.data.youtubeVideo.id}?enablejsapi=1&origin=${window.location.origin}&autoplay=${overlayClicked[selectedVideo.id] ? '1' : '0'}`}
                           title={selectedVideo.data.youtubeVideo.title}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                           className="w-full h-full"
+                          id={`youtube-player-${selectedVideo.id}`}
                         />
                       ) : selectedVideo.data?.link ? (
                         <iframe
@@ -560,7 +922,24 @@ export default function ClassroomPage() {
                           Video content not available
                         </div>
                       )}
+                      
+                      {/* Clickable overlay to start video tracking */}
+                      {!videoPlayStates[selectedVideo.id]?.isPlaying && !videoCompletions[selectedVideo.id] && !overlayClicked[selectedVideo.id] && (
+                        <div 
+                          className="absolute inset-0 bg-black/20 flex items-center justify-center cursor-pointer hover:bg-black/30 transition-all duration-200"
+                          onClick={() => startVideoTracking(selectedVideo.id)}
+                        >
+                          <div className="bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-lg hover:scale-105 transition-transform duration-200">
+                            <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
+                              <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
+
 
                     {/* Video Controls */}
                     <div className="flex items-center justify-center gap-2">
@@ -584,6 +963,18 @@ export default function ClassroomPage() {
                       >
                         Next →
                       </Button>
+                      
+                      {/* Go to Quiz button - shows when all videos are completed */}
+                      {areAllVideosCompleted() && currentAssignment?.children?.quizzes && currentAssignment.children.quizzes.length > 0 && (
+                        <Button
+                          onClick={navigateToQuiz}
+                          variant="secondary"
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          📝 Go to Quiz
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -636,7 +1027,7 @@ export default function ClassroomPage() {
                     <div className="flex items-center justify-center gap-2">
                       {!videoCompletions[selectedQuiz.id] && (
                         <Button
-                          onClick={() => handleQuizSubmit(selectedQuiz.id)}
+                          onClick={() => handleManualQuizSubmit(selectedQuiz.id)}
                           variant="outline"
                           size="sm"
                         >
@@ -663,19 +1054,64 @@ export default function ClassroomPage() {
           selectedCourse={selectedCourse}
           stageProgress={stageProgress}
           selectedStage={selectedStage}
-          onStageSelect={setSelectedStage}
-          onMaterialSelect={(materialId) => {
+          onStageSelect={isCourseFullyCompleted() ? () => {} : setSelectedStage}
+          onMaterialSelect={isCourseFullyCompleted() ? () => {} : (materialId) => {
             setSelectedMaterialId(materialId)
           }}
-          onVideoSelect={handleVideoSelect}
-          onQuizSelect={handleQuizSelect}
-          onAssignmentSelect={fetchVideoCompletions}
+          onVideoSelect={isCourseFullyCompleted() ? () => {} : handleVideoSelect}
+          onQuizSelect={isCourseFullyCompleted() ? () => {} : handleQuizSelect}
+          onAssignmentSelect={isCourseFullyCompleted() ? () => {} : fetchVideoCompletions}
           videoCompletions={videoCompletions}
           onHierarchicalDataChange={handleHierarchicalDataChange}
         />
           </div>
         </div>
       </div>
+
+      {/* Quiz Disclaimer Modal */}
+      {showQuizDisclaimer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Complete Quiz?</h3>
+                <p className="text-sm text-gray-600">Make sure you've submitted the quiz form</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-700">
+                Have you already submitted the quiz form? If not, please complete the quiz first before marking it as done.
+              </p>
+            </div>
+            
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={() => {
+                  setShowQuizDisclaimer(false)
+                  setPendingQuizId(null)
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Go Back to Quiz
+              </Button>
+              <Button
+                onClick={handleConfirmQuizComplete}
+                disabled={submitting}
+                className="px-4 bg-amber-600 hover:bg-amber-700 disabled:opacity-50"
+                size="sm"
+              >
+                {submitting ? 'Completing...' : 'Mark Complete Anyway'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

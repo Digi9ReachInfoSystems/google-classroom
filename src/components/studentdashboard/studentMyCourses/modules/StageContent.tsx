@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Lock, CheckCircle, Circle } from "lucide-react"
+import { Lock, CheckCircle, Circle, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import CourseMaterials from "./CourseMaterials"
@@ -15,6 +15,8 @@ interface StageContentProps {
   selectedMaterialId?: string | null
   onStageComplete: () => void
   loading: boolean
+  learningModuleProgress?: Record<string, any>
+  videoCompletions?: Record<string, boolean>
 }
 
 export default function StageContent({
@@ -24,16 +26,20 @@ export default function StageContent({
   stageProgress,
   selectedMaterialId,
   onStageComplete,
-  loading
+  loading,
+  learningModuleProgress,
+  videoCompletions
 }: StageContentProps) {
   const [submitting, setSubmitting] = useState(false)
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null)
   const [formSubmitted, setFormSubmitted] = useState(false)
+  const [showDisclaimer, setShowDisclaimer] = useState(false)
 
   // Reset form submitted state when stage changes
   useEffect(() => {
     setFormSubmitted(false)
+    setShowDisclaimer(false)
   }, [selectedStage])
 
   const handleVideoSelect = (videoId: string, videoData: any) => {
@@ -238,6 +244,44 @@ export default function StageContent({
   }
 
   const handleMarkComplete = async () => {
+    // For form stages, show disclaimer if form hasn't been submitted
+    if (stageInfo?.type === 'form' && !formSubmitted) {
+      setShowDisclaimer(true)
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      setFormSubmitted(true) // Mark form as submitted when manually completing
+      const response = await fetch('/api/student/complete-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId,
+          stageId: selectedStage
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Refresh stage progress
+        await onStageComplete()
+        
+        // Note: Automatic navigation to next section will be implemented later
+        // For now, just refresh the progress
+      }
+    } catch (error) {
+      console.error('Error completing stage:', error)
+      setFormSubmitted(false) // Reset if there was an error
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleConfirmComplete = async () => {
+    setShowDisclaimer(false)
+    
     try {
       setSubmitting(true)
       setFormSubmitted(true) // Mark form as submitted when manually completing
@@ -334,7 +378,7 @@ export default function StageContent({
                   {!formSubmitted ? (
                     <>
                       <p className="text-sm text-muted-foreground">
-                        Form will be automatically marked as complete when submitted. Use the button below if needed.
+                        {/* Form will be automatically marked as complete when submitted. Use the button below if needed. */}
                       </p>
                       <Button 
                         onClick={handleMarkComplete}
@@ -378,6 +422,8 @@ export default function StageContent({
             submitting={submitting}
             onVideoSelect={handleVideoSelect}
             onQuizSelect={handleQuizSelect}
+            learningModuleProgress={learningModuleProgress}
+            videoCompletions={videoCompletions}
           />
         )}
 
@@ -446,6 +492,51 @@ export default function StageContent({
           </div>
         )}
       </CardContent>
+
+      {/* Disclaimer Modal */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="h-6 w-6 text-amber-500" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Form Submission Required
+              </h3>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700 mb-3">
+                <strong>Important:</strong> Without actually submitting the Google Form, the {stageInfo?.title} stage remains due and the next stage will not unlock.
+              </p>
+              <p className="text-sm text-gray-600">
+                Please make sure to:
+              </p>
+              <ul className="text-sm text-gray-600 mt-2 ml-4 list-disc">
+                <li>Fill out all required fields in the form</li>
+                <li>Click the "Submit" button within the Google Form</li>
+                <li>Wait for the form submission confirmation</li>
+              </ul>
+            </div>
+            
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowDisclaimer(false)}
+                className="px-4"
+              >
+                Go Back to Form
+              </Button>
+              <Button
+                onClick={handleConfirmComplete}
+                disabled={submitting}
+                className="px-4 bg-amber-600 hover:bg-amber-700 disabled:opacity-50"
+              >
+                {submitting ? 'Completing...' : 'Mark Complete Anyway'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

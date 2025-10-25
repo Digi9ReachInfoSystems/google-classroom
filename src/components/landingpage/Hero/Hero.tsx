@@ -33,9 +33,12 @@ const Hero: React.FC = () => {
         </p>
 
         {/* Button text: 400 / 12px */}
-        <button className="mt-8 px-6 py-3 rounded-3xl font-normal text-[14px] bg-[var(--primary)] text-white">
+        <a
+          href="/login"
+          className="inline-flex mt-8 px-6 py-3 rounded-3xl font-normal text-[14px] bg-[var(--primary)] text-white hover:bg-[var(--primary)] transition"
+        >
           Get Started
-        </button>
+        </a>
       </div>
     </section>
   );

@@ -73,7 +73,7 @@ export function IdeasTable({ rows }: { rows: IdeaRow[] }) {
                       rel="noreferrer"
                       title="View responses in Google Forms"
                     >
-                      View Response
+                      View Responses
                     </a>
                   ) : (
                     <span className="text-neutral-400">-</span>

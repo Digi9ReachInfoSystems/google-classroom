@@ -4,6 +4,9 @@ import { createUserOAuthClient, getClassroomWithUserAuth } from '@/lib/user-oaut
 import { connectToDatabase } from '@/lib/mongodb';
 import { BadgeModel } from '@/models/Badge';
 import { CertificateModel } from '@/models/Certificate';
+import { UserModel } from '@/models/User';
+import { StageCompletionModel } from '@/models/StageCompletion';
+import { RosterMembershipModel } from '@/models/RosterMembership';
 
 interface StudentData {
   id: string;
@@ -31,14 +34,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 });
     }
 
-    // Check if we have OAuth tokens
-    if (!payload.accessToken) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No OAuth tokens found. Please log in again.' 
-      }, { status: 401 });
-    }
-
     // Get course ID from query parameters
     const { searchParams } = new URL(req.url);
     const courseId = searchParams.get('courseId');
@@ -47,119 +42,204 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Course ID is required' }, { status: 400 });
     }
 
-    // Initialize Google Classroom API with user's OAuth credentials
-    const oauth2Client = createUserOAuthClient({
-      access_token: payload.accessToken,
-      refresh_token: payload.refreshToken
-    });
-    
-    const classroom = getClassroomWithUserAuth(oauth2Client);
-
     try {
       console.log('Fetching leaderboard data for course:', courseId);
 
-      // Connect to database for badges and certificates
+      // Connect to database
       await connectToDatabase();
 
-      // Fetch students enrolled in the course
-      const studentsResponse = await classroom.courses.students.list({
+      // Try database approach first
+      const rosterMembers = await RosterMembershipModel.find({
         courseId: courseId,
-        pageSize: 100
-      });
+        role: 'student'
+      }).select('userEmail');
 
-      const students = studentsResponse.data.students || [];
-      console.log(`Found ${students.length} students in course`);
+      const studentEmails = rosterMembers.map(member => member.userEmail);
+      console.log(`Found ${studentEmails.length} students in course from database`);
 
-      // Fetch all coursework for the course
-      const courseWorkResponse = await classroom.courses.courseWork.list({
-        courseId: courseId,
-        pageSize: 100
-      });
+      let studentData: StudentData[] = [];
 
-      const courseWork = courseWorkResponse.data.courseWork || [];
-      console.log(`Found ${courseWork.length} coursework items`);
+      if (studentEmails.length > 0) {
+        // Database approach - get student details from UserModel
+        const students = await UserModel.find({
+          email: { $in: studentEmails },
+          role: 'student'
+        }).select('email givenName familyName fullName');
 
-      // Calculate completion data for each student
-      const studentData: StudentData[] = [];
+        console.log(`Found ${students.length} student profiles in database`);
 
-      for (const student of students) {
-        if (!student.profile?.emailAddress) continue;
+        for (const student of students) {
+          // Get stage completions for this student
+          const stageCompletions = await StageCompletionModel.find({
+            courseId,
+            studentEmail: student.email
+          });
 
-        let completedAssignments = 0;
-        let totalAssignments = 0;
-        let totalGrade = 0;
-        let gradedAssignments = 0;
-
-        // Check each assignment for this student
-        for (const work of courseWork) {
-          if (!work.id || work.workType !== 'ASSIGNMENT' || work.state !== 'PUBLISHED') continue;
+          // Calculate completion based on stage completions
+          const completedStages = stageCompletions.length;
           
-          totalAssignments++;
+          // Define the main stages that count for completion
+          const mainStages = ['pre-survey', 'ideas', 'post-survey', 'course'];
+          const completedMainStages = stageCompletions.filter(stage => 
+            mainStages.includes(stage.stageId)
+          ).length;
+          
+          const completionPercentage = Math.min(100, Math.round((completedMainStages / mainStages.length) * 100));
 
-          try {
-            // Get student's submission for this assignment
-            const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
-              courseId: courseId as string,
-              courseWorkId: work.id as string,
-              userId: student.profile.id as string
-            });
+          // Get badge count for this student
+          const badgeCount = await BadgeModel.countDocuments({
+            courseId,
+            studentEmail: student.email
+          });
 
-            const submissions = submissionsResponse.data.studentSubmissions || [];
-            const studentSubmission = submissions.find(sub => 
-              sub.userId === student.profile?.id
-            );
+          // Get certificate count for this student
+          const certificateCount = await CertificateModel.countDocuments({
+            courseId,
+            studentEmail: student.email
+          });
 
-            if (studentSubmission) {
-              // Check if assignment is completed
-              if (studentSubmission.state === 'TURNED_IN' || studentSubmission.state === 'RETURNED') {
-                completedAssignments++;
-              }
+          const studentName = student.fullName || 
+                             (student.givenName && student.familyName ? 
+                               `${student.givenName} ${student.familyName}` : null) ||
+                             student.email || 'Unknown Student';
 
-              // Track grades for average calculation
-              if (studentSubmission.assignedGrade !== null && studentSubmission.assignedGrade !== undefined) {
-                totalGrade += studentSubmission.assignedGrade;
-                gradedAssignments++;
-              }
-            }
-          } catch (error) {
-            console.warn(`Error fetching submission for student ${student.profile.emailAddress} in assignment ${work.id}:`, error);
-          }
+          studentData.push({
+            id: student.email,
+            name: studentName,
+            email: student.email,
+            profilePicture: undefined,
+            completionPercentage,
+            totalAssignments: mainStages.length,
+            completedAssignments: completedMainStages,
+            averageGrade: undefined,
+            badges: badgeCount,
+            certificates: certificateCount
+          });
+        }
+      } else {
+        // Fallback to Google Classroom API approach
+        console.log('No database roster found, falling back to Google Classroom API');
+        
+        // Check if we have OAuth tokens for fallback
+        if (!payload.accessToken) {
+          return NextResponse.json({ 
+            success: false, 
+            error: 'No OAuth tokens found. Please log in again.' 
+          }, { status: 401 });
         }
 
-        const completionPercentage = totalAssignments > 0 
-          ? Math.round((completedAssignments / totalAssignments) * 100) 
-          : 0;
+        // Initialize Google Classroom API with user's OAuth credentials
+        const oauth2Client = createUserOAuthClient({
+          access_token: payload.accessToken,
+          refresh_token: payload.refreshToken
+        });
+        
+        const classroom = getClassroomWithUserAuth(oauth2Client);
 
-        const averageGrade = gradedAssignments > 0 
-          ? Math.round(totalGrade / gradedAssignments) 
-          : undefined;
-
-        // Get badge count for this student
-        const badgeCount = await BadgeModel.countDocuments({
-          courseId,
-          studentEmail: student.profile.emailAddress
+        // Fetch students from Google Classroom
+        const studentsResponse = await classroom.courses.students.list({
+          courseId: courseId,
+          pageSize: 100
         });
 
-        // Get certificate count for this student
-        const certificateCount = await CertificateModel.countDocuments({
-          courseId,
-          studentEmail: student.profile.emailAddress
-        });
+        const students = studentsResponse.data.students || [];
+        console.log(`Found ${students.length} students in course from Google Classroom`);
 
-        studentData.push({
-          id: student.profile.id || '',
-          name: student.profile.name?.fullName || 
-                `${student.profile.name?.givenName || ''} ${student.profile.name?.familyName || ''}`.trim() ||
-                student.profile.emailAddress || 'Unknown Student',
-          email: student.profile.emailAddress || '',
-          profilePicture: student.profile.photoUrl || undefined,
-          completionPercentage,
-          totalAssignments,
-          completedAssignments,
-          averageGrade,
-          badges: badgeCount,
-          certificates: certificateCount
-        });
+        for (const student of students) {
+          if (!student.profile?.emailAddress) continue;
+
+          // Get stage completions for this student
+          const stageCompletions = await StageCompletionModel.find({
+            courseId,
+            studentEmail: student.profile.emailAddress
+          });
+
+          // Calculate completion based on stage completions
+          const completedStages = stageCompletions.length;
+          
+          // Define the main stages that count for completion
+          const mainStages = ['pre-survey', 'ideas', 'post-survey', 'course'];
+          const completedMainStages = stageCompletions.filter(stage => 
+            mainStages.includes(stage.stageId)
+          ).length;
+          
+          const completionPercentage = Math.min(100, Math.round((completedMainStages / mainStages.length) * 100));
+
+          // Get badge count for this student
+          const badgeCount = await BadgeModel.countDocuments({
+            courseId,
+            studentEmail: student.profile.emailAddress
+          });
+
+          // Get certificate count for this student
+          const certificateCount = await CertificateModel.countDocuments({
+            courseId,
+            studentEmail: student.profile.emailAddress
+          });
+
+          const studentName = student.profile.name?.fullName || 
+                             `${student.profile.name?.givenName || ''} ${student.profile.name?.familyName || ''}`.trim() ||
+                             student.profile.emailAddress || 'Unknown Student';
+
+          studentData.push({
+            id: student.profile.id || student.profile.emailAddress,
+            name: studentName,
+            email: student.profile.emailAddress,
+            profilePicture: student.profile.photoUrl || undefined,
+            completionPercentage,
+            totalAssignments: mainStages.length,
+            completedAssignments: completedMainStages,
+            averageGrade: undefined,
+            badges: badgeCount,
+            certificates: certificateCount
+          });
+        }
+      }
+
+      // If no students found, at least show the current user
+      if (studentData.length === 0) {
+        console.log('No students found, showing current user only');
+        
+        // Get current user's data
+        const currentUser = await UserModel.findOne({ email: payload.email });
+        if (currentUser) {
+          const stageCompletions = await StageCompletionModel.find({
+            courseId,
+            studentEmail: currentUser.email
+          });
+
+          const completedStages = stageCompletions.length;
+          const totalStages = 4;
+          const completionPercentage = Math.round((completedStages / totalStages) * 100);
+
+          const badgeCount = await BadgeModel.countDocuments({
+            courseId,
+            studentEmail: currentUser.email
+          });
+
+          const certificateCount = await CertificateModel.countDocuments({
+            courseId,
+            studentEmail: currentUser.email
+          });
+
+          const studentName = currentUser.fullName || 
+                             (currentUser.givenName && currentUser.familyName ? 
+                               `${currentUser.givenName} ${currentUser.familyName}` : null) ||
+                             currentUser.email || 'Unknown Student';
+
+          studentData.push({
+            id: currentUser.email,
+            name: studentName,
+            email: currentUser.email,
+            profilePicture: undefined,
+            completionPercentage,
+            totalAssignments: totalStages,
+            completedAssignments: completedStages,
+            averageGrade: undefined,
+            badges: badgeCount,
+            certificates: certificateCount
+          });
+        }
       }
 
       // Sort students by completion percentage (descending)
@@ -183,6 +263,7 @@ export async function GET(req: NextRequest) {
       }));
 
       console.log(`Processed ${rankedStudents.length} students for leaderboard`);
+      console.log('Returning students:', rankedStudents.map(s => ({ name: s.name, email: s.email, isCurrentUser: s.isCurrentUser })));
 
       return NextResponse.json({
         success: true,
@@ -191,18 +272,19 @@ export async function GET(req: NextRequest) {
         courseId: courseId
       });
 
-    } catch (googleError: any) {
-      console.error('Error fetching leaderboard data from Google Classroom:', googleError);
+    } catch (error: any) {
+      console.error('Error fetching leaderboard data:', error);
       
-      if (googleError.code === 403) {
+      // If it's a Google Classroom permission error, provide helpful message
+      if (error.code === 403) {
         return NextResponse.json(
-          { success: false, error: 'Permission denied. Please check your Google Classroom API permissions.' },
+          { success: false, error: 'Permission denied. Students cannot view other students in this course.' },
           { status: 403 }
         );
       }
       
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch leaderboard data from Google Classroom' },
+        { success: false, error: 'Failed to fetch leaderboard data' },
         { status: 500 }
       );
     }

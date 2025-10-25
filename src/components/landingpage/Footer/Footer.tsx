@@ -32,7 +32,7 @@ const Footer: React.FC = () => {
               For demo requests, pricing, or more details, reach us at:
             </p>
             <a
-              href="#contact"
+              href="/login"
               className="inline-flex mt-6 px-6 py-3 rounded-3xl font-semibold bg-[var(--primary)] text-white hover:bg-[var(--primary)] transition"
             >
               Get Started
