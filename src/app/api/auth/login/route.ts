@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
 
 	const token = signAuthToken({ email: username, role: 'super-admin', userId: username });
 	const res = NextResponse.json({ success: true });
-        res.cookies.set('token', token, buildAuthCookieOptions(req.nextUrl.hostname));
+	const isSecure = req.nextUrl.protocol === 'https:';
+	res.cookies.set('token', token, buildAuthCookieOptions(req.nextUrl.hostname, 60 * 60 * 24 * 7, isSecure));
 	return res;
 }

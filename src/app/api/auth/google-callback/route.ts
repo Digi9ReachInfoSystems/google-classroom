@@ -10,23 +10,35 @@ export async function GET(req: NextRequest) {
 		const error = searchParams.get('error');
 		const state = searchParams.get('state');
 
+		// Helper to get proper origin
+		const getOrigin = (req: NextRequest) => {
+			const forwardedHost = req.headers.get('x-forwarded-host');
+			const forwardedProto = req.headers.get('x-forwarded-proto');
+			if (forwardedHost) {
+				return `${forwardedProto || 'https'}://${forwardedHost}`;
+			}
+			return req.nextUrl.origin;
+		};
+
 		if (error) {
 			console.error('OAuth error:', error);
-			const baseUrl = process.env.NODE_ENV === 'production' 
-				? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
-				: req.url.split('/api')[0];
-			return NextResponse.redirect(new URL('/login?error=oauth_denied', baseUrl));
+			return NextResponse.redirect(new URL('/login?error=oauth_denied', getOrigin(req)));
 		}
 
 		if (!code) {
-			const baseUrl = process.env.NODE_ENV === 'production' 
-				? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
-				: req.url.split('/api')[0];
-			return NextResponse.redirect(new URL('/login?error=no_code', baseUrl));
+			return NextResponse.redirect(new URL('/login?error=no_code', getOrigin(req)));
 		}
 
 		console.log('OAuth callback received code:', code);
 		console.log('OAuth state parameter:', state);
+		console.log('[OAuth Callback] Request headers:', {
+			host: req.headers.get('host'),
+			'x-forwarded-host': req.headers.get('x-forwarded-host'),
+			'x-forwarded-proto': req.headers.get('x-forwarded-proto'),
+			'x-forwarded-for': req.headers.get('x-forwarded-for'),
+			origin: req.headers.get('origin'),
+			referer: req.headers.get('referer')
+		});
 
 		// Exchange code for tokens
 		const { oauth2Client, tokens } = await getTokensFromCode(code);
@@ -75,24 +87,44 @@ export async function GET(req: NextRequest) {
 		});
 		console.log('JWT token created');
 
-		// Create response with redirect - use production domain
-		const baseUrl = process.env.NODE_ENV === 'production' 
-			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
-			: req.url.split('/api')[0]; // Extract base URL from request
+		// Create response with redirect - detect proper origin
+		// Check X-Forwarded headers first (for proxies/load balancers)
+		const forwardedHost = req.headers.get('x-forwarded-host');
+		const forwardedProto = req.headers.get('x-forwarded-proto');
+		
+		let baseUrl: string;
+		if (forwardedHost) {
+			const protocol = forwardedProto || 'https';
+			baseUrl = `${protocol}://${forwardedHost}`;
+			console.log('[OAuth Callback] Using forwarded headers:', { forwardedHost, forwardedProto, baseUrl });
+		} else {
+			baseUrl = req.nextUrl.origin;
+			console.log('[OAuth Callback] Using nextUrl.origin:', baseUrl);
+		}
+		
+		console.log('[OAuth Callback] Final redirect base URL:', baseUrl);
 		const res = NextResponse.redirect(new URL(redirectPath, baseUrl));
 
-		// Set authentication cookie
-		res.cookies.set('token', token, {
-			httpOnly: true,
-			secure: false, // Set to false since we're using HTTP in production
-			sameSite: 'lax',
-			path: '/',
-			maxAge: 60 * 60 * 24 * 7, // 7 days
-		});
-
-		console.log('Redirecting to:', redirectPath);
-		console.log('Cookie set with token length:', token.length);
-		console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+		// Set authentication cookie using buildAuthCookieOptions for consistent settings
+		// Use forwarded host/proto if available (for proxies)
+		const hostname = forwardedHost || req.nextUrl.hostname;
+		const protocol = forwardedProto || req.nextUrl.protocol;
+		const isSecure = protocol === 'https' || protocol === 'https:';
+		const cookieOptions = buildAuthCookieOptions(hostname, 60 * 60 * 24 * 7, isSecure);
+		
+		console.log('[OAuth Callback] Setting cookie with options:', cookieOptions);
+		console.log('[OAuth Callback] Hostname for cookie:', hostname);
+		console.log('[OAuth Callback] Protocol for cookie:', protocol);
+		console.log('[OAuth Callback] Is secure:', isSecure);
+		console.log('[OAuth Callback] Redirect path:', redirectPath);
+		console.log('[OAuth Callback] Token length:', token.length);
+		
+		res.cookies.set('token', token, cookieOptions);
+		
+		// Also log what cookies are being set
+		const setCookieHeader = res.headers.get('set-cookie');
+		console.log('[OAuth Callback] Set-Cookie header:', setCookieHeader);
+		
 		return res;
 
 	} catch (error) {
@@ -101,9 +133,17 @@ export async function GET(req: NextRequest) {
 			message: error instanceof Error ? error.message : 'Unknown error',
 			stack: error instanceof Error ? error.stack : undefined
 		});
-		const baseUrl = process.env.NODE_ENV === 'production' 
-			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
-			: req.url.split('/api')[0];
-		return NextResponse.redirect(new URL('/login?error=callback_failed', baseUrl));
+		
+		// Helper to get proper origin
+		const getOrigin = (req: NextRequest) => {
+			const forwardedHost = req.headers.get('x-forwarded-host');
+			const forwardedProto = req.headers.get('x-forwarded-proto');
+			if (forwardedHost) {
+				return `${forwardedProto || 'https'}://${forwardedHost}`;
+			}
+			return req.nextUrl.origin;
+		};
+		
+		return NextResponse.redirect(new URL('/login?error=callback_failed', getOrigin(req)));
 	}
 }

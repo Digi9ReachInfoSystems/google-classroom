@@ -28,7 +28,7 @@ export function signAuthToken(payload: AuthTokenPayload): string {
 type CookieOptions = {
         httpOnly?: boolean;
         secure?: boolean;
-        sameSite?: 'strict' | 'lax' | 'none';
+        sameSite?: 'none';
         path?: string;
         maxAge?: number;
         domain?: string;
@@ -65,19 +65,23 @@ function deriveCookieDomain(hostname?: string): string | undefined {
         return undefined;
 }
 
-export function buildAuthCookieOptions(hostname?: string, maxAge = 60 * 60 * 24 * 7): CookieOptions {
+export function buildAuthCookieOptions(hostname?: string, maxAge = 60 * 60 * 24 * 7, isSecure = false): CookieOptions {
         const options: CookieOptions = {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
+                secure: isSecure,
+                sameSite: 'none',
                 path: '/',
+                domain: 'qa.gully2global.com',
                 maxAge,
         };
 
         const domain = deriveCookieDomain(hostname);
-        if (domain) {
-                options.domain = domain;
-        }
+        console.log('[Cookie Debug] hostname:', hostname, 'derived domain:', domain, 'isSecure:', isSecure);
+        
+        // Don't set domain for now - use host-only cookies to avoid subdomain issues
+        // if (domain) {
+        //         options.domain = domain;
+        // }
 
         return options;
 }
@@ -99,8 +103,16 @@ export function getRoleBasedRedirect(role: string): string {
 
 export function verifyAuthToken(token: string): AuthTokenPayload | null {
 	try {
-		return jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
-	} catch {
+		console.log('[JWT Debug] Attempting verification');
+		console.log('[JWT Debug] JWT_SECRET length:', JWT_SECRET?.length);
+		console.log('[JWT Debug] JWT_SECRET value:', JWT_SECRET);
+		console.log('[JWT Debug] Token length:', token.length);
+		
+		const decoded = jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
+		console.log('[JWT Debug] Verification successful:', decoded);
+		return decoded;
+	} catch (error) {
+		console.error('[JWT Debug] Verification failed:', error);
 		return null;
 	}
 }
