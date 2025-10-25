@@ -28,7 +28,7 @@ export function signAuthToken(payload: AuthTokenPayload): string {
 type CookieOptions = {
         httpOnly?: boolean;
         secure?: boolean;
-        sameSite?: 'strict' | 'lax' | 'none';
+        sameSite?: 'none';
         path?: string;
         maxAge?: number;
         domain?: string;
@@ -67,9 +67,9 @@ function deriveCookieDomain(hostname?: string): string | undefined {
 
 export function buildAuthCookieOptions(hostname?: string, maxAge = 60 * 60 * 24 * 7, isSecure = false): CookieOptions {
         const options: CookieOptions = {
-                httpOnly: true,
+                httpOnly: false,
                 secure: isSecure,
-                sameSite: 'lax',
+                sameSite: 'none',
                 path: '/',
                 maxAge,
         };
