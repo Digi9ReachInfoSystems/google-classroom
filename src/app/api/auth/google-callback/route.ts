@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTokensFromCode, getUserInfo } from '@/lib/google-oauth';
-import { signAuthToken, getRoleBasedRedirect } from '@/lib/auth';
+import { signAuthToken, getRoleBasedRedirect, buildAuthCookieOptions } from '@/lib/auth';
 import { detectGoogleClassroomRole } from '@/lib/google';
 
 export async function GET(req: NextRequest) {
