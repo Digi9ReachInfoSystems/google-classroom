@@ -75,9 +75,12 @@ export function buildAuthCookieOptions(hostname?: string, maxAge = 60 * 60 * 24 
         };
 
         const domain = deriveCookieDomain(hostname);
-        if (domain) {
-                options.domain = domain;
-        }
+        console.log('[Cookie Debug] hostname:', hostname, 'derived domain:', domain, 'isSecure:', isSecure);
+        
+        // Don't set domain for now - use host-only cookies to avoid subdomain issues
+        // if (domain) {
+        //         options.domain = domain;
+        // }
 
         return options;
 }

@@ -13,9 +13,14 @@ export function middleware(req: NextRequest) {
 
 	// Check for authentication token
 	const token = req.cookies.get('token')?.value;
-	console.log('Token found:', !!token);
+	const allCookies = req.cookies.getAll();
+	console.log('[Middleware] All cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value })));
+	console.log('[Middleware] Token found:', !!token);
+	console.log('[Middleware] Request URL:', req.url);
+	console.log('[Middleware] Request hostname:', req.nextUrl.hostname);
+	
 	if (!token) {
-		console.log('No token, redirecting to login');
+		console.log('[Middleware] No token, redirecting to login');
 		return NextResponse.redirect(new URL('/login', req.nextUrl.origin));
 	}
 

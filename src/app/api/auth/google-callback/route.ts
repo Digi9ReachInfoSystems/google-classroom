@@ -76,11 +76,20 @@ export async function GET(req: NextRequest) {
 		// Set authentication cookie using buildAuthCookieOptions for consistent settings
 		// Check if we're using HTTPS
 		const isSecure = req.nextUrl.protocol === 'https:';
-		res.cookies.set('token', token, buildAuthCookieOptions(req.nextUrl.hostname, 60 * 60 * 24 * 7, isSecure));
-
-		console.log('Redirecting to:', redirectPath);
-		console.log('Cookie set with token length:', token.length);
-		console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+		const cookieOptions = buildAuthCookieOptions(req.nextUrl.hostname, 60 * 60 * 24 * 7, isSecure);
+		
+		console.log('[OAuth Callback] Setting cookie with options:', cookieOptions);
+		console.log('[OAuth Callback] Request hostname:', req.nextUrl.hostname);
+		console.log('[OAuth Callback] Request protocol:', req.nextUrl.protocol);
+		console.log('[OAuth Callback] Redirect path:', redirectPath);
+		console.log('[OAuth Callback] Token length:', token.length);
+		
+		res.cookies.set('token', token, cookieOptions);
+		
+		// Also log what cookies are being set
+		const setCookieHeader = res.headers.get('set-cookie');
+		console.log('[OAuth Callback] Set-Cookie header:', setCookieHeader);
+		
 		return res;
 
 	} catch (error) {
