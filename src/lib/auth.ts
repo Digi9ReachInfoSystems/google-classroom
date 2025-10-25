@@ -68,7 +68,7 @@ function deriveCookieDomain(hostname?: string): string | undefined {
 export function buildAuthCookieOptions(hostname?: string, maxAge = 60 * 60 * 24 * 7, isSecure = false): CookieOptions {
         const options: CookieOptions = {
                 httpOnly: true,
-                secure: true,
+                secure: isSecure,
                 sameSite: 'none',
                 path: '/',
                 maxAge,
