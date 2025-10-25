@@ -10,17 +10,35 @@ export async function GET(req: NextRequest) {
 		const error = searchParams.get('error');
 		const state = searchParams.get('state');
 
+		// Helper to get proper origin
+		const getOrigin = (req: NextRequest) => {
+			const forwardedHost = req.headers.get('x-forwarded-host');
+			const forwardedProto = req.headers.get('x-forwarded-proto');
+			if (forwardedHost) {
+				return `${forwardedProto || 'https'}://${forwardedHost}`;
+			}
+			return req.nextUrl.origin;
+		};
+
 		if (error) {
 			console.error('OAuth error:', error);
-			return NextResponse.redirect(new URL('/login?error=oauth_denied', req.nextUrl.origin));
+			return NextResponse.redirect(new URL('/login?error=oauth_denied', getOrigin(req)));
 		}
 
 		if (!code) {
-			return NextResponse.redirect(new URL('/login?error=no_code', req.nextUrl.origin));
+			return NextResponse.redirect(new URL('/login?error=no_code', getOrigin(req)));
 		}
 
 		console.log('OAuth callback received code:', code);
 		console.log('OAuth state parameter:', state);
+		console.log('[OAuth Callback] Request headers:', {
+			host: req.headers.get('host'),
+			'x-forwarded-host': req.headers.get('x-forwarded-host'),
+			'x-forwarded-proto': req.headers.get('x-forwarded-proto'),
+			'x-forwarded-for': req.headers.get('x-forwarded-for'),
+			origin: req.headers.get('origin'),
+			referer: req.headers.get('referer')
+		});
 
 		// Exchange code for tokens
 		const { oauth2Client, tokens } = await getTokensFromCode(code);
@@ -69,18 +87,35 @@ export async function GET(req: NextRequest) {
 		});
 		console.log('JWT token created');
 
-		// Create response with redirect - use the request origin
-		const baseUrl = req.nextUrl.origin;
+		// Create response with redirect - detect proper origin
+		// Check X-Forwarded headers first (for proxies/load balancers)
+		const forwardedHost = req.headers.get('x-forwarded-host');
+		const forwardedProto = req.headers.get('x-forwarded-proto');
+		
+		let baseUrl: string;
+		if (forwardedHost) {
+			const protocol = forwardedProto || 'https';
+			baseUrl = `${protocol}://${forwardedHost}`;
+			console.log('[OAuth Callback] Using forwarded headers:', { forwardedHost, forwardedProto, baseUrl });
+		} else {
+			baseUrl = req.nextUrl.origin;
+			console.log('[OAuth Callback] Using nextUrl.origin:', baseUrl);
+		}
+		
+		console.log('[OAuth Callback] Final redirect base URL:', baseUrl);
 		const res = NextResponse.redirect(new URL(redirectPath, baseUrl));
 
 		// Set authentication cookie using buildAuthCookieOptions for consistent settings
-		// Check if we're using HTTPS
-		const isSecure = req.nextUrl.protocol === 'https:';
-		const cookieOptions = buildAuthCookieOptions(req.nextUrl.hostname, 60 * 60 * 24 * 7, isSecure);
+		// Use forwarded host/proto if available (for proxies)
+		const hostname = forwardedHost || req.nextUrl.hostname;
+		const protocol = forwardedProto || req.nextUrl.protocol;
+		const isSecure = protocol === 'https' || protocol === 'https:';
+		const cookieOptions = buildAuthCookieOptions(hostname, 60 * 60 * 24 * 7, isSecure);
 		
 		console.log('[OAuth Callback] Setting cookie with options:', cookieOptions);
-		console.log('[OAuth Callback] Request hostname:', req.nextUrl.hostname);
-		console.log('[OAuth Callback] Request protocol:', req.nextUrl.protocol);
+		console.log('[OAuth Callback] Hostname for cookie:', hostname);
+		console.log('[OAuth Callback] Protocol for cookie:', protocol);
+		console.log('[OAuth Callback] Is secure:', isSecure);
 		console.log('[OAuth Callback] Redirect path:', redirectPath);
 		console.log('[OAuth Callback] Token length:', token.length);
 		
@@ -98,6 +133,17 @@ export async function GET(req: NextRequest) {
 			message: error instanceof Error ? error.message : 'Unknown error',
 			stack: error instanceof Error ? error.stack : undefined
 		});
-		return NextResponse.redirect(new URL('/login?error=callback_failed', req.nextUrl.origin));
+		
+		// Helper to get proper origin
+		const getOrigin = (req: NextRequest) => {
+			const forwardedHost = req.headers.get('x-forwarded-host');
+			const forwardedProto = req.headers.get('x-forwarded-proto');
+			if (forwardedHost) {
+				return `${forwardedProto || 'https'}://${forwardedHost}`;
+			}
+			return req.nextUrl.origin;
+		};
+		
+		return NextResponse.redirect(new URL('/login?error=callback_failed', getOrigin(req)));
 	}
 }

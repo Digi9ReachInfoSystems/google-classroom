@@ -21,7 +21,11 @@ export function middleware(req: NextRequest) {
 	
 	if (!token) {
 		console.log('[Middleware] No token, redirecting to login');
-		return NextResponse.redirect(new URL('/login', req.nextUrl.origin));
+		// Use forwarded host if available (for proxies)
+		const forwardedHost = req.headers.get('x-forwarded-host');
+		const forwardedProto = req.headers.get('x-forwarded-proto');
+		const origin = forwardedHost ? `${forwardedProto || 'https'}://${forwardedHost}` : req.nextUrl.origin;
+		return NextResponse.redirect(new URL('/login', origin));
 	}
 
 	const payload = verifyAuthToken(token);
@@ -30,7 +34,11 @@ export function middleware(req: NextRequest) {
 	if (!payload) {
 		console.log('Invalid token, redirecting to login');
 		console.log('Token value (first 50 chars):', token.substring(0, 50));
-		return NextResponse.redirect(new URL('/login', req.nextUrl.origin));
+		// Use forwarded host if available (for proxies)
+		const forwardedHost = req.headers.get('x-forwarded-host');
+		const forwardedProto = req.headers.get('x-forwarded-proto');
+		const origin = forwardedHost ? `${forwardedProto || 'https'}://${forwardedHost}` : req.nextUrl.origin;
+		return NextResponse.redirect(new URL('/login', origin));
 	}
 
 	// Role-based route protection
@@ -62,7 +70,11 @@ export function middleware(req: NextRequest) {
 		
 		const redirectPath = redirectMap[userRole] || '/dashboard';
 		console.log('Redirecting to:', redirectPath);
-		return NextResponse.redirect(new URL(redirectPath, req.nextUrl.origin));
+		// Use forwarded host if available (for proxies)
+		const forwardedHost = req.headers.get('x-forwarded-host');
+		const forwardedProto = req.headers.get('x-forwarded-proto');
+		const origin = forwardedHost ? `${forwardedProto || 'https'}://${forwardedHost}` : req.nextUrl.origin;
+		return NextResponse.redirect(new URL(redirectPath, origin));
 	}
 
 	console.log('Middleware allowing access');
