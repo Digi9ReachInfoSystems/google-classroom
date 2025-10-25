@@ -12,11 +12,17 @@ export async function GET(req: NextRequest) {
 
 		if (error) {
 			console.error('OAuth error:', error);
-			return NextResponse.redirect(new URL('/login?error=oauth_denied', req.url));
+			const baseUrl = process.env.NODE_ENV === 'production' 
+				? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
+				: req.url.split('/api')[0];
+			return NextResponse.redirect(new URL('/login?error=oauth_denied', baseUrl));
 		}
 
 		if (!code) {
-			return NextResponse.redirect(new URL('/login?error=no_code', req.url));
+			const baseUrl = process.env.NODE_ENV === 'production' 
+				? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
+				: req.url.split('/api')[0];
+			return NextResponse.redirect(new URL('/login?error=no_code', baseUrl));
 		}
 
 		console.log('OAuth callback received code:', code);
@@ -69,19 +75,24 @@ export async function GET(req: NextRequest) {
 		});
 		console.log('JWT token created');
 
-		// Create response with redirect
-		const res = NextResponse.redirect(new URL(redirectPath, req.url));
+		// Create response with redirect - use production domain
+		const baseUrl = process.env.NODE_ENV === 'production' 
+			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
+			: req.url.split('/api')[0]; // Extract base URL from request
+		const res = NextResponse.redirect(new URL(redirectPath, baseUrl));
 
 		// Set authentication cookie
 		res.cookies.set('token', token, {
 			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
+			secure: false, // Set to false since we're using HTTP in production
 			sameSite: 'lax',
 			path: '/',
 			maxAge: 60 * 60 * 24 * 7, // 7 days
 		});
 
 		console.log('Redirecting to:', redirectPath);
+		console.log('Cookie set with token length:', token.length);
+		console.log('Response headers:', Object.fromEntries(res.headers.entries()));
 		return res;
 
 	} catch (error) {
@@ -90,6 +101,9 @@ export async function GET(req: NextRequest) {
 			message: error instanceof Error ? error.message : 'Unknown error',
 			stack: error instanceof Error ? error.stack : undefined
 		});
-		return NextResponse.redirect(new URL('/login?error=callback_failed', req.url));
+		const baseUrl = process.env.NODE_ENV === 'production' 
+			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
+			: req.url.split('/api')[0];
+		return NextResponse.redirect(new URL('/login?error=callback_failed', baseUrl));
 	}
 }

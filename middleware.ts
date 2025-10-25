@@ -16,14 +16,22 @@ export function middleware(req: NextRequest) {
 	console.log('Token found:', !!token);
 	if (!token) {
 		console.log('No token, redirecting to login');
-		return NextResponse.redirect(new URL('/login', req.url));
+		const baseUrl = process.env.NODE_ENV === 'production' 
+			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
+			: req.url.split('/api')[0];
+		return NextResponse.redirect(new URL('/login', baseUrl));
 	}
 
 	const payload = verifyAuthToken(token);
 	console.log('Token payload:', payload);
+	console.log('Token verification result:', !!payload);
 	if (!payload) {
 		console.log('Invalid token, redirecting to login');
-		return NextResponse.redirect(new URL('/login', req.url));
+		console.log('Token value (first 50 chars):', token.substring(0, 50));
+		const baseUrl = process.env.NODE_ENV === 'production' 
+			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
+			: req.url.split('/api')[0];
+		return NextResponse.redirect(new URL('/login', baseUrl));
 	}
 
 	// Role-based route protection
@@ -55,7 +63,10 @@ export function middleware(req: NextRequest) {
 		
 		const redirectPath = redirectMap[userRole] || '/dashboard';
 		console.log('Redirecting to:', redirectPath);
-		return NextResponse.redirect(new URL(redirectPath, req.url));
+		const baseUrl = process.env.NODE_ENV === 'production' 
+			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
+			: req.url.split('/api')[0];
+		return NextResponse.redirect(new URL(redirectPath, baseUrl));
 	}
 
 	console.log('Middleware allowing access');
