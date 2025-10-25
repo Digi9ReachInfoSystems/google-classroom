@@ -12,17 +12,11 @@ export async function GET(req: NextRequest) {
 
 		if (error) {
 			console.error('OAuth error:', error);
-			const baseUrl = process.env.NODE_ENV === 'production' 
-				? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
-				: req.url.split('/api')[0];
-			return NextResponse.redirect(new URL('/login?error=oauth_denied', baseUrl));
+			return NextResponse.redirect(new URL('/login?error=oauth_denied', req.nextUrl.origin));
 		}
 
 		if (!code) {
-			const baseUrl = process.env.NODE_ENV === 'production' 
-				? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
-				: req.url.split('/api')[0];
-			return NextResponse.redirect(new URL('/login?error=no_code', baseUrl));
+			return NextResponse.redirect(new URL('/login?error=no_code', req.nextUrl.origin));
 		}
 
 		console.log('OAuth callback received code:', code);
@@ -75,20 +69,14 @@ export async function GET(req: NextRequest) {
 		});
 		console.log('JWT token created');
 
-		// Create response with redirect - use production domain
-		const baseUrl = process.env.NODE_ENV === 'production' 
-			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
-			: req.url.split('/api')[0]; // Extract base URL from request
+		// Create response with redirect - use the request origin
+		const baseUrl = req.nextUrl.origin;
 		const res = NextResponse.redirect(new URL(redirectPath, baseUrl));
 
-		// Set authentication cookie
-		res.cookies.set('token', token, {
-			httpOnly: true,
-			secure: false, // Set to false since we're using HTTP in production
-			sameSite: 'lax',
-			path: '/',
-			maxAge: 60 * 60 * 24 * 7, // 7 days
-		});
+		// Set authentication cookie using buildAuthCookieOptions for consistent settings
+		// Check if we're using HTTPS
+		const isSecure = req.nextUrl.protocol === 'https:';
+		res.cookies.set('token', token, buildAuthCookieOptions(req.nextUrl.hostname, 60 * 60 * 24 * 7, isSecure));
 
 		console.log('Redirecting to:', redirectPath);
 		console.log('Cookie set with token length:', token.length);
@@ -101,9 +89,6 @@ export async function GET(req: NextRequest) {
 			message: error instanceof Error ? error.message : 'Unknown error',
 			stack: error instanceof Error ? error.stack : undefined
 		});
-		const baseUrl = process.env.NODE_ENV === 'production' 
-			? (process.env.PRODUCTION_BASE_URL || 'http://qa.gully2global.com')
-			: req.url.split('/api')[0];
-		return NextResponse.redirect(new URL('/login?error=callback_failed', baseUrl));
+		return NextResponse.redirect(new URL('/login?error=callback_failed', req.nextUrl.origin));
 	}
 }
