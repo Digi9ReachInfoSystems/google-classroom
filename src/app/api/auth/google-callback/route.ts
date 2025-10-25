@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTokensFromCode, getUserInfo } from '@/lib/google-oauth';
-import { signAuthToken, getRoleBasedRedirect } from '@/lib/auth';
+import { signAuthToken, getRoleBasedRedirect, buildAuthCookieOptions } from '@/lib/auth';
 import { detectGoogleClassroomRole } from '@/lib/google';
 
 export async function GET(req: NextRequest) {
@@ -70,16 +70,11 @@ export async function GET(req: NextRequest) {
 		console.log('JWT token created');
 
 		// Create response with redirect
-		const res = NextResponse.redirect(new URL(redirectPath, req.url));
+                const redirectUrl = new URL(redirectPath, req.url);
+                const res = NextResponse.redirect(redirectUrl);
 
-		// Set authentication cookie
-		res.cookies.set('token', token, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
-			path: '/',
-			maxAge: 60 * 60 * 24 * 7, // 7 days
-		});
+                // Set authentication cookie
+                res.cookies.set('token', token, buildAuthCookieOptions(redirectUrl.hostname));
 
 		console.log('Redirecting to:', redirectPath);
 		return res;

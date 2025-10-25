@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { signAuthToken, verifyStaticCredentials } from '@/lib/auth';
+import { buildAuthCookieOptions, signAuthToken, verifyStaticCredentials } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
 	const { username, password } = await req.json();
@@ -15,12 +15,6 @@ export async function POST(req: NextRequest) {
 
 	const token = signAuthToken({ email: username, role: 'super-admin', userId: username });
 	const res = NextResponse.json({ success: true });
-	res.cookies.set('token', token, {
-		httpOnly: true,
-		secure: true,
-		sameSite: 'lax',
-		path: '/',
-		maxAge: 60 * 60 * 24 * 7,
-	});
+        res.cookies.set('token', token, buildAuthCookieOptions(req.nextUrl.hostname));
 	return res;
 }

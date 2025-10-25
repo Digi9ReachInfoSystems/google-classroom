@@ -1,16 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { buildAuthCookieOptions } from '@/lib/auth';
 
-export async function POST() {
-	const res = NextResponse.json({ success: true });
-	
-	// Clear the authentication cookie
-	res.cookies.set('token', '', {
-		httpOnly: true,
-		secure: process.env.NODE_ENV === 'production',
-		sameSite: 'lax',
-		path: '/',
-		maxAge: 0, // Expire immediately
-	});
+export async function POST(req: NextRequest) {
+        const res = NextResponse.json({ success: true });
 
-	return res;
+        // Clear the authentication cookie
+        const options = buildAuthCookieOptions(req.nextUrl.hostname, 0);
+        res.cookies.set('token', '', options);
+
+        return res;
 }
