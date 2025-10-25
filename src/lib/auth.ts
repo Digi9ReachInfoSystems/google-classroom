@@ -71,6 +71,7 @@ export function buildAuthCookieOptions(hostname?: string, maxAge = 60 * 60 * 24 
                 secure: isSecure,
                 sameSite: 'none',
                 path: '/',
+                domain: 'qa.gully2global.com',
                 maxAge,
         };
 
@@ -102,8 +103,16 @@ export function getRoleBasedRedirect(role: string): string {
 
 export function verifyAuthToken(token: string): AuthTokenPayload | null {
 	try {
-		return jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
-	} catch {
+		console.log('[JWT Debug] Attempting verification');
+		console.log('[JWT Debug] JWT_SECRET length:', JWT_SECRET?.length);
+		console.log('[JWT Debug] JWT_SECRET value:', JWT_SECRET);
+		console.log('[JWT Debug] Token length:', token.length);
+		
+		const decoded = jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
+		console.log('[JWT Debug] Verification successful:', decoded);
+		return decoded;
+	} catch (error) {
+		console.error('[JWT Debug] Verification failed:', error);
 		return null;
 	}
 }
